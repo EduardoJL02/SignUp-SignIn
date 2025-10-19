@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.effect.*?>
+<?import javafx.scene.text.*?>
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="900.0" prefWidth="1600.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+   <children>
+      <Label layoutX="425.0" layoutY="221.0" prefHeight="25.0" prefWidth="88.0" text="FISRT NAME" />
+      <TextField layoutX="425.0" layoutY="246.0" prefHeight="25.0" prefWidth="242.0" promptText="Insert your fisrt name" />
+      <Label layoutX="679.0" layoutY="251.0" text="?">
+         <tooltip>
+            <Tooltip text="Must be an Alphabetical Name" />
+         </tooltip>
+      </Label>
+      <Label layoutX="425.0" layoutY="283.0" prefHeight="25.0" prefWidth="101.0" text="MIDDLE NAME" />
+      <TextField layoutX="425.0" layoutY="308.0" prefHeight="25.0" prefWidth="242.0" promptText="Insert your middle name" />
+      <Label layoutX="679.0" layoutY="313.0" text="?">
+         <tooltip>
+            <Tooltip text="Must be an Alphabetical Name" />
+         </tooltip>
+      </Label>
+      <Label layoutX="425.0" layoutY="345.0" prefHeight="25.0" prefWidth="78.0" text="LAST NAME" />
+      <TextField layoutX="425.0" layoutY="370.0" prefHeight="25.0" prefWidth="242.0" promptText="Insert your last name" />
+      <Label layoutX="679.0" layoutY="375.0" text="?">
+         <tooltip>
+            <Tooltip text="Must be an Alphabetical Name" />
+         </tooltip>
+      </Label>
+      <Label layoutX="425.0" layoutY="429.0" prefHeight="25.0" prefWidth="78.0" text="ADDRESS" />
+      <TextField layoutX="425.0" layoutY="454.0" prefHeight="25.0" prefWidth="242.0" promptText="Insert your address" />
+      <Label layoutX="679.0" layoutY="459.0" text="?">
+         <tooltip>
+            <Tooltip text="Full addres, without city, state and zip" />
+         </tooltip>
+      </Label>
+      <Label layoutX="425.0" layoutY="490.0" prefHeight="25.0" prefWidth="34.0" text="CITY" />
+      <TextField layoutX="426.0" layoutY="520.0" prefHeight="25.0" prefWidth="242.0" promptText="Insert your city" />
+      <Label layoutX="679.0" layoutY="520.0" text="?">
+         <tooltip>
+            <Tooltip text="Your city" />
+         </tooltip>
+      </Label>
+      <Label layoutX="425.0" layoutY="552.0" prefHeight="25.0" prefWidth="78.0" text="STATE" />
+      <TextField layoutX="425.0" layoutY="577.0" prefHeight="25.0" prefWidth="242.0" promptText="Insert your state" />
+      <Label layoutX="679.0" layoutY="582.0" text="?">
+         <tooltip>
+            <Tooltip text="Your state" />
+         </tooltip>
+      </Label>
+      <Label layoutX="425.0" layoutY="613.0" prefHeight="25.0" prefWidth="78.0" text="ZIP" />
+      <TextField layoutX="425.0" layoutY="638.0" prefHeight="25.0" prefWidth="78.0" promptText="Zip Code" />
+      <Label layoutX="510.0" layoutY="643.0" text="?">
+         <tooltip>
+            <Tooltip text="Zip Code" />
+         </tooltip>
+      </Label>
+      <Label layoutX="425.0" layoutY="675.0" prefHeight="25.0" prefWidth="78.0" text="PHONE" />
+      <TextField layoutX="425.0" layoutY="700.0" prefHeight="25.0" prefWidth="117.0" promptText="Phone Number" />
+      <Label layoutX="553.0" layoutY="705.0" text="?">
+         <tooltip>
+            <Tooltip text="Phone Number Without Country Code" />
+         </tooltip>
+      </Label>
+      <Label layoutX="914.0" layoutY="365.0" prefHeight="25.0" prefWidth="88.0" text="EMAIL" />
+      <TextField layoutX="914.0" layoutY="390.0" prefHeight="25.0" prefWidth="242.0" promptText="Email address" />
+      <Label layoutX="1168.0" layoutY="395.0" text="?">
+         <tooltip>
+            <Tooltip />
+         </tooltip>
+      </Label>
+      <Label layoutX="914.0" layoutY="429.0" prefHeight="25.0" prefWidth="88.0" text="PASSWORD" />
+      <TextField layoutX="914.0" layoutY="459.0" prefHeight="25.0" prefWidth="242.0" promptText="Password" />
+      <Label layoutX="1168.0" layoutY="459.0" text="?">
+         <tooltip>
+            <Tooltip text="Must have Capitals, lowercase, special characters (!;-;_;*), minimum 8 charaters and maximun 15." />
+         </tooltip>
+      </Label>
+      <Label layoutX="914.0" layoutY="500.0" prefHeight="25.0" prefWidth="132.0" text="REPEAT PASSWORD" />
+      <TextField layoutX="914.0" layoutY="530.0" prefHeight="25.0" prefWidth="242.0" />
+      <ProgressBar layoutX="935.0" layoutY="587.0" prefWidth="200.0" progress="0.0" />
+      <Separator layoutX="800.0" layoutY="196.0" orientation="VERTICAL" prefHeight="551.0" prefWidth="7.0" />
+      <Button layoutX="520.0" layoutY="785.0" mnemonicParsing="false" prefHeight="37.0" prefWidth="220.0" style="-fx-background-color: black;" text="BACK" textFill="WHITE">
+         <font>
+            <Font size="15.0" />
+         </font></Button>
+      <Label layoutX="476.0" layoutY="167.0" text="PERSONAL DATA" textAlignment="CENTER">
+         <font>
+            <Font name="System Bold" size="20.0" />
+         </font></Label>
+      <Button layoutX="866.0" layoutY="786.0" mnemonicParsing="false" prefHeight="37.0" prefWidth="220.0" style="-fx-background-color: green;" text="Create account" textAlignment="CENTER" textFill="WHITE">
+         <effect>
+            <Glow />
+         </effect>
+         <font>
+            <Font size="15.0" />
+         </font>
+      </Button>
+      <Label layoutX="974.0" layoutY="308.0" text="USER LOGIN" textAlignment="CENTER">
+         <font>
+            <Font name="System Bold" size="20.0" />
+         </font>
+      </Label>
+   </children>
+</Pane>
