@@ -82,7 +82,6 @@
       </Label>
       <Label layoutX="914.0" layoutY="500.0" prefHeight="25.0" prefWidth="132.0" text="REPEAT PASSWORD" />
       <TextField layoutX="914.0" layoutY="530.0" prefHeight="25.0" prefWidth="242.0" />
-      <ProgressBar layoutX="935.0" layoutY="587.0" prefWidth="200.0" progress="0.0" />
       <Separator layoutX="800.0" layoutY="196.0" orientation="VERTICAL" prefHeight="551.0" prefWidth="7.0" />
       <Button layoutX="520.0" layoutY="785.0" mnemonicParsing="false" prefHeight="37.0" prefWidth="220.0" style="-fx-background-color: black;" text="BACK" textFill="WHITE">
          <font>
@@ -105,5 +104,6 @@
             <Font name="System Bold" size="20.0" />
          </font>
       </Label>
+      <ProgressBar layoutX="935.0" layoutY="587.0" prefWidth="200.0" progress="0.0" />
    </children>
 </Pane>
