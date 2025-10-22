@@ -10,6 +10,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import ui.GestionUsuariosController;
 
 /**
  *
@@ -19,7 +20,13 @@ public class SignUpWindow extends Application {
     
     @Override
     public void start(Stage stage) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("FXMLDocument.fxml"));
+        
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/FXMLDocument.fxml"));
+        Parent root = (Parent)loader.load();
+        
+        GestionUsuariosController controller=loader.getController();
+        
+        controller.init(stage);
         
         Scene scene = new Scene(root);
         
