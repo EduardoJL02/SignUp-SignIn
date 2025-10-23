@@ -4,8 +4,11 @@
  * and open the template in the editor.
  */
 package UI;
+import java.awt.event.ActionEvent;
 import java.util.logging.Logger;
+import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
+import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
@@ -63,7 +66,7 @@ public class GestionUsuariosController {
     
 
     
-    public void init(Stage stage) {
+    public void init(Stage stage, Parent root) {
         LOGGER.info("Initializing login stage.");
 //Establecer titulo de la ventana
         stage.setTitle("User management");
@@ -72,8 +75,44 @@ public class GestionUsuariosController {
         stage.setResizable(false);
         
         
-        LoginButton.setDisable(true);    }
+        LoginButton.setDisable(true);
+
+        //Asociar eventos a manejadores
+        LoginButton.setOnAction(this::handleLoginButtonOnAction);
+        
+        EmailTextField.textProperty().addListener(this::handleEmailTextChange);
+        EmailTextField.focusedProperty().addListener(this::handleEmailFocusChange);
+        PasswordField.textProperty().addListener(this::handlePasswordChange);
+                        
+        
+        //Mostrar ventana
+        stage.show();
+
+    }
+    
+    /**
+     * 
+     * @param observable
+     * @param oldValue
+     * @param newValue 
+     */
+    private void handleLoginButtonOnAction(ActionEvent event){}
+    private void handleEmailTextChange(ObservableValue observable, 
+                                                String oldValue, 
+                                                String newValue){}
     
     
+    private void handleEmailFocusChange(ObservableValue observable, 
+                                                Boolean oldValue, 
+                                                Boolean newValue){
+        if(newValue){
+            LOGGER.info("onFocus");
+        }
+    }
+        
+    
+    private void handlePasswordChange(ObservableValue observable, 
+                                                String oldValue, 
+                                                String newValue){}
     
 }
