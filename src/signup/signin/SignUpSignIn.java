@@ -23,7 +23,7 @@ public class SignUpSignIn extends Application {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/UI/FXMLDocument.fxml"));
         Parent root = (Parent)loader.load();
         GestionUsuariosController controller= loader.getController();
-        controller.init(stage);
+        controller.init(stage,root);
         
         Scene scene = new Scene(root);
         
