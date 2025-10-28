@@ -6,7 +6,7 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import javafx.application.Platform;
 import javafx.beans.value.ObservableValue;
-import javafx.event.ActionEvent; // ✅ correcto
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
@@ -35,7 +35,7 @@ public class GestionUsuariosController {
 
     private static final Logger LOGGER = Logger.getLogger("SignUpSignIn.UI");
 
-    private static final Pattern EMAIL_REGEX = Pattern.compile("^[A-Za-z0-9+_.-]+@(.+)$");
+    private static final Pattern EMAIL_REGEX = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
     private static final int MIN_PASSWORD_LENGTH = 8;
 
     public void init(Stage stage, Parent root) {
@@ -74,27 +74,29 @@ public class GestionUsuariosController {
             String password = PasswordField.getText();
 
             if (!EMAIL_REGEX.matcher(email).matches() || password.length() < MIN_PASSWORD_LENGTH) {
-                showInlineError("Email o contraseña incorrectos.");
+                String emailError = !EMAIL_REGEX.matcher(email).matches() ? "Formato de email inválido" : "";
+                String passwordError = password.length() < MIN_PASSWORD_LENGTH ? "Contraseña demasiado corta" : "";
+                showInlineError(emailError, passwordError);
                 return;
             }
 
             LOGGER.info("Evento: login_attempt");
 
-            // Simular llamada backend (esto debe reemplazarse por conexión real HTTPS)
+            // Stub de autenticación: solo para pruebas, no seguro para uso real. Reemplazar por conexión HTTPS segura.
             boolean loginOK = fakeBackendAuth(email, password);
 
             if (loginOK) {
                 LOGGER.info("Evento: login_success (método=standard)");
                 navigateToMain();
             } else {
-                showInlineError("Email o contraseña incorrectos.");
+                showInlineError("", "Email o contraseña incorrectos.");
                 LOGGER.info("Evento: login_failed");
                 PasswordField.requestFocus();
                 PasswordField.selectAll();
             }
 
         } catch (NoSuchElementException ex) {
-            showInlineError("Email o contraseña incorrectos.");
+            showInlineError("", "Email o contraseña incorrectos.");
             LOGGER.log(Level.WARNING, "Usuario no encontrado", ex);
         } catch (Exception ex) {
             showError("Ha ocurrido un error inesperado.");
@@ -157,9 +159,9 @@ public class GestionUsuariosController {
         }
     }
 
-    private void showInlineError(String message) {
-        Error_email.setText(message);
-        Error_password.setText(message);
+    private void showInlineError(String emailMessage, String passwordMessage) {
+        Error_email.setText(emailMessage);
+        Error_password.setText(passwordMessage);
     }
 
     private void showError(String message) {
@@ -179,8 +181,12 @@ public class GestionUsuariosController {
 
     private void navigateToMain() {
         LOGGER.info("Navegando a ventana principal...");
-        // Aquí iría la carga de la nueva escena (main screen)
-        Platform.runLater(() -> showError("Login correcto (simulación)."));
+        // TODO: Implementar la carga y el cambio de escena a la pantalla principal de la aplicación.
+        // Ejemplo: cargar el FXML de la pantalla principal y establecerlo en el Stage actual.
+        Platform.runLater(() -> {
+            // TODO: Reemplazar esto por la lógica real de navegación.
+            showError("Login correcto (simulación).");
+        });
     }
 
     private void handleForgotPassword() {
@@ -189,17 +195,18 @@ public class GestionUsuariosController {
             // Aquí cargarías la ventana de recuperación de contraseña
             showError("Ir a ventana de recuperación de contraseña (a implementar)");
         } catch (Exception e) {
-            showInlineError("No se pudo abrir la ventana de recuperación.");
+            showInlineError("", "No se pudo abrir la ventana de recuperación.");
         }
     }
 
     private void handleSignUp() {
         LOGGER.info("Evento: register_navigated");
         try {
-            // Aquí cargarías la ventana de Sign-Up
+            // TODO: Implementar la carga y apertura de la ventana de registro (Sign-Up).
+            // Ejemplo: cargar el FXML de registro y mostrarlo en una nueva escena o ventana.
             showError("Ir a ventana de registro (a implementar)");
         } catch (Exception e) {
-            showInlineError("No se pudo abrir la ventana de registro.");
+            showInlineError("", "No se pudo abrir la ventana de registro.");
         }
     }
 }

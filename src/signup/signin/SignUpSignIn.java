@@ -18,7 +18,8 @@ import java.util.logging.Logger;
  */
 public class SignUpSignIn extends Application {
 
-    private static final Logger LOGGER = Logger.getLogger("SignUpSignIn.Main");
+    // Logger for main application events in SignUpSignIn
+        private static final Logger LOGGER = Logger.getLogger("SignUpSignIn.Main");
 
     @Override
     public void start(Stage stage) {
@@ -27,8 +28,19 @@ public class SignUpSignIn extends Application {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/UI/FXMLDocument.fxml"));
             Parent root = loader.load();
 
+            if (root == null) {
+                LOGGER.severe("No se pudo cargar la interfaz FXML: root es null.");
+                showError("No se pudo cargar la interfaz de usuario.");
+                return;
+            }
+
             // Obtener controlador y pasar Stage
             GestionUsuariosController controller = loader.getController();
+            if (controller == null) {
+                LOGGER.severe("No se encontró el controlador en el FXML.");
+                showError("No se encontró el controlador en el archivo FXML.");
+                return;
+            }
             controller.init(stage, root);
 
             // Crear escena
@@ -36,10 +48,6 @@ public class SignUpSignIn extends Application {
             stage.setScene(scene);
             stage.setTitle("LOGIN");
             stage.setResizable(false);
-
-            // (Opcional) aplicar estilos o íconos
-            // scene.getStylesheets().add(getClass().getResource("/UI/styles.css").toExternalForm());
-            // stage.getIcons().add(new Image(getClass().getResourceAsStream("/UI/icon.png")));
 
             // Confirmación al cerrar
             stage.setOnCloseRequest(event -> {
@@ -52,7 +60,7 @@ public class SignUpSignIn extends Application {
 
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error al iniciar Sign-In", e);
-            showError("Error al iniciar la aplicación:\n" + e.getMessage());
+            showError("Ha ocurrido un error al iniciar la aplicación. Por favor, inténtalo de nuevo más tarde.");
         }
     }
 
@@ -76,6 +84,7 @@ public class SignUpSignIn extends Application {
 
     /**
      * Muestra un error genérico.
+     * Este método es bloqueante: espera hasta que el usuario cierre el diálogo.
      */
     private void showError(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -84,7 +93,10 @@ public class SignUpSignIn extends Application {
         alert.setContentText(message);
         alert.showAndWait();
     }
-
+    /**
+     * Launches the JavaFX application.
+     * @param args the command line arguments
+     */
     public static void main(String[] args) {
         launch(args);
     }
