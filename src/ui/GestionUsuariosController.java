@@ -17,6 +17,10 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import javax.ws.rs.ForbiddenException;
+import javax.ws.rs.InternalServerErrorException;
+import logic.CustomerRESTClient;
+import model.Customer;
 
 /**
  *
@@ -109,7 +113,24 @@ public class GestionUsuariosController {
      * @param event 
      */
     private void handleBtCreateOnAction(ActionEvent event){
-         
+        try{
+            //Crear un objeto customer
+            Customer customer = new Customer();
+
+            //Establecer propiedades del objeto a partir de los valores de los campos
+            customer.setFirstName(tfFName);
+            CustomerRESTClient client = new CustomerRESTClient();
+            client.create_XML(customer, Customer.class);
+            client.close();
+            
+            //Indicar al usuario que se ha registrado
+            new Alert("msg)".;
+                    
+            //Abrir venta de Sign In        
+        }catch(ForbiddenException e){
+            
+        }catch(InternalServerErrorException e){
+        }
     }
     /**
      * 
