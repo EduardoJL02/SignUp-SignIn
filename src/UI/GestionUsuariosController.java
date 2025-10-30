@@ -69,6 +69,24 @@ public class GestionUsuariosController {
      * Evento: Pulsación del botón Login
      */
     private void handleLoginButtonOnAction(ActionEvent event) {
+        /**
+         * try{
+         * 
+         *  //Crear un objeto Customer
+         *  Customer customer = new Customer();
+         *  //Establecer propiedades del objeto a partir
+         *  //de los valores de los campos
+         *  customer.setLastName("")
+         *  CustomerRESTClient client= new CustomerRESTClient();
+         *  client.create_XML(customer);
+         *  client.close();
+         *  //Indicar al usuario que se ha registrado correctamente
+         *  new Alert("msg");
+         *  //abrir ventana de Sign In
+         * }catch(Exception){
+         * 
+         * }
+         */
         try {
             String email = EmailTextField.getText().trim();
             String password = PasswordField.getText();
