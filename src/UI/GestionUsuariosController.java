@@ -12,6 +12,8 @@ import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import model.Customer;
+import logic.CustomerRESTClient;
 
 
 /**
@@ -69,24 +71,7 @@ public class GestionUsuariosController {
      * Evento: Pulsación del botón Login
      */
     private void handleLoginButtonOnAction(ActionEvent event) {
-        /**
-         * try{
-         * 
-         *  //Crear un objeto Customer
-         *  Customer customer = new Customer();
-         *  //Establecer propiedades del objeto a partir
-         *  //de los valores de los campos
-         *  customer.setLastName("")
-         *  CustomerRESTClient client= new CustomerRESTClient();
-         *  client.create_XML(customer);
-         *  client.close();
-         *  //Indicar al usuario que se ha registrado correctamente
-         *  new Alert("msg");
-         *  //abrir ventana de Sign In
-         * }catch(Exception){
-         * 
-         * }
-         */
+        // Autenticación: usar el servicio REST para obtener el Customer por email+password
         try {
             String email = EmailTextField.getText().trim();
             String password = PasswordField.getText();
@@ -98,19 +83,32 @@ public class GestionUsuariosController {
                 return;
             }
 
-            LOGGER.info("Evento: login_attempt");
+            LOGGER.info("Evento: login_attempt (REST)");
 
-            // Stub de autenticación: solo para pruebas, no seguro para uso real. Reemplazar por conexión HTTPS segura.
-            boolean loginOK = fakeBackendAuth(email, password);
+            CustomerRESTClient client = new CustomerRESTClient();
+            try {
+                // Llamada al servicio REST que busca por email y password
+                Customer found = client.findCustomerByEmailPassword_XML(Customer.class, email, password);
 
-            if (loginOK) {
-                LOGGER.info("Evento: login_success (método=standard)");
-                navigateToMain();
-            } else {
-                showInlineError("", "Email o contraseña incorrectos.");
-                LOGGER.info("Evento: login_failed");
-                PasswordField.requestFocus();
-                PasswordField.selectAll();
+                if (found != null && found.getId() != null) {
+                    LOGGER.info("Evento: login_success (REST)");
+                    // Aquí puedes guardar el customer en contexto de la app si lo necesitas
+                    Platform.runLater(() -> navigateToMain());
+                } else {
+                    // Credenciales incorrectas
+                    showInlineError("", "Email o contraseña incorrectos.");
+                    LOGGER.info("Evento: login_failed (REST): credenciales inválidas");
+                    PasswordField.requestFocus();
+                    PasswordField.selectAll();
+                }
+
+            } catch (Exception e) {
+                // Errores de conexión / servidor
+                String msg = e.getMessage() != null ? e.getMessage() : "No se pudo conectar con el servicio.";
+                showInlineError("", "Error al autenticar: " + msg);
+                LOGGER.log(Level.SEVERE, "Error durante autenticación REST", e);
+            } finally {
+                client.close();
             }
 
         } catch (NoSuchElementException ex) {
