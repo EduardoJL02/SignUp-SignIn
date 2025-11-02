@@ -43,13 +43,13 @@ public class CustomerRESTClient {
 
     public <T> T findCustomerByEmailPassword_XML(Class<T> responseType, String email, String password) throws ClientErrorException {
         WebTarget resource = webTarget;
-        resource = resource.path(java.text.MessageFormat.format("sigin/{0}/{1}", new Object[]{email, password}));
+        resource = resource.path(java.text.MessageFormat.format("signin/{0}/{1}", new Object[]{email, password}));
         return resource.request(javax.ws.rs.core.MediaType.APPLICATION_XML).get(responseType);
     }
 
     public <T> T findCustomerByEmailPassword_JSON(Class<T> responseType, String email, String password) throws ClientErrorException {
         WebTarget resource = webTarget;
-        resource = resource.path(java.text.MessageFormat.format("sigin/{0}/{1}", new Object[]{email, password}));
+        resource = resource.path(java.text.MessageFormat.format("signin/{0}/{1}", new Object[]{email, password}));
         return resource.request(javax.ws.rs.core.MediaType.APPLICATION_JSON).get(responseType);
     }
 

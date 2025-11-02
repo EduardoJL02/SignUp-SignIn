@@ -6,12 +6,15 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import javafx.application.Platform;
 import javafx.beans.value.ObservableValue;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import model.Customer;
 import logic.CustomerRESTClient;
 
@@ -72,54 +75,63 @@ public class GestionUsuariosController {
      */
     private void handleLoginButtonOnAction(ActionEvent event) {
         // Autenticación: usar el servicio REST para obtener el Customer por email+password
-        try {
-            String email = EmailTextField.getText().trim();
-            String password = PasswordField.getText();
+        String email = EmailTextField.getText().trim();
+        String password = PasswordField.getText();
 
-            if (!EMAIL_REGEX.matcher(email).matches() || password.length() < MIN_PASSWORD_LENGTH) {
-                String emailError = !EMAIL_REGEX.matcher(email).matches() ? "Formato de email inválido" : "";
-                String passwordError = password.length() < MIN_PASSWORD_LENGTH ? "Contraseña demasiado corta" : "";
-                showInlineError(emailError, passwordError);
-                return;
-            }
-
-            LOGGER.info("Evento: login_attempt (REST)");
-
-            CustomerRESTClient client = new CustomerRESTClient();
-            try {
-                // Llamada al servicio REST que busca por email y password
-                Customer found = client.findCustomerByEmailPassword_XML(Customer.class, email, password);
-
-                if (found != null && found.getId() != null) {
-                    LOGGER.info("Evento: login_success (REST)");
-                    // Aquí puedes guardar el customer en contexto de la app si lo necesitas
-                    Platform.runLater(() -> navigateToMain());
-                } else {
-                    // Credenciales incorrectas
-                    showInlineError("", "Email o contraseña incorrectos.");
-                    LOGGER.info("Evento: login_failed (REST): credenciales inválidas");
-                    PasswordField.requestFocus();
-                    PasswordField.selectAll();
-                }
-
-            } catch (Exception e) {
-                // Errores de conexión / servidor
-                String msg = e.getMessage() != null ? e.getMessage() : "No se pudo conectar con el servicio.";
-                showInlineError("", "Error al autenticar: " + msg);
-                LOGGER.log(Level.SEVERE, "Error durante autenticación REST", e);
-            } finally {
-                client.close();
-            }
-
-        } catch (NoSuchElementException ex) {
-            showInlineError("", "Email o contraseña incorrectos.");
-            LOGGER.log(Level.WARNING, "Usuario no encontrado", ex);
-        } catch (Exception ex) {
-            showError("Ha ocurrido un error inesperado.");
-            LOGGER.log(Level.SEVERE, "Error en login", ex);
-        } finally {
-            LoginButton.setDisable(false);
+        if (!EMAIL_REGEX.matcher(email).matches() || password.length() < MIN_PASSWORD_LENGTH) {
+            String emailError = !EMAIL_REGEX.matcher(email).matches() ? "Formato de email inválido" : "";
+            String passwordError = password.length() < MIN_PASSWORD_LENGTH ? "Contraseña demasiado corta" : "";
+            showInlineError(emailError, passwordError);
+            return;
         }
+
+        LOGGER.info("Evento: login_attempt (REST)");
+
+        // Deshabilitar botón y lanzar llamada en segundo plano para no bloquear la UI
+        LoginButton.setDisable(true);
+        Error_email.setText("");
+        Error_password.setText("");
+
+        Task<Customer> task = new Task<Customer>() {
+            @Override
+            protected Customer call() throws Exception {
+                CustomerRESTClient client = new CustomerRESTClient();
+                try {
+                    // Codificar parámetros para evitar problemas con caracteres especiales
+                    String encEmail = URLEncoder.encode(email, StandardCharsets.UTF_8.toString());
+                    String encPassword = URLEncoder.encode(password, StandardCharsets.UTF_8.toString());
+                    return client.findCustomerByEmailPassword_XML(Customer.class, encEmail, encPassword);
+                } finally {
+                    client.close();
+                }
+            }
+        };
+
+        task.setOnSucceeded(workerStateEvent -> {
+            Customer found = task.getValue();
+            if (found != null && found.getId() != null) {
+                LOGGER.info("Evento: login_success (REST)");
+                navigateToMain();
+            } else {
+                showInlineError("", "Email o contraseña incorrectos.");
+                LOGGER.info("Evento: login_failed (REST): credenciales inválidas");
+                PasswordField.requestFocus();
+                PasswordField.selectAll();
+            }
+            LoginButton.setDisable(false);
+        });
+
+        task.setOnFailed(workerStateEvent -> {
+            Throwable ex = task.getException();
+            String msg = ex != null && ex.getMessage() != null ? ex.getMessage() : "No se pudo conectar con el servicio.";
+            showInlineError("", "Error al autenticar: " + msg);
+            LOGGER.log(Level.SEVERE, "Error durante autenticación REST", ex);
+            LoginButton.setDisable(false);
+        });
+
+        Thread th = new Thread(task, "login-rest-thread");
+        th.setDaemon(true);
+        th.start();
     }
 
     /**
