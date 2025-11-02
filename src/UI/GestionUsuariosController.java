@@ -60,7 +60,7 @@ public class GestionUsuariosController {
             SignUpLink.setOnAction(e -> handleSignUp());
 
             // Mostrar tooltip de requisitos
-            PasswordTooltip.setText("La contraseÃ±a debe tener al menos " + MIN_PASSWORD_LENGTH + " caracteres.");
+            PasswordTooltip.setText("La contraseña debe tener al menos " + MIN_PASSWORD_LENGTH + " caracteres.");
             Tooltip.install(LabelTooltipPassword, PasswordTooltip);
 
             stage.show();
@@ -71,23 +71,23 @@ public class GestionUsuariosController {
     }
 
     /**
-     * Evento: PulsaciÃ³n del botÃ³n Login
+     * Evento: Pulsación del botón Login
      */
     private void handleLoginButtonOnAction(ActionEvent event) {
-        // AutenticaciÃ³n: usar el servicio REST para obtener el Customer por email+password
+        // Autenticación: usar el servicio REST para obtener el Customer por email+password
         String email = EmailTextField.getText().trim();
         String password = PasswordField.getText();
 
         if (!EMAIL_REGEX.matcher(email).matches() || password.length() < MIN_PASSWORD_LENGTH) {
-            String emailError = !EMAIL_REGEX.matcher(email).matches() ? "Formato de email invÃ¡lido" : "";
-            String passwordError = password.length() < MIN_PASSWORD_LENGTH ? "ContraseÃ±a demasiado corta" : "";
+            String emailError = !EMAIL_REGEX.matcher(email).matches() ? "Formato de email inválido" : "";
+            String passwordError = password.length() < MIN_PASSWORD_LENGTH ? "Contraseña demasiado corta" : "";
             showInlineError(emailError, passwordError);
             return;
         }
 
         LOGGER.info("Evento: login_attempt (REST)");
 
-        // Deshabilitar botÃ³n y lanzar llamada en segundo plano para no bloquear la UI
+        // Deshabilitar botón y lanzar llamada en segundo plano para no bloquear la UI
         LoginButton.setDisable(true);
         Error_email.setText("");
         Error_password.setText("");
@@ -97,7 +97,7 @@ public class GestionUsuariosController {
             protected Customer call() throws Exception {
                 CustomerRESTClient client = new CustomerRESTClient();
                 try {
-                    // Codificar parÃ¡metros para evitar problemas con caracteres especiales
+                    // Codificar parámetros para evitar problemas con caracteres especiales
                     String encEmail = URLEncoder.encode(email, StandardCharsets.UTF_8.toString());
                     String encPassword = URLEncoder.encode(password, StandardCharsets.UTF_8.toString());
                     return client.findCustomerByEmailPassword_XML(Customer.class, encEmail, encPassword);
@@ -113,8 +113,8 @@ public class GestionUsuariosController {
                 LOGGER.info("Evento: login_success (REST)");
                 navigateToMain();
             } else {
-                showInlineError("", "Email o contraseÃ±a incorrectos.");
-                LOGGER.info("Evento: login_failed (REST): credenciales invÃ¡lidas");
+                showInlineError("", "Email o contraseña incorrectos.");
+                LOGGER.info("Evento: login_failed (REST): credenciales inválidas");
                 PasswordField.requestFocus();
                 PasswordField.selectAll();
             }
@@ -125,7 +125,7 @@ public class GestionUsuariosController {
             Throwable ex = task.getException();
             String msg = ex != null && ex.getMessage() != null ? ex.getMessage() : "No se pudo conectar con el servicio.";
             showInlineError("", "Error al autenticar: " + msg);
-            LOGGER.log(Level.SEVERE, "Error durante autenticaciÃ³n REST", ex);
+            LOGGER.log(Level.SEVERE, "Error durante autenticación REST", ex);
             LoginButton.setDisable(false);
         });
 
@@ -135,7 +135,7 @@ public class GestionUsuariosController {
     }
 
     /**
-     * ValidaciÃ³n en tiempo real de formato del email.
+     * Validación en tiempo real de formato del email.
      */
     private void handleEmailTextChange(ObservableValue<? extends String> obs, String oldValue, String newValue) {
         validateInputs();
@@ -148,7 +148,7 @@ public class GestionUsuariosController {
     }
 
     /**
-     * ValidaciÃ³n en tiempo real de contraseÃ±a.
+     * Validación en tiempo real de contraseña.
      */
     private void handlePasswordChange(ObservableValue<? extends String> obs, String oldValue, String newValue) {
         validateInputs();
@@ -166,7 +166,7 @@ public class GestionUsuariosController {
         boolean valid = EMAIL_REGEX.matcher(email).matches();
 
         if (email.isEmpty() || !valid) {
-            Error_email.setText("Formato de email invÃ¡lido");
+            Error_email.setText("Formato de email inválido");
             return false;
         } else {
             Error_email.setText("");
@@ -179,7 +179,7 @@ public class GestionUsuariosController {
         boolean valid = password != null && password.length() >= MIN_PASSWORD_LENGTH;
 
         if (!valid) {
-            Error_password.setText("ContraseÃ±a demasiado corta");
+            Error_password.setText("Contraseña demasiado corta");
             return false;
         } else {
             Error_password.setText("");
@@ -200,30 +200,30 @@ public class GestionUsuariosController {
     }
 
     /**
-     * Simula autenticaciÃ³n de usuario.
+     * Simula autenticación de usuario.
      */
     private boolean fakeBackendAuth(String email, String password) {
-        // SimulaciÃ³n simple: solo "test@correo.com" con "12345678" es vÃ¡lido
+        // Simulación simple: solo "test@correo.com" con "12345678" es válido
         return email.equals("test@correo.com") && password.equals("12345678");
     }
 
     private void navigateToMain() {
         LOGGER.info("Navegando a ventana principal...");
-        // TODO: Implementar la carga y el cambio de escena a la pantalla principal de la aplicaciÃ³n.
+        // TODO: Implementar la carga y el cambio de escena a la pantalla principal de la aplicación.
         // Ejemplo: cargar el FXML de la pantalla principal y establecerlo en el Stage actual.
         Platform.runLater(() -> {
-            // TODO: Reemplazar esto por la lÃ³gica real de navegaciÃ³n.
-            showError("Login correcto (simulaciÃ³n).");
+            // TODO: Reemplazar esto por la lógica real de navegación.
+            showError("Login correcto (simulación).");
         });
     }
 
     private void handleForgotPassword() {
         LOGGER.info("Evento: forgot_password_requested");
         try {
-            // AquÃ­ cargarÃ­as la ventana de recuperaciÃ³n de contraseÃ±a
-            showError("Ir a ventana de recuperaciÃ³n de contraseÃ±a (a implementar)");
+            // Aquí cargarías la ventana de recuperación de contraseña
+            showError("Ir a ventana de recuperación de contraseña (a implementar)");
         } catch (Exception e) {
-            showInlineError("", "No se pudo abrir la ventana de recuperaciÃ³n.");
+            showInlineError("", "No se pudo abrir la ventana de recuperación.");
         }
     }
 
