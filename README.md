@@ -58,6 +58,3 @@ Si usa JDK 11+, puede que necesite indicar la ruta a las librerías JavaFX, por 
 ## Contacto
 
 Si tienes preguntas o quieres proponer mejoras, abre un issue o haz un pull request en el repositorio.
-
----
-
