@@ -135,7 +135,7 @@ public class GestionUsuariosController {
     }
 
     /**
-     * Validaci�n en tiempo real de formato del email.
+     * Validacion en tiempo real de formato del email.
      */
     private void handleEmailTextChange(ObservableValue<? extends String> obs, String oldValue, String newValue) {
         validateInputs();
