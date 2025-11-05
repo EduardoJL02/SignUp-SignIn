@@ -25,8 +25,15 @@ public class SignUpWindow extends Application {
         
         GestionUsuariosController controller=loader.getController();
         
+        // ⚠️ Nota: El método init() dentro del controlador ahora maneja la creación
+        // del NUEVO Stage (myStage) y establece el 'stage' de start() como su propietario.
+        // El 'stage' de start() no se usa directamente para mostrar la interfaz.
         controller.init(stage, root);
         
+        // Opcional: Si este Stage no se usa para mostrar nada (es solo el propietario),
+        // puedes mantenerlo oculto o cerrarlo después de la inicialización,
+        // aunque es más limpio dejarlo abierto como propietario de la aplicación.
+        // stage.hide(); 
     }
 
     /**
