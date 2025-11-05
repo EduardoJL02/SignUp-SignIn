@@ -12,6 +12,7 @@
    <children>
       <Label fx:id="firstName" layoutX="425.0" layoutY="221.0" prefHeight="25.0" prefWidth="88.0" text="FIRST NAME *" />
       <TextField fx:id="tfFName" layoutX="425.0" layoutY="246.0" prefHeight="25.0" prefWidth="242.0" promptText="Your first name" />
+      <Label fx:id="firstNameError" styleClass="error-label" />
       <Label layoutX="679.0" layoutY="251.0" text="?">
          <tooltip>
             <Tooltip text="Required. Only letters" />
@@ -19,6 +20,7 @@
       </Label>
       <Label layoutX="425.0" layoutY="283.0" prefHeight="25.0" prefWidth="101.0" text="MIDDLE INITIAL *" />
       <TextField fx:id="tfMName" layoutX="425.0" layoutY="308.0" prefHeight="25.0" prefWidth="242.0" promptText="e.g. J." />
+      <Label fx:id="middleNameError" styleClass="error-label" />
       <Label layoutX="679.0" layoutY="313.0" text="?">
          <tooltip>
             <Tooltip text="Required. Format: 'A.'" />
@@ -26,6 +28,7 @@
       </Label>
       <Label layoutX="425.0" layoutY="345.0" prefHeight="25.0" prefWidth="78.0" text="LAST NAME *" />
       <TextField fx:id="tfLName" layoutX="425.0" layoutY="370.0" prefHeight="25.0" prefWidth="242.0" promptText="Insert your last name" />
+      <Label fx:id="lastNameError" styleClass="error-label" />
       <Label layoutX="679.0" layoutY="375.0" text="?">
          <tooltip>
             <Tooltip text="Required. Only letters." />
@@ -33,6 +36,7 @@
       </Label>
       <Label layoutX="425.0" layoutY="429.0" prefHeight="25.0" prefWidth="78.0" text="ADDRESS *" />
       <TextField fx:id="tfAddress" layoutX="425.0" layoutY="454.0" prefHeight="25.0" prefWidth="242.0" promptText="e.g. 123 Main St" />
+      <Label fx:id="addressError" styleClass="error-label" />
       <Label layoutX="679.0" layoutY="459.0" text="?">
          <tooltip>
             <Tooltip text="Required. Allowed: a-z, 0-9, ., - /" />
@@ -40,6 +44,7 @@
       </Label>
       <Label layoutX="425.0" layoutY="490.0" prefHeight="25.0" prefWidth="34.0" text="CITY *" />
       <TextField fx:id="tfCity" layoutX="426.0" layoutY="520.0" prefHeight="25.0" prefWidth="242.0" promptText="e.g. New York" />
+      <Label fx:id="cityError" styleClass="error-label" />
       <Label layoutX="679.0" layoutY="520.0" text="?">
          <tooltip>
             <Tooltip text="Your city" />
@@ -47,6 +52,7 @@
       </Label>
       <Label layoutX="425.0" layoutY="552.0" prefHeight="25.0" prefWidth="78.0" text="STATE *" />
       <TextField fx:id="tfState" layoutX="425.0" layoutY="577.0" prefHeight="25.0" prefWidth="242.0" promptText="e.g. NY" />
+      <Label fx:id="stateError" styleClass="error-label" />
       <Label layoutX="679.0" layoutY="582.0" text="?">
          <tooltip>
             <Tooltip text="Required. e.g. 'CA' or 'Texas'" />
@@ -54,34 +60,39 @@
       </Label>
       <Label layoutX="425.0" layoutY="613.0" prefHeight="25.0" prefWidth="78.0" text="ZIP *" />
       <TextField fx:id="tfZip" layoutX="425.0" layoutY="638.0" prefHeight="25.0" prefWidth="78.0" promptText="e.g. 10001" />
+      <Label fx:id="zipError" styleClass="error-label" />
       <Label layoutX="510.0" layoutY="643.0" text="?">
          <tooltip>
-            <Tooltip text="Required. Only Numbers." />
+            <Tooltip text="Required. 5 digits." />
          </tooltip>
       </Label>
-      <Label layoutX="425.0" layoutY="675.0" prefHeight="25.0" prefWidth="78.0" text="PHONE" />
-      <TextField fx:id="tfPhone" layoutX="425.0" layoutY="700.0" prefHeight="25.0" prefWidth="117.0" promptText="Phone Number" />
+      <Label layoutX="425.0" layoutY="675.0" prefHeight="25.0" prefWidth="78.0" text="PHONE *" />
+      <TextField fx:id="tfPhone" layoutX="425.0" layoutY="700.0" prefHeight="25.0" prefWidth="117.0" promptText="e.g. 123456789" />
+      <Label fx:id="phoneError" styleClass="error-label" />
       <Label layoutX="553.0" layoutY="705.0" text="?">
          <tooltip>
-            <Tooltip text="Phone Number Without Country Code" />
+            <Tooltip text="Required. 9+ digits." />
          </tooltip>
       </Label>
-      <Label layoutX="914.0" layoutY="365.0" prefHeight="25.0" prefWidth="88.0" text="EMAIL" />
-      <TextField fx:id="tfEmail" layoutX="914.0" layoutY="390.0" prefHeight="25.0" prefWidth="242.0" promptText="Email address" />
+      <Label layoutX="914.0" layoutY="365.0" prefHeight="25.0" prefWidth="88.0" text="EMAIL *" />
+      <TextField fx:id="tfEmail" layoutX="914.0" layoutY="390.0" prefHeight="25.0" prefWidth="242.0" promptText="user@example.com" />
+      <Label fx:id="emailError" styleClass="error-label" />
       <Label layoutX="1168.0" layoutY="395.0" text="?">
          <tooltip>
-            <Tooltip />
+            <Tooltip text="Required. Must be a valid email format."/>
          </tooltip>
       </Label>
-      <Label layoutX="914.0" layoutY="429.0" prefHeight="25.0" prefWidth="88.0" text="PASSWORD" />
-      <TextField fx:id="tfPass" layoutX="914.0" layoutY="459.0" prefHeight="25.0" prefWidth="242.0" promptText="Password" />
+      <Label layoutX="914.0" layoutY="429.0" prefHeight="25.0" prefWidth="88.0" text="ASSWORD *" />
+      <TextField fx:id="tfPass" layoutX="914.0" layoutY="459.0" prefHeight="25.0" prefWidth="242.0" promptText="Min 8 characters" />
+      <Label fx:id="passwordError" styleClass="error-label" />
       <Label layoutX="1168.0" layoutY="459.0" text="?">
          <tooltip>
-            <Tooltip text="Must have Capitals, lowercase, special characters (!;-;_;*), minimum 8 charaters and maximun 15." />
+            <Tooltip text="Min 8 chars, 1 upper, 1 lower, 1 number, 1 symbol." />
          </tooltip>
       </Label>
-      <Label layoutX="914.0" layoutY="500.0" prefHeight="25.0" prefWidth="132.0" text="REPEAT PASSWORD" />
+      <Label layoutX="914.0" layoutY="500.0" prefHeight="25.0" prefWidth="132.0" text="REPEAT PASSWORD *" />
       <TextField fx:id="tfRPass" layoutX="914.0" layoutY="530.0" prefHeight="25.0" prefWidth="242.0" />
+      <Label fx:id="repeatPasswordError" styleClass="error-label" />
       <Separator layoutX="800.0" layoutY="196.0" orientation="VERTICAL" prefHeight="551.0" prefWidth="7.0" />
       <Label layoutX="476.0" layoutY="167.0" text="PERSONAL DATA" textAlignment="CENTER">
          <font>
