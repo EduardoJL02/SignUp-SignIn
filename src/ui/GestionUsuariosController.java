@@ -113,25 +113,41 @@ public class GestionUsuariosController {
      * @param event 
      */
     private void handleBtCreateOnAction(ActionEvent event){
-        try{
-            //Crear un objeto customer
-            Customer customer = new Customer();
+    try{
+        //Crear un objeto customer
+        Customer customer = new Customer();
 
-            //Establecer propiedades del objeto a partir de los valores de los campos
-            customer.setFirstName(tfFName);
-            CustomerRESTClient client = new CustomerRESTClient();
-            client.create_XML(customer, Customer.class);
-            client.close();
+        //Establecer propiedades del objeto a partir de los valores de los campos
+        //*** CORRECCIÓN 1: USAR .getText() ***
+        customer.setFirstName(tfFName.getText()); 
+        customer.setMiddleInitial(tfMName.getText()); 
+        customer.setLastName(tfLName.getText()); 
+        // ... Asignar el resto de campos (Address, City, Email, Pass) ...
+
+        CustomerRESTClient client = new CustomerRESTClient();
+        //*** CORRECCIÓN 2: Un solo argumento ***
+        client.create_XML(customer); 
+        client.close();
             
-            //Indicar al usuario que se ha registrado
-            new Alert("msg)".;
-                    
-            //Abrir venta de Sign In        
-        }catch(ForbiddenException e){
+        //Indicar al usuario que se ha registrado
+        //*** CORRECCIÓN 3: Uso correcto de Alert ***
+        Alert successAlert = new Alert(Alert.AlertType.INFORMATION);
+        successAlert.setTitle("Registro Completo");
+        successAlert.setHeaderText("¡Usuario Creado!");
+        successAlert.setContentText("La cuenta se ha registrado correctamente.");
+        successAlert.showAndWait();
             
-        }catch(InternalServerErrorException e){
-        }
+        // Cerrar la ventana actual (opcional, pero recomendable tras un registro exitoso)
+        ((Stage) btCreate.getScene().getWindow()).close();
+            
+    }catch(ForbiddenException e){
+        LOGGER.log(Level.WARNING, "Email ya registrado.", e);
+        new Alert(Alert.AlertType.WARNING, "Este email ya está en uso.").showAndWait();
+    }catch(InternalServerErrorException e){
+        LOGGER.log(Level.SEVERE, "Error interno del servidor al crear usuario.", e);
+        new Alert(Alert.AlertType.ERROR, "Error de servidor. Intente más tarde.").showAndWait();
     }
+}
     /**
      * 
      * @param observable
