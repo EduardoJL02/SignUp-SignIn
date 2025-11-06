@@ -19,10 +19,9 @@ import javafx.stage.Stage;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
-// Imports de JAX-RS (Asegúrate de que tu librería los incluye)
+// Imports de JAX-RS
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.ClientErrorException; // Usado para el catch genérico si es necesario
 
 import logic.CustomerRESTClient;
 import model.Customer;
@@ -373,20 +372,20 @@ public class GestionUsuariosController {
             }
 
         } catch (ForbiddenException e) {
-            // --- CORRECCIÓN: MANEJO DE ERROR 403 (EMAIL DUPLICADO) ---
-            LOGGER.log(Level.WARNING, "Creación fallida: Email ya registrado (403 Forbidden).", e);
+            // --- MANEJO DE ERROR 403 (EMAIL DUPLICADO) ---
+            LOGGER.log(Level.WARNING, "Creación fallida: Email ya registrado.", e);
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("Error de Creación");
             alert.setHeaderText("El email ya existe.");
-            alert.setContentText("El correo proporcionado ya está registrado en el sistema.");
+            alert.setContentText("El correo proporcionado ya está\n registrado en el sistema.");
             alert.showAndWait();
             setFieldsDisabled(false);
             checkGlobalValidation();
 
         } catch (InternalServerErrorException e) {
             // Manejo de 500
-            LOGGER.log(Level.SEVERE, "Creación fallida: Error Interno del Servidor (500).", e);
-            new Alert(Alert.AlertType.ERROR, "Error en el servidor. Intenta más tarde.").showAndWait();
+            LOGGER.log(Level.SEVERE, "Creación fallida: Error Interno del Servidor.", e);
+            new Alert(Alert.AlertType.ERROR, "Error en el servidor.\n Intenta más tarde.").showAndWait();
             setFieldsDisabled(false);
             checkGlobalValidation();
             
@@ -400,7 +399,7 @@ public class GestionUsuariosController {
         } catch (Exception e) {
             // Manejo de otros errores (400 Bad Request, o error de conexión)
             LOGGER.log(Level.SEVERE, "Error inesperado al crear usuario: " + e.getMessage(), e);
-            new Alert(Alert.AlertType.ERROR, "Datos inválidos o no se pudo conectar con el servidor.").showAndWait();
+            new Alert(Alert.AlertType.ERROR, "Datos inválidos\n o no se pudo conectar con el servidor.").showAndWait();
             setFieldsDisabled(false);
             checkGlobalValidation();
         }

@@ -70,7 +70,7 @@ public class CustomerRESTClient {
     public void create_XML(Object requestEntity) throws ForbiddenException, InternalServerErrorException {
         webTarget.request(javax.ws.rs.core.MediaType.APPLICATION_XML)
             .post(javax.ws.rs.client.Entity.entity(requestEntity,
-                 javax.ws.rs.core.MediaType.APPLICATION_XML));
+                 javax.ws.rs.core.MediaType.APPLICATION_XML),requestEntity.getClass());
     }
 
     public void create_JSON(Object requestEntity) throws ClientErrorException {
