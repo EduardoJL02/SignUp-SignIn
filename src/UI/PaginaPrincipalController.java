@@ -30,6 +30,7 @@ public class PaginaPrincipalController {
     @FXML private Label CustomerNameLabel;
     @FXML private Label EmailLabel;
     @FXML private Label CustomerIdLabel;
+    @FXML private Button ContinueButton;
     @FXML private Button LogoutButton;
 
     // ======================== CONSTANTES ========================
@@ -59,7 +60,7 @@ public class PaginaPrincipalController {
             // Verificar que el customer no sea null
             if (customer == null) {
                 LOGGER.severe("Error: Customer is null in PaginaPrincipalController");
-                showErrorAlert("Error: User information could not be loaded.");
+                showErrorAlert("Error: No se pudo cargar la información del usuario.");
                 return;
             }
             
@@ -67,14 +68,14 @@ public class PaginaPrincipalController {
             loadCustomerData();
             
             // Asociar eventos a manejadores
-                        LogoutButton.setOnAction(this::handleLogoutButtonAction);
+            LogoutButton.setOnAction(this::handleLogoutButtonAction);
             
             stage.show();
             LOGGER.info("Main window initialized successfully.");
             
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error al inicializar ventana principal", e);
-            showErrorAlert("Error initializing main window: " + e.getMessage());
+            showErrorAlert("Error al cargar la ventana principal: " + e.getMessage());
         }
     }
 
@@ -120,11 +121,11 @@ public class PaginaPrincipalController {
         int hour = java.time.LocalTime.now().getHour();
         
         if (hour >= 6 && hour < 12) {
-            return "Good morning";
+            return "Buenos días";
         } else if (hour >= 12 && hour < 20) {
-            return "Good afternoon";
+            return "Buenas tardes";
         } else {
-            return "Good evening";
+            return "Buenas noches";
         }
     }
 
@@ -146,23 +147,24 @@ public class PaginaPrincipalController {
                 showErrorAlert("Error: No se puede cerrar sesión correctamente.");
                 return;
             }
-        // Mostrar diálogo de confirmación
-        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
-        confirmAlert.initModality(Modality.APPLICATION_MODAL);
-        confirmAlert.initOwner(stage);
-        confirmAlert.setTitle("Confirm log out");
-        confirmAlert.setHeaderText("Do you want to log out?");
-        confirmAlert.setContentText("You will need to log in again to access the application.");
-        
-        Optional<ButtonType> result = confirmAlert.showAndWait();
-        
-        if (result.isPresent() && result.get() == ButtonType.OK) {
+            // Mostrar diálogo de confirmación
+            Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+            confirmAlert.initModality(Modality.APPLICATION_MODAL);
+            confirmAlert.initOwner(stage);
+            confirmAlert.setTitle("Confirmar cierre de sesión");
+            confirmAlert.setHeaderText("¿Deseas cerrar sesión?");
+            confirmAlert.setContentText("Tendrás que volver a iniciar sesión para acceder a la aplicación.");
+            
+            Optional<ButtonType> result = confirmAlert.showAndWait();
+            
+            if (result.isPresent() && result.get() == ButtonType.OK) {
                 LOGGER.info("Evento: logout_confirmed - Cerrando sesión del usuario: " + 
                            (customer != null ? customer.getEmail() : "unknown"));
                 returnToLogin();
             } else {
                 LOGGER.info("Evento: logout_cancelled");
             }
+            
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error en handleLogoutButtonAction", e);
             showErrorAlert("Error al cerrar sesión: " + e.getMessage());
@@ -179,49 +181,49 @@ public class PaginaPrincipalController {
             // Verificar que el stage no sea null
             if (stage == null) {
                 LOGGER.severe("ERROR: Stage es null en returnToLogin");
-                showErrorAlert("Error: No se puede regresar al login.");
+                showErrorAlert("Error: Cannot return to login.");
                 return;
             }
             
             // Limpiar datos del usuario actual ANTES de cargar login
             String loggedOutUser = customer != null ? customer.getEmail() : "unknown";
             customer = null;
-            LOGGER.info("Datos de sesión limpiados para usuario: " + loggedOutUser);
+            LOGGER.info("Session data cleared for user: " + loggedOutUser);
             
             // Cargar la ventana de login
-            LOGGER.info("Cargando FXMLDocument.fxml...");
+            LOGGER.info("Loading FXMLDocument.fxml...");
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/UI/FXMLDocument.fxml"));
             Parent root = loader.load();
             
             if (root == null) {
-                LOGGER.severe("ERROR: Root es null al cargar FXMLDocument.fxml");
-                showErrorAlert("Error al cargar la interfaz de login.");
+                LOGGER.severe("ERROR: Root is null when loading FXMLDocument.fxml");
+                showErrorAlert("Error loading login interface.");
                 return;
             }
-            LOGGER.info("FXML de login cargado exitosamente");
+            LOGGER.info("Login FXML loaded successfully");
             
             // Obtener el controlador de login
             GestionUsuariosController controller = loader.getController();
             
             if (controller == null) {
-                LOGGER.severe("ERROR: Controller de login es null");
-                showErrorAlert("Error al cargar el controlador de login.");
+                LOGGER.severe("ERROR: Login controller is null");
+                showErrorAlert("Error loading login controller.");
                 return;
             }
-            LOGGER.info("Controlador de login obtenido");
+            LOGGER.info("Login controller obtained");
             
-            // Inicializar el controlador de login (configura listeners, etc.)
-            controller.init(stage, root);
+            // Inicializar el controlador SIN mostrar la ventana (ya está visible)
+            controller.initWithoutShow(stage, root);
             
-            LOGGER.info("Sesión cerrada exitosamente. Ventana de login cargada.");
+            LOGGER.info("Session closed successfully. Login window loaded.");
             
         } catch (java.io.IOException e) {
-            LOGGER.log(Level.SEVERE, "Error de I/O al cargar login", e);
-            showErrorAlert("Error al cargar la interfaz de login: " + e.getMessage());
+            LOGGER.log(Level.SEVERE, "I/O error loading login", e);
+            showErrorAlert("Error loading login interface: " + e.getMessage());
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error inesperado al regresar a login", e);
+            LOGGER.log(Level.SEVERE, "Unexpected error returning to login", e);
             e.printStackTrace();
-            showErrorAlert("Error al cerrar sesión: " + e.getMessage());
+            showErrorAlert("Error logging out: " + e.getMessage());
         }
     }
 

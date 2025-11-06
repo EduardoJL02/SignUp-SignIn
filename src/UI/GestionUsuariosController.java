@@ -68,11 +68,36 @@ public class GestionUsuariosController {
      * @param root Nodo raíz del FXML
      */
     public void init(Stage stage, Parent root) {
+        initializeController(stage, root);
+        stage.show(); // Mostrar ventana solo en inicio
+        LOGGER.info("Login window initialized and shown successfully.");
+    }
+
+    /**
+     * Inicializa el controlador sin mostrar la ventana (para navegación desde logout).
+     * 
+     * @param stage Stage principal de la aplicación
+     * @param root Nodo raíz del FXML
+     */
+    public void initWithoutShow(Stage stage, Parent root) {
+        initializeController(stage, root);
+        LOGGER.info("Login window reinitialized successfully (from logout).");
+    }
+
+    /**
+     * Lógica común de inicialización del controlador.
+     * 
+     * @param stage Stage principal
+     * @param root Nodo raíz del FXML
+     */
+    private void initializeController(Stage stage, Parent root) {
         try {
             this.stage = stage;
-            LOGGER.info("Initializing login stage.");
+            LOGGER.info("Initializing login controller.");
             
             // Configuración de la ventana
+            Scene scene = new Scene(root);
+            stage.setScene(scene);
             stage.setTitle("LOGIN");
             stage.setResizable(false);
             
@@ -93,11 +118,8 @@ public class GestionUsuariosController {
             PasswordTooltip.setText("La contraseña debe tener al menos " + MIN_PASSWORD_LENGTH + " caracteres.");
             Tooltip.install(LabelTooltipPassword, PasswordTooltip);
             
-            stage.show();
-            LOGGER.info("Login window initialized successfully.");
-            
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error al inicializar Sign-In", e);
+            LOGGER.log(Level.SEVERE, "Error al inicializar controlador de login", e);
             showErrorAlert("Error al inicializar la ventana: " + e.getMessage());
         }
     }
@@ -196,7 +218,8 @@ public class GestionUsuariosController {
         } else if (ex instanceof InternalServerErrorException) {
             // 500: Error del servidor
             LOGGER.severe("Evento: login_error_server - Error interno del servidor");
-            showErrorAlert("Error en el servidor.\nPor favor, inténtalo más tarde.");
+            showErrorAlert("Error en el servidor.\nPor favor, inténtalo más tarde.\n\n" +
+                          "Si el problema persiste, contacta con el administrador.");
             
         } else if (ex instanceof ClientErrorException) {
             ClientErrorException clientEx = (ClientErrorException) ex;
@@ -204,7 +227,8 @@ public class GestionUsuariosController {
             
             if (status == 404) {
                 LOGGER.severe("Error 404: El endpoint REST no existe");
-                showErrorAlert("Error: El servicio de autenticación no está disponible.");
+                showErrorAlert("Error: El servicio de autenticación no está disponible.\n\n" +
+                              "Contacta con el administrador del sistema.");
             } else {
                 LOGGER.severe("Error REST " + status + ": " + clientEx.getMessage());
                 showInlineError("", "Error del servidor: código " + status);
@@ -333,26 +357,76 @@ public class GestionUsuariosController {
      * Navega a la ventana principal de la aplicación.
      */
     private void navigateToMain() {
-        LOGGER.info("Navegando a ventana principal...");
+        LOGGER.info("=== INICIO NAVEGACIÓN A VENTANA PRINCIPAL ===");
+        LOGGER.info("Stage actual: " + (stage != null ? "OK" : "NULL"));
+        LOGGER.info("Logged customer: " + (loggedCustomer != null ? loggedCustomer.getEmail() : "NULL"));
         
         Platform.runLater(() -> {
             try {
-                // Cargar el FXML de la página principal
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/UI/PaginaPrincipal.fxml"));
+                // 1. Verificar recurso FXML
+                LOGGER.info("Paso 1: Buscando recurso /UI/PaginaPrincipal.fxml");
+                java.net.URL fxmlUrl = getClass().getResource("/UI/PaginaPrincipal.fxml");
+                
+                if (fxmlUrl == null) {
+                    LOGGER.severe("ERROR: No se encontró el archivo PaginaPrincipal.fxml en /UI/");
+                    showErrorAlert("Error: No se encontró el archivo PaginaPrincipal.fxml\n\n" +
+                                  "Verifica que el archivo esté en src/UI/PaginaPrincipal.fxml");
+                    return;
+                }
+                LOGGER.info("Recurso encontrado: " + fxmlUrl);
+                
+                // 2. Cargar el FXML
+                LOGGER.info("Paso 2: Cargando FXML...");
+                FXMLLoader loader = new FXMLLoader(fxmlUrl);
                 Parent root = loader.load();
+                LOGGER.info("FXML cargado exitosamente. Root: " + (root != null ? "OK" : "NULL"));
                 
-                // Obtener el controlador y pasar el usuario autenticado
+                // 3. Obtener el controlador
+                LOGGER.info("Paso 3: Obteniendo controlador...");
                 PaginaPrincipalController controller = loader.getController();
-                controller.setCustomer(loggedCustomer); // IMPORTANTE: Llamar ANTES de init()
                 
-                // Inicializar la ventana principal
+                if (controller == null) {
+                    LOGGER.severe("ERROR: Controller es NULL. Verifica fx:controller en PaginaPrincipal.fxml");
+                    showErrorAlert("Error: No se pudo cargar el controlador de la ventana principal.\n\n" +
+                                  "Verifica que PaginaPrincipal.fxml tenga: fx:controller=\"UI.PaginaPrincipalController\"");
+                    return;
+                }
+                LOGGER.info("Controlador obtenido: " + controller.getClass().getName());
+                
+                // 4. Pasar el usuario autenticado
+                LOGGER.info("Paso 4: Pasando customer al controlador...");
+                if (loggedCustomer == null) {
+                    LOGGER.severe("ERROR: loggedCustomer es NULL");
+                    showErrorAlert("Error: No hay información del usuario autenticado.");
+                    return;
+                }
+                controller.setCustomer(loggedCustomer);
+                LOGGER.info("Customer pasado correctamente");
+                
+                // 5. Verificar stage
+                LOGGER.info("Paso 5: Verificando stage...");
+                if (stage == null) {
+                    LOGGER.severe("ERROR: Stage es NULL");
+                    showErrorAlert("Error: No hay ventana disponible para navegar.");
+                    return;
+                }
+                LOGGER.info("Stage verificado: OK");
+                
+                // 6. Inicializar la ventana principal
+                LOGGER.info("Paso 6: Inicializando ventana principal...");
                 controller.init(stage, root);
                 
-                LOGGER.info("Navegación exitosa a ventana principal para usuario: " + loggedCustomer.getEmail());
+                LOGGER.info("=== NAVEGACIÓN EXITOSA ===");
+                LOGGER.info("Usuario: " + loggedCustomer.getEmail());
                 
+            } catch (java.io.IOException e) {
+                LOGGER.log(Level.SEVERE, "Error de I/O al cargar FXML", e);
+                showErrorAlert("Error al cargar la interfaz:\n" + e.getMessage() + "\n\n" +
+                              "Verifica que PaginaPrincipal.fxml esté en src/UI/");
             } catch (Exception e) {
-                LOGGER.log(Level.SEVERE, "Error al navegar a ventana principal", e);
-                showErrorAlert("No se pudo cargar la ventana principal: " + e.getMessage());
+                LOGGER.log(Level.SEVERE, "Error inesperado al navegar", e);
+                e.printStackTrace(); // Para ver el stacktrace completo
+                showErrorAlert("Error inesperado: " + e.getMessage());
             }
         });
     }
