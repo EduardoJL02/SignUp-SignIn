@@ -7,96 +7,96 @@
 
 <Pane fx:id="fisrtName" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="768.0" prefWidth="1024.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.GestionUsuariosController">
    <children>
-      <Label fx:id="firstName" layoutX="96.0" layoutY="151.0" prefHeight="25.0" prefWidth="101.0" text="FIRST NAME *" />
-      <TextField fx:id="tfFName" layoutX="96.0" layoutY="176.0" prefHeight="25.0" prefWidth="242.0" promptText="Your first name" />
-      <Label fx:id="firstNameError" layoutX="89.0" layoutY="207.0" prefHeight="15.0" prefWidth="0.0" styleClass="error-label" textFill="#f80101" />
-      <Label layoutX="349.0" layoutY="181.0" text="?">
+      <Label fx:id="firstName" layoutX="99.0" layoutY="110.0" prefHeight="25.0" prefWidth="101.0" text="FIRST NAME *" />
+      <TextField fx:id="tfFName" layoutX="98.0" layoutY="135.0" prefHeight="25.0" prefWidth="242.0" promptText="Your first name" />
+      <Label fx:id="firstNameError" layoutX="99.0" layoutY="161.0" prefHeight="17.0" prefWidth="0.0" styleClass="error-label" textFill="#f80101" />
+      <Label layoutX="348.0" layoutY="140.0" text="?">
          <tooltip>
             <Tooltip text="Required. Only letters" />
          </tooltip>
       </Label>
-      <Label layoutX="98.0" layoutY="222.0" prefHeight="25.0" prefWidth="117.0" text="MIDDLE INITIAL *" />
-      <TextField fx:id="tfMName" layoutX="97.0" layoutY="250.0" prefHeight="25.0" prefWidth="68.0" promptText="e.g. J." />
-      <Label fx:id="middleNameError" layoutX="91.0" layoutY="277.0" prefHeight="15.0" prefWidth="0.0" styleClass="error-label" />
-      <Label layoutX="176.0" layoutY="255.0" text="?">
+      <Label layoutX="98.0" layoutY="181.0" prefHeight="25.0" prefWidth="117.0" text="MIDDLE INITIAL *" />
+      <TextField fx:id="tfMName" layoutX="97.0" layoutY="206.0" prefHeight="25.0" prefWidth="68.0" promptText="e.g. J." />
+      <Label fx:id="middleNameError" layoutX="97.0" layoutY="234.0" prefHeight="26.0" prefWidth="0.0" styleClass="error-label" />
+      <Label layoutX="175.0" layoutY="210.0" text="?">
          <tooltip>
             <Tooltip text="Required. Format: 'A.'" />
          </tooltip>
       </Label>
-      <Label layoutX="99.0" layoutY="294.0" prefHeight="25.0" prefWidth="95.0" text="LAST NAME *" />
-      <TextField fx:id="tfLName" layoutX="97.0" layoutY="319.0" prefHeight="25.0" prefWidth="242.0" promptText="Insert your last name" />
-      <Label fx:id="lastNameError" layoutX="97.0" layoutY="345.0" styleClass="error-label" />
-      <Label layoutX="350.0" layoutY="325.0" text="?">
+      <Label layoutX="96.0" layoutY="253.0" prefHeight="25.0" prefWidth="95.0" text="LAST NAME *" />
+      <TextField fx:id="tfLName" layoutX="95.0" layoutY="278.0" prefHeight="25.0" prefWidth="242.0" promptText="Insert your last name" />
+      <Label fx:id="lastNameError" layoutX="95.0" layoutY="304.0" prefHeight="17.0" prefWidth="0.0" styleClass="error-label" />
+      <Label layoutX="347.0" layoutY="282.0" text="?">
          <tooltip>
             <Tooltip text="Required. Only letters." />
          </tooltip>
       </Label>
-      <Label layoutX="96.0" layoutY="379.0" prefHeight="25.0" prefWidth="78.0" text="ADDRESS *" />
-      <TextField fx:id="tfAddress" layoutX="96.0" layoutY="404.0" prefHeight="25.0" prefWidth="242.0" promptText="e.g. 123 Main St" />
-      <Label fx:id="addressError" layoutX="96.0" layoutY="433.0" styleClass="error-label" />
-      <Label layoutX="350.0" layoutY="409.0" text="?">
+      <Label layoutX="97.0" layoutY="328.0" prefHeight="25.0" prefWidth="78.0" text="ADDRESS *" />
+      <TextField fx:id="tfAddress" layoutX="96.0" layoutY="353.0" prefHeight="25.0" prefWidth="242.0" promptText="e.g. 123 Main St" />
+      <Label fx:id="addressError" layoutX="96.0" layoutY="392.0" styleClass="error-label" />
+      <Label layoutX="347.0" layoutY="357.0" text="?">
          <tooltip>
             <Tooltip text="Required. Allowed: a-z, 0-9, ., - /" />
          </tooltip>
       </Label>
-      <Label layoutX="96.0" layoutY="440.0" prefHeight="25.0" prefWidth="58.0" text="CITY *" />
-      <TextField fx:id="tfCity" layoutX="97.0" layoutY="470.0" prefHeight="25.0" prefWidth="242.0" promptText="e.g. New York" />
-      <Label fx:id="cityError" layoutX="95.0" layoutY="495.0" styleClass="error-label" />
-      <Label layoutX="350.0" layoutY="470.0" text="?">
+      <Label layoutX="98.0" layoutY="406.0" prefHeight="25.0" prefWidth="58.0" text="CITY *" />
+      <TextField fx:id="tfCity" layoutX="97.0" layoutY="431.0" prefHeight="25.0" prefWidth="242.0" promptText="e.g. New York" />
+      <Label fx:id="cityError" layoutX="95.0" layoutY="456.0" styleClass="error-label" />
+      <Label layoutX="349.0" layoutY="435.0" text="?">
          <tooltip>
             <Tooltip text="Your city" />
          </tooltip>
       </Label>
-      <Label layoutX="96.0" layoutY="502.0" prefHeight="25.0" prefWidth="78.0" text="STATE *" />
-      <TextField fx:id="tfState" layoutX="96.0" layoutY="527.0" prefHeight="25.0" prefWidth="242.0" promptText="e.g. NY" />
-      <Label fx:id="stateError" layoutX="94.0" layoutY="556.0" styleClass="error-label" />
-      <Label layoutX="350.0" layoutY="532.0" text="?">
+      <Label layoutX="96.0" layoutY="476.0" prefHeight="25.0" prefWidth="78.0" text="STATE *" />
+      <TextField fx:id="tfState" layoutX="96.0" layoutY="501.0" prefHeight="26.0" prefWidth="78.0" promptText="e.g. NY" />
+      <Label fx:id="stateError" layoutX="96.0" layoutY="528.0" prefHeight="25.0" prefWidth="0.0" styleClass="error-label" />
+      <Label layoutX="184.0" layoutY="506.0" text="?">
          <tooltip>
             <Tooltip text="Required. e.g. 'CA' or 'Texas'" />
          </tooltip>
       </Label>
-      <Label layoutX="96.0" layoutY="563.0" prefHeight="25.0" prefWidth="78.0" text="ZIP *" />
-      <TextField fx:id="tfZip" layoutX="96.0" layoutY="588.0" prefHeight="25.0" prefWidth="78.0" promptText="e.g. 10001" />
-      <Label fx:id="zipError" layoutX="93.0" layoutY="618.0" styleClass="error-label" />
-      <Label layoutX="181.0" layoutY="593.0" text="?">
+      <Label layoutX="213.0" layoutY="476.0" prefHeight="25.0" prefWidth="78.0" text="ZIP *" />
+      <TextField fx:id="tfZip" layoutX="213.0" layoutY="501.0" prefHeight="25.0" prefWidth="78.0" promptText="e.g. 10001" />
+      <Label fx:id="zipError" layoutX="213.0" layoutY="528.0" prefHeight="26.0" prefWidth="0.0" styleClass="error-label" />
+      <Label layoutX="302.0" layoutY="505.0" text="?">
          <tooltip>
             <Tooltip text="Required. 5 digits." />
          </tooltip>
       </Label>
-      <Label layoutX="96.0" layoutY="625.0" prefHeight="25.0" prefWidth="78.0" text="PHONE *" />
-      <TextField fx:id="tfPhone" layoutX="96.0" layoutY="650.0" prefHeight="25.0" prefWidth="117.0" promptText="e.g. 123456789" />
-      <Label fx:id="phoneError" layoutX="95.0" layoutY="682.0" styleClass="error-label" />
-      <Label layoutX="224.0" layoutY="655.0" text="?">
+      <Label layoutX="95.0" layoutY="552.0" prefHeight="25.0" prefWidth="78.0" text="PHONE *" />
+      <TextField fx:id="tfPhone" layoutX="94.0" layoutY="578.0" prefHeight="25.0" prefWidth="117.0" promptText="e.g. 123456789" />
+      <Label fx:id="phoneError" layoutX="95.0" layoutY="605.0" prefHeight="26.0" prefWidth="0.0" styleClass="error-label" />
+      <Label layoutX="221.0" layoutY="582.0" text="?">
          <tooltip>
             <Tooltip text="Required. 9+ digits." />
          </tooltip>
       </Label>
-      <Label layoutX="629.0" layoutY="243.0" prefHeight="25.0" prefWidth="88.0" text="EMAIL *" />
-      <TextField fx:id="tfEmail" layoutX="629.0" layoutY="268.0" prefHeight="25.0" prefWidth="270.0" promptText="user@example.com" />
-      <Label fx:id="emailError" layoutX="640.0" layoutY="297.0" styleClass="error-label" />
-      <Label layoutX="902.0" layoutY="273.0" text="?">
+      <Label layoutX="631.0" layoutY="235.0" prefHeight="25.0" prefWidth="88.0" text="EMAIL *" />
+      <TextField fx:id="tfEmail" layoutX="629.0" layoutY="259.0" prefHeight="25.0" prefWidth="270.0" promptText="user@example.com" />
+      <Label fx:id="emailError" layoutX="630.0" layoutY="287.0" prefHeight="17.0" prefWidth="0.0" styleClass="error-label" />
+      <Label layoutX="909.0" layoutY="264.0" text="?">
          <tooltip>
             <Tooltip text="Required. Must be a valid email format." />
          </tooltip>
       </Label>
-      <Label layoutX="629.0" layoutY="307.0" prefHeight="25.0" prefWidth="88.0" text="PASSWORD *" />
+      <Label layoutX="630.0" layoutY="311.0" prefHeight="25.0" prefWidth="88.0" text="PASSWORD *" />
       <TextField fx:id="tfPass" layoutX="629.0" layoutY="337.0" prefHeight="25.0" prefWidth="242.0" promptText="Min 8 characters" />
-      <Label fx:id="passwordError" layoutX="639.0" layoutY="359.0" styleClass="error-label" />
+      <Label fx:id="passwordError" layoutX="630.0" layoutY="363.0" prefHeight="25.0" prefWidth="0.0" styleClass="error-label" />
       <Label layoutX="883.0" layoutY="342.0" text="?">
          <tooltip>
             <Tooltip text="Min 8 chars, 1 upper, 1 lower, 1 number, 1 symbol." />
          </tooltip>
       </Label>
-      <Label layoutX="629.0" layoutY="378.0" prefHeight="25.0" prefWidth="156.0" text="REPEAT PASSWORD *" />
-      <TextField fx:id="tfRPass" layoutX="629.0" layoutY="408.0" prefHeight="25.0" prefWidth="242.0" />
-      <Label fx:id="repeatPasswordError" layoutX="638.0" layoutY="443.0" styleClass="error-label" />
-        <Label layoutX="883.0" layoutY="413.0" text="?">
+      <Label layoutX="629.0" layoutY="391.0" prefHeight="25.0" prefWidth="156.0" text="REPEAT PASSWORD *" />
+      <TextField fx:id="tfRPass" layoutX="629.0" layoutY="421.0" prefHeight="25.0" prefWidth="242.0" />
+      <Label fx:id="repeatPasswordError" layoutX="630.0" layoutY="447.0" prefHeight="26.0" prefWidth="0.0" styleClass="error-label" />
+        <Label layoutX="883.0" layoutY="426.0" text="?">
          <tooltip>
             <Tooltip text="Must match the password above." />
          </tooltip>
       </Label>
-      <Separator layoutX="489.0" layoutY="104.0" orientation="VERTICAL" prefHeight="551.0" prefWidth="7.0" />
-      <Label layoutX="147.0" layoutY="97.0" text="PERSONAL DATA" textAlignment="CENTER">
+      <Separator layoutX="489.0" layoutY="104.0" orientation="VERTICAL" prefHeight="551.0" prefWidth="14.0" />
+      <Label layoutX="147.0" layoutY="56.0" text="PERSONAL DATA" textAlignment="CENTER">
          <font>
             <Font name="System Bold" size="20.0" />
          </font></Label>
@@ -105,7 +105,7 @@
             <Font name="System Bold" size="20.0" />
          </font>
       </Label>
-      <Button fx:id="btBack" layoutX="207.0" layoutY="708.0" mnemonicParsing="false" prefHeight="37.0" prefWidth="220.0" style="-fx-background-color: black;" text="BACK" textFill="WHITE">
+      <Button fx:id="btBack" layoutX="204.0" layoutY="708.0" mnemonicParsing="false" prefHeight="37.0" prefWidth="220.0" style="-fx-background-color: black;" text="BACK" textFill="WHITE">
          <font>
             <Font size="15.0" />
          </font></Button>
