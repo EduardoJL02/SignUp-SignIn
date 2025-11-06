@@ -15,6 +15,7 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import javax.ws.rs.ClientErrorException;
 import model.Customer;
 import logic.CustomerRESTClient;
 
@@ -74,65 +75,91 @@ public class GestionUsuariosController {
      * Evento: Pulsaci�n del bot�n Login
      */
     private void handleLoginButtonOnAction(ActionEvent event) {
-        // Autenticaci�n: usar el servicio REST para obtener el Customer por email+password
-        String email = EmailTextField.getText().trim();
-        String password = PasswordField.getText();
+    String email = EmailTextField.getText().trim();
+    String password = PasswordField.getText();
 
-        if (!EMAIL_REGEX.matcher(email).matches() || password.length() < MIN_PASSWORD_LENGTH) {
-            String emailError = !EMAIL_REGEX.matcher(email).matches() ? "Formato de email invalido" : "";
-            String passwordError = password.length() < MIN_PASSWORD_LENGTH ? "Contrasenia demasiado corta" : "";
-            showInlineError(emailError, passwordError);
-            return;
+    if (!EMAIL_REGEX.matcher(email).matches() || password.length() < MIN_PASSWORD_LENGTH) {
+        String emailError = !EMAIL_REGEX.matcher(email).matches() ? "Formato de email invalido" : "";
+        String passwordError = password.length() < MIN_PASSWORD_LENGTH ? "Contrasenia demasiado corta" : "";
+        showInlineError(emailError, passwordError);
+        return;
+    }
+
+    LOGGER.info("Evento: login_attempt");
+    LoginButton.setDisable(true);
+    Error_email.setText("");
+    Error_password.setText("");
+
+    Task<Customer> task = new Task<Customer>() {
+        @Override
+        protected Customer call() throws Exception {
+            CustomerRESTClient client = new CustomerRESTClient();
+            try {
+                String encEmail = URLEncoder.encode(email, StandardCharsets.UTF_8.toString());
+                String encPassword = URLEncoder.encode(password, StandardCharsets.UTF_8.toString());
+                
+                // AÑADE ESTE LOG PARA VER LA URL EXACTA
+                String urlFinal = "http://localhost:8080/CRUDBankServerSide/webresources/customer/signin/" 
+                                + encEmail + "/" + encPassword;
+                LOGGER.info("Intentando conectar a: " + urlFinal);
+                
+                return client.findCustomerByEmailPassword_XML(Customer.class, encEmail, encPassword);
+            } catch (ClientErrorException e) {
+                // CAPTURA EL ERROR ESPECÍFICO
+                LOGGER.severe("Error ClientErrorException: " + e.getMessage() + " - Status: " + e.getResponse().getStatus());
+                throw e;
+            } finally {
+                client.close();
+            }
         }
+    };
 
-        LOGGER.info("Evento: login_attempt (REST)");
+    task.setOnSucceeded(workerStateEvent -> {
+        Customer found = task.getValue();
+        if (found != null && found.getId() != null) {
+            LOGGER.info("Evento: login_success");
+            navigateToMain();
+        } else {
+            showInlineError("", "Email o contrasenia incorrectos.");
+            LOGGER.info("Evento: login_failed: credenciales invalidas");
+            PasswordField.requestFocus();
+            PasswordField.selectAll();
+        }
+        LoginButton.setDisable(false);
+    });
 
-        // Deshabilitar bot�n y lanzar llamada en segundo plano para no bloquear la UI
-        LoginButton.setDisable(true);
-        Error_email.setText("");
-        Error_password.setText("");
-
-        Task<Customer> task = new Task<Customer>() {
-            @Override
-            protected Customer call() throws Exception {
-                CustomerRESTClient client = new CustomerRESTClient();
-                try {
-                    // Codificar par�metros para evitar problemas con caracteres especiales
-                    String encEmail = URLEncoder.encode(email, StandardCharsets.UTF_8.toString());
-                    String encPassword = URLEncoder.encode(password, StandardCharsets.UTF_8.toString());
-                    return client.findCustomerByEmailPassword_XML(Customer.class, encEmail, encPassword);
-                } finally {
-                    client.close();
-                }
-            }
-        };
-
-        task.setOnSucceeded(workerStateEvent -> {
-            Customer found = task.getValue();
-            if (found != null && found.getId() != null) {
-                LOGGER.info("Evento: login_success (REST)");
-                navigateToMain();
-            } else {
+    task.setOnFailed(workerStateEvent -> {
+        Throwable ex = task.getException();
+        
+        // MANEJO MEJORADO DE EXCEPCIONES
+        if (ex instanceof ClientErrorException) {
+            ClientErrorException clientEx = (ClientErrorException) ex;
+            int status = clientEx.getResponse().getStatus();
+            
+            if (status == 404) {
+                showInlineError("", "Error: El servicio de autenticacion no esta disponible (404).");
+                LOGGER.severe("Error 404: El endpoint REST no existe en el servidor.");
+            } else if (status == 401) {
                 showInlineError("", "Email o contrasenia incorrectos.");
-                LOGGER.info("Evento: login_failed (REST): credenciales invalidas");
-                PasswordField.requestFocus();
-                PasswordField.selectAll();
+                LOGGER.info("Error 401: Credenciales invalidas.");
+            } else {
+                showInlineError("", "Error del servidor: " + status);
+                LOGGER.severe("Error " + status + ": " + clientEx.getMessage());
             }
-            LoginButton.setDisable(false);
-        });
-
-        task.setOnFailed(workerStateEvent -> {
-            Throwable ex = task.getException();
+        } else {
             String msg = ex != null && ex.getMessage() != null ? ex.getMessage() : "No se pudo conectar con el servicio.";
             showInlineError("", "Error al autenticar: " + msg);
             LOGGER.log(Level.SEVERE, "Error durante autenticacion REST", ex);
-            LoginButton.setDisable(false);
-        });
+        }
+        
+        LoginButton.setDisable(false);
+    });
 
-        Thread th = new Thread(task, "login-rest-thread");
-        th.setDaemon(true);
-        th.start();
-    }
+    Thread th = new Thread(task, "login-rest-thread");
+    th.setDaemon(true);
+    th.start();
+}
+
 
     /**
      * Validaci�n en tiempo real de formato del email.
