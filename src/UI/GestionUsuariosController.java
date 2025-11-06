@@ -1,11 +1,3 @@
-/**
- * 
-Ahora, cuando inicie sesion correctamente, en vez de que salga una ventana de alerta (information) 
-donde diga que he iniciado sesion correctamente, 
-me lleve a una ventana en blanco donde ponga: WELCOME "customer"! . 
-Eso debo de crear un documento FXML aparte que contenga una etiqueta label al que hare referencia el customer?
- */
-
 package UI;
 
 import java.net.URLEncoder;
@@ -165,10 +157,7 @@ public class GestionUsuariosController {
                 LOGGER.info("Evento: login_success para ID: " + customer.getId());
                 loggedCustomer = customer; // Almacenar usuario autenticado
                 
-                // Mostrar mensaje de bienvenida
-                showWelcomeMessage(customer);
-                
-                // Navegar a la ventana principal
+                // Navegar directamente a la ventana principal
                 navigateToMain();
             } else {
                 LOGGER.warning("Evento: login_failed - Customer null o sin ID");
@@ -207,8 +196,7 @@ public class GestionUsuariosController {
         } else if (ex instanceof InternalServerErrorException) {
             // 500: Error del servidor
             LOGGER.severe("Evento: login_error_server - Error interno del servidor");
-            showErrorAlert("Error en el servidor.\nPor favor, inténtalo más tarde.\n\n" +
-                          "Si el problema persiste, contacta con el administrador.");
+            showErrorAlert("Error en el servidor.\nPor favor, inténtalo más tarde.");
             
         } else if (ex instanceof ClientErrorException) {
             ClientErrorException clientEx = (ClientErrorException) ex;
@@ -345,28 +333,22 @@ public class GestionUsuariosController {
      * Navega a la ventana principal de la aplicación.
      */
     private void navigateToMain() {
+        LOGGER.info("Navegando a ventana principal...");
         
         Platform.runLater(() -> {
             try {
-                // TODO: Reemplazar con la carga real de la ventana principal
-                // Ejemplo:
-                /*
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/UI/MainWindow.fxml"));
+                // Cargar el FXML de la página principal
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/UI/PaginaPrincipal.fxml"));
                 Parent root = loader.load();
-                MainWindowController controller = loader.getController();
-                controller.setCustomer(loggedCustomer);
-                controller.init(stage, root);
-                */
                 
-                // TEMPORAL: Mostrar alerta de éxito
-                Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                alert.initModality(Modality.APPLICATION_MODAL);
-                alert.initOwner(stage);
-                alert.setTitle("Navegación pendiente");
-                alert.setHeaderText("Login correcto");
-                alert.setContentText("Usuario: " + loggedCustomer.getEmail() + "\n" +
-                                    "ID: " + loggedCustomer.getId());
-                alert.showAndWait();
+                // Obtener el controlador y pasar el usuario autenticado
+                PaginaPrincipalController controller = loader.getController();
+                controller.setCustomer(loggedCustomer); // IMPORTANTE: Llamar ANTES de init()
+                
+                // Inicializar la ventana principal
+                controller.init(stage, root);
+                
+                LOGGER.info("Navegación exitosa a ventana principal para usuario: " + loggedCustomer.getEmail());
                 
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE, "Error al navegar a ventana principal", e);
