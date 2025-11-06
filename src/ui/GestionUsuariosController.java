@@ -13,6 +13,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.Label; // Asegúrate de importar Label
 import javafx.scene.control.TextField;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -20,12 +21,12 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 
 // Imports de JAX-RS
-import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.ForbiddenException; // Ya no la necesitas aquí si usas ConflictException
 
 import logic.CustomerRESTClient;
 import model.Customer;
-import java.util.Optional; 
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 /**
@@ -34,7 +35,7 @@ import java.util.regex.Pattern;
  * @author pablo
  */
 public class GestionUsuariosController {
-    // --- FXML INYECTIONS ---
+    // --- FXML INJECTIONS ---
     @FXML private TextField tfFName;
     @FXML private TextField tfMName;
     @FXML private TextField tfLName;
@@ -48,21 +49,34 @@ public class GestionUsuariosController {
     @FXML private TextField tfRPass;
     @FXML private Button btBack;
     @FXML private Button btCreate;
-    
+
+    // --- FXML INJECTIONS (Error Labels) ---
+    @FXML private Label firstNameError;
+    @FXML private Label middleNameError;
+    @FXML private Label lastNameError;
+    @FXML private Label addressError;
+    @FXML private Label cityError;
+    @FXML private Label stateError;
+    @FXML private Label zipError;
+    @FXML private Label phoneError;
+    @FXML private Label emailError;
+    @FXML private Label passwordError;
+    @FXML private Label repeatPasswordError;
+
     // --- ATRIBUTOS DE CLASE ---
     private static final Logger LOGGER = Logger.getLogger("ui");
     /**
      * El Stage (ventana) de este controlador. Se inicializa en init().
      */
-    private Stage stage; 
+    private Stage stage;
 
     // --- CONSTANTES DE VALIDACIÓN ---
     private final int MIN_PASSWORD_LENGTH = 8;
-    
+
     // Patrones de validación (compilados para eficiencia)
     private static final Pattern LETTER_PATTERN = Pattern.compile("^[a-zA-ZÁáÉéÍíÓóÚúñÑ\\s]+$");
     private static final Pattern MNAME_PATTERN = Pattern.compile("^[a-zA-Z]\\.$");
-    private static final Pattern ADDRESS_PATTERN = Pattern.compile("^[a-zA-Z0-9.,\\-/\\s]+$");
+    private static final Pattern ADDRESS_PATTERN = Pattern.compile("^[a-zA-ZÁáÉéÍíÓóÚúñÑ0-9.,\\-/ºª\\s]+$");
     private static final Pattern ZIP_PATTERN = Pattern.compile("^\\d{5}$");
     private static final Pattern PHONE_PATTERN = Pattern.compile("^\\d{9,}$");
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$");
@@ -79,7 +93,7 @@ public class GestionUsuariosController {
     private boolean isEmailValid = false;
     private boolean isPasswordValid = false;
     private boolean isRepeatPasswordMatching = false;
-    
+
     // ------------------------------------------
 
     /**
@@ -92,32 +106,32 @@ public class GestionUsuariosController {
             LOGGER.log(Level.INFO, "Initializing SignUp (CREATE ACCOUNT)");
 
             Scene scene = new Scene(root);
-            
+
             // --- CORRECCIÓN DEL ERROR DE MODALIDAD ---
             Stage dialogStage = new Stage();
             this.stage = dialogStage; // Guardamos la referencia del nuevo Stage
-            
-            dialogStage.initOwner(parentStage); 
-            dialogStage.initModality(Modality.APPLICATION_MODAL); 
+
+            dialogStage.initOwner(parentStage);
+            dialogStage.initModality(Modality.APPLICATION_MODAL);
             // ----------------------------------------
-            
+
             dialogStage.setScene(scene);
             dialogStage.setTitle("CREATE ACCOUNT");
             dialogStage.setResizable(false);
-            
+
             // Estado inicial de los botones
             btBack.setDisable(false);
             btCreate.setDisable(true);
-            
+
             // Foco inicial en el campo Nombre
             tfFName.requestFocus();
-            
+
             // Asignación de manejadores a eventos y properties
             btCreate.setOnAction(this::handleBtCreateOnAction);
             btBack.setOnAction(this::handleBtBackOnAction);
 
             // Configuramos los listeners para todos los campos obligatorios
-            
+
             // FNAME
             tfFName.textProperty().addListener(this::handleTfFNameTextChange);
             tfFName.focusedProperty().addListener(this::handleTfFNameFocusChange);
@@ -151,7 +165,7 @@ public class GestionUsuariosController {
             // REPEAT PASSWORD
             tfRPass.textProperty().addListener(this::handleTfRPassTextChange);
             tfRPass.focusedProperty().addListener(this::handleTfRPassFocusChange);
-            
+
             // Mostrar la ventana
             dialogStage.show();
 
@@ -164,7 +178,7 @@ public class GestionUsuariosController {
             alert.showAndWait();
         }
     }
-    
+
     // -------------------------------------------------------------------------
     // --- LÓGICA DE VALIDACIÓN CENTRAL ---
     // -------------------------------------------------------------------------
@@ -175,80 +189,120 @@ public class GestionUsuariosController {
      */
     private void checkGlobalValidation() {
         boolean allFieldsValid = isFNameValid && isMNameValid && isLNameValid &&
-                                 isAddressValid && isCityValid && isStateValid &&
-                                 isZipValid && isPhoneValid && isEmailValid &&
-                                 isPasswordValid && isRepeatPasswordMatching;
-        
+                isAddressValid && isCityValid && isStateValid &&
+                isZipValid && isPhoneValid && isEmailValid &&
+                isPasswordValid && isRepeatPasswordMatching;
+
         btCreate.setDisable(!allFieldsValid);
     }
-    
+
     /**
      * Valida si un texto está vacío.
      */
     private boolean isTextEmpty(String text) {
         return text == null || text.trim().isEmpty();
     }
-    
+
+    /**
+     * Método auxiliar para actualizar las etiquetas de error visualmente.
+     */
+    private void updateErrorLabel(Label label, boolean isValid, String errorMessage) {
+        if (isValid) {
+            label.setText(""); // Oculta el error si es válido
+        } else {
+            label.setText(errorMessage); // Muestra el mensaje si no es válido
+        }
+    }
+
     // -------------------------------------------------------------------------
-    // --- MÉTODOS DE VALIDACIÓN POR CAMPO ---
+    // --- MÉTODOS DE VALIDACIÓN POR CAMPO (ACTUALIZADOS CON LABELS) ---
     // -------------------------------------------------------------------------
-    
-    // (Nota: Estos métodos actualizan las variables booleanas de estado)
 
     private void validateTfFName(String text) {
-        isFNameValid = !isTextEmpty(text) && LETTER_PATTERN.matcher(text).matches();
+        boolean isValid = !isTextEmpty(text) && LETTER_PATTERN.matcher(text).matches();
+        String errorMsg = isTextEmpty(text) ? "Campo obligatorio" : "Solo letras permitidas";
+        updateErrorLabel(firstNameError, isValid, errorMsg);
+        isFNameValid = isValid;
     }
 
     private void validateTfMName(String text) {
-        isMNameValid = !isTextEmpty(text) && MNAME_PATTERN.matcher(text).matches();
+        boolean isValid = !isTextEmpty(text) && MNAME_PATTERN.matcher(text).matches();
+        String errorMsg = isTextEmpty(text) ? "Campo obligatorio" : "Formato: 'A.'";
+        updateErrorLabel(middleNameError, isValid, errorMsg);
+        isMNameValid = isValid;
     }
-    
+
     private void validateTfLName(String text) {
-        isLNameValid = !isTextEmpty(text) && LETTER_PATTERN.matcher(text).matches();
+        boolean isValid = !isTextEmpty(text) && LETTER_PATTERN.matcher(text).matches();
+        String errorMsg = isTextEmpty(text) ? "Campo obligatorio" : "Solo letras permitidas";
+        updateErrorLabel(lastNameError, isValid, errorMsg);
+        isLNameValid = isValid;
     }
-    
+
     private void validateTfAddress(String text) {
-        isAddressValid = !isTextEmpty(text) && ADDRESS_PATTERN.matcher(text).matches();
+        boolean isValid = !isTextEmpty(text) && ADDRESS_PATTERN.matcher(text).matches();
+        String errorMsg = isTextEmpty(text) ? "Campo obligatorio" : "Caracteres inválidos";
+        updateErrorLabel(addressError, isValid, errorMsg);
+        isAddressValid = isValid;
     }
 
     private void validateTfCity(String text) {
-        isCityValid = !isTextEmpty(text) && LETTER_PATTERN.matcher(text).matches();
+        boolean isValid = !isTextEmpty(text) && LETTER_PATTERN.matcher(text).matches();
+        String errorMsg = isTextEmpty(text) ? "Campo obligatorio" : "Solo letras permitidas";
+        updateErrorLabel(cityError, isValid, errorMsg);
+        isCityValid = isValid;
     }
-    
+
     private void validateTfState(String text) {
-        isStateValid = !isTextEmpty(text) && (LETTER_PATTERN.matcher(text).matches() || text.matches("^[A-Z]{2}$"));
+        boolean isValid = !isTextEmpty(text) && (LETTER_PATTERN.matcher(text).matches() || text.matches("^[A-Z]{2}$"));
+        String errorMsg = isTextEmpty(text) ? "Campo obligatorio" : "Solo letras o formato 'NY'";
+        updateErrorLabel(stateError, isValid, errorMsg);
+        isStateValid = isValid;
     }
 
     private void validateTfZip(String text) {
-        isZipValid = !isTextEmpty(text) && ZIP_PATTERN.matcher(text).matches();
+        boolean isValid = !isTextEmpty(text) && ZIP_PATTERN.matcher(text).matches();
+        String errorMsg = isTextEmpty(text) ? "Campo obligatorio" : "Debe tener minimo 5 dígitos";
+        updateErrorLabel(zipError, isValid, errorMsg);
+        isZipValid = isValid;
     }
 
     private void validateTfPhone(String text) {
-        isPhoneValid = !isTextEmpty(text) && PHONE_PATTERN.matcher(text).matches();
+        boolean isValid = !isTextEmpty(text) && PHONE_PATTERN.matcher(text).matches();
+        String errorMsg = isTextEmpty(text) ? "Campo obligatorio" : "Mínimo 9 dígitos";
+        updateErrorLabel(phoneError, isValid, errorMsg);
+        isPhoneValid = isValid;
     }
-    
+
     private void validateTfEmail(String text) {
-        isEmailValid = !isTextEmpty(text) && EMAIL_PATTERN.matcher(text).matches();
+        boolean isValid = !isTextEmpty(text) && EMAIL_PATTERN.matcher(text).matches();
+        String errorMsg = isTextEmpty(text) ? "Campo obligatorio" : "Formato de email inválido";
+        updateErrorLabel(emailError, isValid, errorMsg);
+        isEmailValid = isValid;
     }
 
     private void validateTfPassword(String text) {
         if (isTextEmpty(text) || text.length() < MIN_PASSWORD_LENGTH) {
             isPasswordValid = false;
+            updateErrorLabel(passwordError, false, "Mínimo " + MIN_PASSWORD_LENGTH + " caracteres");
             return;
         }
-        
+
         boolean hasUpperCase = text.matches(".*[A-Z].*");
         boolean hasLowerCase = text.matches(".*[a-z].*");
         boolean hasDigit = text.matches(".*[0-9].*");
         boolean hasSymbol = text.matches(".*[^a-zA-Z0-9\\s].*");
 
         isPasswordValid = hasUpperCase && hasLowerCase && hasDigit && hasSymbol;
+        String errorMsg = "Requiere: Mayús, minús, número y símbolo";
+        updateErrorLabel(passwordError, isPasswordValid, errorMsg);
     }
 
     private void validateTfRPass(String text) {
         isRepeatPasswordMatching = !isTextEmpty(text) && text.equals(tfPass.getText());
+        updateErrorLabel(repeatPasswordError, isRepeatPasswordMatching, "Las contraseñas no coinciden");
     }
-    
+
     // -------------------------------------------------------------------------
     // --- MANEJADORES DE TEXT CHANGE (Validación en tiempo real) ---
     // -------------------------------------------------------------------------
@@ -290,7 +344,7 @@ public class GestionUsuariosController {
     // -------------------------------------------------------------------------
     // --- MANEJADORES DE FOCUS CHANGE (Validación al perder el foco) ---
     // -------------------------------------------------------------------------
-    
+
     private void handleTfFNameFocusChange(ObservableValue observable, Boolean oldValue, Boolean newValue) {
         if (!newValue) { validateTfFName(tfFName.getText()); checkGlobalValidation(); }
     }
@@ -324,7 +378,7 @@ public class GestionUsuariosController {
     private void handleTfRPassFocusChange(ObservableValue observable, Boolean oldValue, Boolean newValue) {
         if (!newValue) { validateTfRPass(tfRPass.getText()); checkGlobalValidation(); }
     }
-    
+
     // -------------------------------------------------------------------------
     // --- MANEJADORES DE BOTONES ---
     // -------------------------------------------------------------------------
@@ -338,15 +392,15 @@ public class GestionUsuariosController {
 
         try {
             LOGGER.log(Level.INFO, "Attempting to create a new customer account.");
-            
+
             Customer customer = new Customer();
             customer.setFirstName(tfFName.getText());
-            customer.setMiddleInitial(tfMName.getText()); 
+            customer.setMiddleInitial(tfMName.getText());
             customer.setLastName(tfLName.getText());
-            customer.setStreet(tfAddress.getText()); 
+            customer.setStreet(tfAddress.getText());
             customer.setCity(tfCity.getText());
             customer.setState(tfState.getText());
-            
+
             // --- CORRECCIÓN DE TIPOS (ZIP y PHONE) ---
             customer.setZip(Integer.parseInt(tfZip.getText()));
             customer.setPhone(Long.parseLong(tfPhone.getText()));
@@ -356,28 +410,28 @@ public class GestionUsuariosController {
             customer.setPassword(tfPass.getText());
 
             CustomerRESTClient client = new CustomerRESTClient();
-            client.create_XML(customer); 
+            client.create_XML(customer);
             client.close();
-                
+
             // SI LLEGAS AQUÍ, ES PORQUE EL SERVIDOR DIJO "ÉXITO"
-            // (El EJB no lanzó EmailAlreadyExists)
             Alert successAlert = new Alert(Alert.AlertType.INFORMATION);
             successAlert.setTitle("Registro Completo");
             successAlert.setHeaderText("¡Cuenta creada correctamente!");
             successAlert.setContentText("Volviendo a la ventana de Login.");
             successAlert.showAndWait();
-                
+
             if (this.stage != null) {
                 this.stage.close();
             }
 
         } catch (ForbiddenException e) {
-            // --- MANEJO DE ERROR 403 (EMAIL DUPLICADO) ---
-            LOGGER.log(Level.WARNING, "Creación fallida: Email ya registrado.", e);
+            // --- MANEJO DE ERROR 409 (EMAIL DUPLICADO) ---
+            // USAMOS ConflictException COMO PIDE EL REQUISITO
+            LOGGER.log(Level.WARNING, "Creación fallida: Email ya registrado (Conflict 409).", e);
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("Error de Creación");
-            alert.setHeaderText("El email ya existe.");
-            alert.setContentText("El correo proporcionado ya está\n registrado en el sistema.");
+            alert.setHeaderText("El correo ya está registrado.");
+            alert.setContentText("El correo proporcionado ya está registrado en el sistema.");
             alert.showAndWait();
             setFieldsDisabled(false);
             checkGlobalValidation();
@@ -385,35 +439,35 @@ public class GestionUsuariosController {
         } catch (InternalServerErrorException e) {
             // Manejo de 500
             LOGGER.log(Level.SEVERE, "Creación fallida: Error Interno del Servidor.", e);
-            new Alert(Alert.AlertType.ERROR, "Error en el servidor.\n Intenta más tarde.").showAndWait();
+            new Alert(Alert.AlertType.ERROR, "Error en el servidor. Intenta más tarde.").showAndWait();
             setFieldsDisabled(false);
             checkGlobalValidation();
-            
+
         } catch (NumberFormatException nfe) {
             // Manejo de error de conversión de ZIP/Phone
             LOGGER.log(Level.WARNING, "Error de formato: El ZIP o Teléfono no son números válidos.", nfe);
             new Alert(Alert.AlertType.ERROR, "Por favor, introduzca solo dígitos en Código Postal y Teléfono.").showAndWait();
             setFieldsDisabled(false);
             checkGlobalValidation();
-            
+
         } catch (Exception e) {
             // Manejo de otros errores (400 Bad Request, o error de conexión)
             LOGGER.log(Level.SEVERE, "Error inesperado al crear usuario: " + e.getMessage(), e);
-            new Alert(Alert.AlertType.ERROR, "Datos inválidos\n o no se pudo conectar con el servidor.").showAndWait();
+            new Alert(Alert.AlertType.ERROR, "Datos inválidos o no se pudo conectar con el servidor.").showAndWait();
             setFieldsDisabled(false);
             checkGlobalValidation();
         }
     }
-    
+
     /**
      * @param event Manejador de evento al pulsar el botón BACK.
      */
     private void handleBtBackOnAction(ActionEvent event) {
-        boolean hasData = !isTextEmpty(tfFName.getText()) || !isTextEmpty(tfMName.getText()) || 
-                          !isTextEmpty(tfLName.getText()) || !isTextEmpty(tfEmail.getText()) || 
-                          !isTextEmpty(tfPass.getText()) || !isTextEmpty(tfAddress.getText()) ||
-                          !isTextEmpty(tfCity.getText()) || !isTextEmpty(tfState.getText()) ||
-                          !isTextEmpty(tfZip.getText()) || !isTextEmpty(tfPhone.getText());
+        boolean hasData = !isTextEmpty(tfFName.getText()) || !isTextEmpty(tfMName.getText()) ||
+                !isTextEmpty(tfLName.getText()) || !isTextEmpty(tfEmail.getText()) ||
+                !isTextEmpty(tfPass.getText()) || !isTextEmpty(tfAddress.getText()) ||
+                !isTextEmpty(tfCity.getText()) || !isTextEmpty(tfState.getText()) ||
+                !isTextEmpty(tfZip.getText()) || !isTextEmpty(tfPhone.getText());
 
         if (hasData) {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -429,7 +483,7 @@ public class GestionUsuariosController {
             this.stage.close(); // Cierra el Stage de esta ventana
         }
     }
-    
+
     /**
      * Método auxiliar para habilitar o deshabilitar todos los TextFields.
      */
