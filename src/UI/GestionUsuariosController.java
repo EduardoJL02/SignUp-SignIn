@@ -1,6 +1,15 @@
+/**
+ * 
+Ahora, cuando inicie sesion correctamente, en vez de que salga una ventana de alerta (information) 
+donde diga que he iniciado sesion correctamente, 
+me lleve a una ventana en blanco donde ponga: WELCOME "customer"! . 
+Eso debo de crear un documento FXML aparte que contenga una etiqueta label al que hare referencia el customer?
+ */
+
 package UI;
 
-import java.util.NoSuchElementException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -9,22 +18,28 @@ import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.text.Text;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import javax.ws.rs.ClientErrorException;
-import model.Customer;
+import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.NotAuthorizedException;
 import logic.CustomerRESTClient;
-
+import model.Customer;
 
 /**
  * Controlador de la ventana Sign-In (Login)
+ * Maneja autenticación de usuarios mediante REST API
+ * 
+ * @author Tu Nombre
  */
 public class GestionUsuariosController {
 
+    // ======================== COMPONENTES FXML ========================
     @FXML private Button LoginButton;
     @FXML private PasswordField PasswordField;
     @FXML private TextField EmailTextField;
@@ -39,161 +54,266 @@ public class GestionUsuariosController {
     @FXML private Label Error_email;
     @FXML private Label Error_password;
 
+    // ======================== CONSTANTES ========================
     private static final Logger LOGGER = Logger.getLogger("SignUpSignIn.UI");
-
-    private static final Pattern EMAIL_REGEX = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    private static final Pattern EMAIL_REGEX = Pattern.compile(
+            "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
     private static final int MIN_PASSWORD_LENGTH = 8;
+    
+    // Estilos CSS inline para feedback visual
+    private static final String STYLE_ERROR_BORDER = "-fx-border-color: red; -fx-border-width: 2px;";
+    private static final String STYLE_NORMAL_BORDER = "-fx-border-color: grey; -fx-border-width: 1px;";
+    private static final String STYLE_FOCUS_BORDER = "-fx-border-color: #0078d4; -fx-border-width: 2px;";
 
+    // ======================== VARIABLES DE INSTANCIA ========================
+    private Stage stage;
+    private Customer loggedCustomer; // Almacena el usuario autenticado
+
+    /**
+     * Inicializa el controlador y configura la ventana de login.
+     * 
+     * @param stage Stage principal de la aplicación
+     * @param root Nodo raíz del FXML
+     */
     public void init(Stage stage, Parent root) {
         try {
+            this.stage = stage;
             LOGGER.info("Initializing login stage.");
+            
+            // Configuración de la ventana
             stage.setTitle("LOGIN");
             stage.setResizable(false);
+            
+            // Estado inicial de controles
             LoginButton.setDisable(true);
-
-            // Asociar eventos
+            clearErrorMessages();
+            
+            // Asociar eventos a manejadores
             LoginButton.setOnAction(this::handleLoginButtonOnAction);
             EmailTextField.textProperty().addListener(this::handleEmailTextChange);
             EmailTextField.focusedProperty().addListener(this::handleEmailFocusChange);
             PasswordField.textProperty().addListener(this::handlePasswordChange);
-
+            PasswordField.focusedProperty().addListener(this::handlePasswordFocusChange);
             GetPasswordLink.setOnAction(e -> handleForgotPassword());
             SignUpLink.setOnAction(e -> handleSignUp());
-
-            // Mostrar tooltip de requisitos
-            PasswordTooltip.setText("La contrasenia debe tener al menos " + MIN_PASSWORD_LENGTH + " caracteres.");
+            
+            // Configurar tooltip de requisitos de contraseña
+            PasswordTooltip.setText("La contraseña debe tener al menos " + MIN_PASSWORD_LENGTH + " caracteres.");
             Tooltip.install(LabelTooltipPassword, PasswordTooltip);
-
+            
             stage.show();
+            LOGGER.info("Login window initialized successfully.");
+            
         } catch (Exception e) {
-            showError("Error al inicializar la ventana: " + e.getMessage());
             LOGGER.log(Level.SEVERE, "Error al inicializar Sign-In", e);
+            showErrorAlert("Error al inicializar la ventana: " + e.getMessage());
         }
+    }
+
+    // ======================== MANEJADORES DE EVENTOS ========================
+
+    /**
+     * Maneja el evento de clic en el botón Login.
+     * Realiza autenticación contra el backend REST.
+     * 
+     * @param event Evento de acción del botón
+     */
+    private void handleLoginButtonOnAction(ActionEvent event) {
+        String email = EmailTextField.getText().trim();
+        String password = PasswordField.getText();
+
+        // Validación final (por si acaso)
+        if (!EMAIL_REGEX.matcher(email).matches() || password.length() < MIN_PASSWORD_LENGTH) {
+            String emailError = !EMAIL_REGEX.matcher(email).matches() ? "Formato de email inválido" : "";
+            String passwordError = password.length() < MIN_PASSWORD_LENGTH ? "Contraseña demasiado corta" : "";
+            showInlineError(emailError, passwordError);
+            return;
+        }
+
+        LOGGER.info("Evento: login_attempt para email: " + email);
+        
+        // Deshabilitar controles durante la petición
+        setControlsDisabled(true);
+        clearErrorMessages();
+
+        // Crear tarea asíncrona para autenticación REST
+        Task<Customer> loginTask = new Task<Customer>() {
+            @Override
+            protected Customer call() throws Exception {
+                CustomerRESTClient client = new CustomerRESTClient();
+                try {
+                    // Codificar parámetros para URL
+                    String encEmail = URLEncoder.encode(email, StandardCharsets.UTF_8.toString());
+                    String encPassword = URLEncoder.encode(password, StandardCharsets.UTF_8.toString());
+                    
+                    LOGGER.info("Conectando a REST API para autenticación...");
+                    
+                    // Llamada al servicio REST
+                    return client.findCustomerByEmailPassword_XML(Customer.class, encEmail, encPassword);
+                    
+                } finally {
+                    client.close();
+                }
+            }
+        };
+
+        // Manejo de éxito
+        loginTask.setOnSucceeded(workerStateEvent -> {
+            Customer customer = loginTask.getValue();
+            
+            if (customer != null && customer.getId() != null) {
+                LOGGER.info("Evento: login_success para ID: " + customer.getId());
+                loggedCustomer = customer; // Almacenar usuario autenticado
+                
+                // Mostrar mensaje de bienvenida
+                showWelcomeMessage(customer);
+                
+                // Navegar a la ventana principal
+                navigateToMain();
+            } else {
+                LOGGER.warning("Evento: login_failed - Customer null o sin ID");
+                showInlineError("", "Error inesperado: datos de usuario incompletos.");
+                setControlsDisabled(false);
+            }
+        });
+
+        // Manejo de errores
+        loginTask.setOnFailed(workerStateEvent -> {
+            Throwable ex = loginTask.getException();
+            handleLoginError(ex);
+            setControlsDisabled(false);
+        });
+
+        // Ejecutar tarea en hilo separado
+        Thread loginThread = new Thread(loginTask, "login-rest-thread");
+        loginThread.setDaemon(true);
+        loginThread.start();
     }
 
     /**
-     * Evento: Pulsaci�n del bot�n Login
+     * Maneja los diferentes tipos de errores de autenticación.
+     * 
+     * @param ex Excepción capturada durante el login
      */
-    private void handleLoginButtonOnAction(ActionEvent event) {
-    String email = EmailTextField.getText().trim();
-    String password = PasswordField.getText();
-
-    if (!EMAIL_REGEX.matcher(email).matches() || password.length() < MIN_PASSWORD_LENGTH) {
-        String emailError = !EMAIL_REGEX.matcher(email).matches() ? "Formato de email invalido" : "";
-        String passwordError = password.length() < MIN_PASSWORD_LENGTH ? "Contrasenia demasiado corta" : "";
-        showInlineError(emailError, passwordError);
-        return;
-    }
-
-    LOGGER.info("Evento: login_attempt");
-    LoginButton.setDisable(true);
-    Error_email.setText("");
-    Error_password.setText("");
-
-    Task<Customer> task = new Task<Customer>() {
-        @Override
-        protected Customer call() throws Exception {
-            CustomerRESTClient client = new CustomerRESTClient();
-            try {
-                String encEmail = URLEncoder.encode(email, StandardCharsets.UTF_8.toString());
-                String encPassword = URLEncoder.encode(password, StandardCharsets.UTF_8.toString());
-                
-                // AÑADE ESTE LOG PARA VER LA URL EXACTA
-                String urlFinal = "http://localhost:8080/CRUDBankServerSide/webresources/customer/signin/" 
-                                + encEmail + "/" + encPassword;
-                LOGGER.info("Intentando conectar a: " + urlFinal);
-                
-                return client.findCustomerByEmailPassword_XML(Customer.class, encEmail, encPassword);
-            } catch (ClientErrorException e) {
-                // CAPTURA EL ERROR ESPECÍFICO
-                LOGGER.severe("Error ClientErrorException: " + e.getMessage() + " - Status: " + e.getResponse().getStatus());
-                throw e;
-            } finally {
-                client.close();
-            }
-        }
-    };
-
-    task.setOnSucceeded(workerStateEvent -> {
-        Customer found = task.getValue();
-        if (found != null && found.getId() != null) {
-            LOGGER.info("Evento: login_success");
-            navigateToMain();
-        } else {
-            showInlineError("", "Email o contrasenia incorrectos.");
-            LOGGER.info("Evento: login_failed: credenciales invalidas");
+    private void handleLoginError(Throwable ex) {
+        if (ex instanceof NotAuthorizedException) {
+            // 401: Credenciales incorrectas
+            LOGGER.info("Evento: login_failed - Credenciales inválidas");
+            showInlineError("", "Email o contraseña incorrectos.");
+            highlightErrorFields(true, true);
             PasswordField.requestFocus();
             PasswordField.selectAll();
-        }
-        LoginButton.setDisable(false);
-    });
-
-    task.setOnFailed(workerStateEvent -> {
-        Throwable ex = task.getException();
-        
-        // MANEJO MEJORADO DE EXCEPCIONES
-        if (ex instanceof ClientErrorException) {
+            
+        } else if (ex instanceof InternalServerErrorException) {
+            // 500: Error del servidor
+            LOGGER.severe("Evento: login_error_server - Error interno del servidor");
+            showErrorAlert("Error en el servidor.\nPor favor, inténtalo más tarde.\n\n" +
+                          "Si el problema persiste, contacta con el administrador.");
+            
+        } else if (ex instanceof ClientErrorException) {
             ClientErrorException clientEx = (ClientErrorException) ex;
             int status = clientEx.getResponse().getStatus();
             
             if (status == 404) {
-                showInlineError("", "Error: El servicio de autenticacion no esta disponible (404).");
-                LOGGER.severe("Error 404: El endpoint REST no existe en el servidor.");
-            } else if (status == 401) {
-                showInlineError("", "Email o contrasenia incorrectos.");
-                LOGGER.info("Error 401: Credenciales invalidas.");
+                LOGGER.severe("Error 404: El endpoint REST no existe");
+                showErrorAlert("Error: El servicio de autenticación no está disponible.");
             } else {
-                showInlineError("", "Error del servidor: " + status);
-                LOGGER.severe("Error " + status + ": " + clientEx.getMessage());
+                LOGGER.severe("Error REST " + status + ": " + clientEx.getMessage());
+                showInlineError("", "Error del servidor: código " + status);
             }
+            
         } else {
+            // Error genérico (red, timeout, etc.)
             String msg = ex != null && ex.getMessage() != null ? ex.getMessage() : "No se pudo conectar con el servicio.";
-            showInlineError("", "Error al autenticar: " + msg);
-            LOGGER.log(Level.SEVERE, "Error durante autenticacion REST", ex);
+            LOGGER.log(Level.SEVERE, "Error durante autenticación REST", ex);
+            showErrorAlert("Error al conectar con el servidor:\n" + msg + "\n\n" +
+                          "Verifica tu conexión a internet y que el servidor esté activo.");
         }
-        
-        LoginButton.setDisable(false);
-    });
-
-    Thread th = new Thread(task, "login-rest-thread");
-    th.setDaemon(true);
-    th.start();
-}
-
+    }
 
     /**
-     * Validacion en tiempo real de formato del email.
+     * Muestra mensaje de bienvenida al usuario.
+     * 
+     * @param customer Usuario autenticado
+     */
+    private void showWelcomeMessage(Customer customer) {
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.initModality(Modality.APPLICATION_MODAL);
+            alert.initOwner(stage);
+            alert.setTitle("Login exitoso");
+            alert.setHeaderText("¡Bienvenido!");
+            alert.setContentText("Hola, " + customer.getFirstName() + " " + customer.getLastName());
+            alert.showAndWait();
+        });
+    }
+
+    // ======================== VALIDACIONES EN TIEMPO REAL ========================
+
+    /**
+     * Valida el formato del email en tiempo real.
      */
     private void handleEmailTextChange(ObservableValue<? extends String> obs, String oldValue, String newValue) {
         validateInputs();
     }
 
+    /**
+     * Maneja el cambio de foco en el campo email.
+     */
     private void handleEmailFocusChange(ObservableValue<? extends Boolean> obs, Boolean oldValue, Boolean newValue) {
-        if (!newValue) { // Al perder foco
-            validateEmail();
+        if (newValue) {
+            // Gana foco: limpiar estilo de error
+            EmailTextField.setStyle(STYLE_FOCUS_BORDER);
+        } else {
+            // Pierde foco: validar
+            if (validateEmail()) {
+                EmailTextField.setStyle(STYLE_NORMAL_BORDER);
+            }
         }
     }
 
     /**
-     * Validaci�n en tiempo real de contrase�a.
+     * Valida la contraseña en tiempo real.
      */
     private void handlePasswordChange(ObservableValue<? extends String> obs, String oldValue, String newValue) {
         validateInputs();
     }
 
+    /**
+     * Maneja el cambio de foco en el campo contraseña.
+     */
+    private void handlePasswordFocusChange(ObservableValue<? extends Boolean> obs, Boolean oldValue, Boolean newValue) {
+        if (newValue) {
+            // Gana foco: limpiar estilo de error
+            PasswordField.setStyle(STYLE_FOCUS_BORDER);
+        } else {
+            // Pierde foco: validar
+            if (validatePassword()) {
+                PasswordField.setStyle(STYLE_NORMAL_BORDER);
+            }
+        }
+    }
+
+    /**
+     * Valida ambos campos y habilita/deshabilita el botón Login.
+     */
     private void validateInputs() {
         boolean emailValid = validateEmail();
         boolean passwordValid = validatePassword();
-
         LoginButton.setDisable(!(emailValid && passwordValid));
     }
 
+    /**
+     * Valida el formato del email.
+     * 
+     * @return true si el email es válido
+     */
     private boolean validateEmail() {
         String email = EmailTextField.getText().trim();
-        boolean valid = EMAIL_REGEX.matcher(email).matches();
+        boolean valid = !email.isEmpty() && EMAIL_REGEX.matcher(email).matches();
 
-        if (email.isEmpty() || !valid) {
-            Error_email.setText("Formato de email invalido");
+        if (!valid) {
+            Error_email.setText(email.isEmpty() ? "El email es obligatorio" : "Formato de email inválido");
             return false;
         } else {
             Error_email.setText("");
@@ -201,12 +321,17 @@ public class GestionUsuariosController {
         }
     }
 
+    /**
+     * Valida la longitud de la contraseña.
+     * 
+     * @return true si la contraseña es válida
+     */
     private boolean validatePassword() {
         String password = PasswordField.getText();
         boolean valid = password != null && password.length() >= MIN_PASSWORD_LENGTH;
 
         if (!valid) {
-            Error_password.setText("Contrasenia demasiado corta");
+            Error_password.setText("La contraseña debe tener al menos " + MIN_PASSWORD_LENGTH + " caracteres");
             return false;
         } else {
             Error_password.setText("");
@@ -214,54 +339,195 @@ public class GestionUsuariosController {
         }
     }
 
+    // ======================== NAVEGACIÓN ========================
+
+    /**
+     * Navega a la ventana principal de la aplicación.
+     */
+    private void navigateToMain() {
+        
+        Platform.runLater(() -> {
+            try {
+                // TODO: Reemplazar con la carga real de la ventana principal
+                // Ejemplo:
+                /*
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/UI/MainWindow.fxml"));
+                Parent root = loader.load();
+                MainWindowController controller = loader.getController();
+                controller.setCustomer(loggedCustomer);
+                controller.init(stage, root);
+                */
+                
+                // TEMPORAL: Mostrar alerta de éxito
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.initModality(Modality.APPLICATION_MODAL);
+                alert.initOwner(stage);
+                alert.setTitle("Navegación pendiente");
+                alert.setHeaderText("Login correcto");
+                alert.setContentText("Usuario: " + loggedCustomer.getEmail() + "\n" +
+                                    "ID: " + loggedCustomer.getId());
+                alert.showAndWait();
+                
+            } catch (Exception e) {
+                LOGGER.log(Level.SEVERE, "Error al navegar a ventana principal", e);
+                showErrorAlert("No se pudo cargar la ventana principal: " + e.getMessage());
+            }
+        });
+    }
+
+    /**
+     * Maneja el evento "Olvidé mi contraseña".
+     */
+    private void handleForgotPassword() {
+        LOGGER.info("Evento: forgot_password_requested");
+        
+        try {
+            // TODO: Implementar navegación a ventana de recuperación
+            /*
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/UI/ForgotPassword.fxml"));
+            Parent root = loader.load();
+            ForgotPasswordController controller = loader.getController();
+            controller.init(new Stage(), root);
+            */
+            
+            // TEMPORAL
+            showInfoAlert("Ir a ventana de recuperación de contraseña (a implementar)");
+            
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error al abrir ventana de recuperación", e);
+            showInlineError("", "No se pudo abrir la ventana de recuperación.");
+        }
+    }
+
+    /**
+     * Maneja el evento "Registrarse".
+     */
+    private void handleSignUp() {
+        LOGGER.info("Evento: register_navigated");
+        
+        try {
+            // TODO: Implementar navegación a ventana de registro
+            /*
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/UI/SignUp.fxml"));
+            Parent root = loader.load();
+            SignUpController controller = loader.getController();
+            controller.init(new Stage(), root);
+            */
+            
+            // TEMPORAL
+            showInfoAlert("Ir a ventana de registro (a implementar)");
+            
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error al abrir ventana de registro", e);
+            showInlineError("", "No se pudo abrir la ventana de registro.");
+        }
+    }
+
+    // ======================== MÉTODOS AUXILIARES ========================
+
+    /**
+     * Muestra mensajes de error inline debajo de los campos.
+     * 
+     * @param emailMessage Mensaje de error para email (vacío si no hay error)
+     * @param passwordMessage Mensaje de error para contraseña (vacío si no hay error)
+     */
     private void showInlineError(String emailMessage, String passwordMessage) {
         Error_email.setText(emailMessage);
         Error_password.setText(passwordMessage);
     }
 
-    private void showError(String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+    /**
+     * Limpia todos los mensajes de error inline.
+     */
+    private void clearErrorMessages() {
+        Error_email.setText("");
+        Error_password.setText("");
     }
 
     /**
-     * Simula autenticaci�n de usuario.
+     * Resalta los campos con error mediante bordes rojos.
+     * 
+     * @param highlightEmail true para resaltar el campo email
+     * @param highlightPassword true para resaltar el campo contraseña
      */
-    private boolean fakeBackendAuth(String email, String password) {
-        // Simulaci�n simple: solo "test@correo.com" con "12345678" es v�lido
-        return email.equals("test@correo.com") && password.equals("12345678");
+    private void highlightErrorFields(boolean highlightEmail, boolean highlightPassword) {
+        if (highlightEmail) {
+            EmailTextField.setStyle(STYLE_ERROR_BORDER);
+        } else {
+            EmailTextField.setStyle(STYLE_NORMAL_BORDER);
+        }
+        
+        if (highlightPassword) {
+            PasswordField.setStyle(STYLE_ERROR_BORDER);
+        } else {
+            PasswordField.setStyle(STYLE_NORMAL_BORDER);
+        }
     }
 
-    private void navigateToMain() {
-        LOGGER.info("Navegando a ventana principal...");
-        // TODO: Implementar la carga y el cambio de escena a la pantalla principal de la aplicaci�n.
-        // Ejemplo: cargar el FXML de la pantalla principal y establecerlo en el Stage actual.
+    /**
+     * Habilita o deshabilita los controles durante operaciones asíncronas.
+     * 
+     * @param disabled true para deshabilitar, false para habilitar
+     */
+    private void setControlsDisabled(boolean disabled) {
+        LoginButton.setDisable(disabled);
+        EmailTextField.setDisable(disabled);
+        PasswordField.setDisable(disabled);
+        GetPasswordLink.setDisable(disabled);
+        SignUpLink.setDisable(disabled);
+    }
+
+    /**
+     * Muestra un diálogo de error modal.
+     * 
+     * @param message Mensaje de error a mostrar
+     */
+    private void showErrorAlert(String message) {
         Platform.runLater(() -> {
-            // TODO: Reemplazar esto por la l�gica real de navegaci�n.
-            showError("Login correcto (simulacion).");
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.initModality(Modality.APPLICATION_MODAL);
+            alert.initOwner(stage);
+            alert.setTitle("Error");
+            alert.setHeaderText(null);
+            alert.setContentText(message);
+            alert.showAndWait();
         });
     }
 
-    private void handleForgotPassword() {
-        LOGGER.info("Evento: forgot_password_requested");
-        try {
-            // Aqu� cargar�as la ventana de recuperaci�n de contrase�a
-            showError("Ir a ventana de recuperacion de contrasenia (a implementar)");
-        } catch (Exception e) {
-            showInlineError("", "No se pudo abrir la ventana de recuperacion.");
-        }
+    /**
+     * Muestra un diálogo de información modal.
+     * 
+     * @param message Mensaje informativo a mostrar
+     */
+    private void showInfoAlert(String message) {
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.initModality(Modality.APPLICATION_MODAL);
+            alert.initOwner(stage);
+            alert.setTitle("Información");
+            alert.setHeaderText(null);
+            alert.setContentText(message);
+            alert.showAndWait();
+        });
     }
 
-    private void handleSignUp() {
-        LOGGER.info("Evento: register_navigated");
-        try {
-            // TODO: Implementar la carga y apertura de la ventana de registro (Sign-Up).
-            // Ejemplo: cargar el FXML de registro y mostrarlo en una nueva escena o ventana.
-            showError("Ir a ventana de registro (a implementar)");
-        } catch (Exception e) {
-            showInlineError("", "No se pudo abrir la ventana de registro.");
-        }
+    // ======================== GETTERS Y SETTERS ========================
+
+    /**
+     * Obtiene el usuario autenticado.
+     * 
+     * @return Customer autenticado o null si no hay sesión
+     */
+    public Customer getLoggedCustomer() {
+        return loggedCustomer;
+    }
+
+    /**
+     * Establece el Stage principal (si es necesario desde fuera).
+     * 
+     * @param stage Stage principal de la aplicación
+     */
+    public void setStage(Stage stage) {
+        this.stage = stage;
     }
 }
