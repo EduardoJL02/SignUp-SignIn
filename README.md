@@ -1,6 +1,6 @@
 # Ventana LOGIN — SignUp-SignIn
 
-Este proyecto contiene una implementación de ejemplo de una ventana de inicio de sesión (LOGIN) creada con JavaFX. La rama actual (`GestionUsuariosFeature`) incluye la interfaz FXML y el controlador que gestionan la validación de correo y contraseña.
+Este proyecto contiene una implementación de ejemplo de una ventana de inicio de sesión (LOGIN) creada con JavaFX y crear una cuenta.
 
 ## Contenido
 
