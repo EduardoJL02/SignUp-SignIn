@@ -13,6 +13,7 @@
             </extension>
         </buildExtensions>
         <data xmlns="http://www.netbeans.org/ns/j2se-project/3">
+            <name>SignUpWindow</name>
             <name>SignUp-SignIn</name>
             <source-roots>
                 <root id="src.dir"/>

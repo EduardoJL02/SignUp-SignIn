@@ -67,7 +67,7 @@ public class CustomerRESTClient {
         resource = resource.path(java.text.MessageFormat.format("{0}", new Object[]{id}));
         return resource.request(javax.ws.rs.core.MediaType.APPLICATION_JSON).get(responseType);
     }
-
+  
     public void create_XML(Object requestEntity) throws ForbiddenException, InternalServerErrorException {
         webTarget.request(javax.ws.rs.core.MediaType.APPLICATION_XML)
             .post(javax.ws.rs.client.Entity.entity(requestEntity,
