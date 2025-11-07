@@ -6,6 +6,7 @@
 package model;
 import java.io.Serializable;
 import java.util.Set;
+import javafx.scene.control.TextField;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
@@ -234,5 +235,9 @@ public class Customer implements Serializable {
     @Override
     public String toString() {
         return "Customer[ name="+ firstName+" "+lastName+" "+" id=" + id + " ]";
+    }
+    
+    public void setFirstName(TextField tfFName) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }
