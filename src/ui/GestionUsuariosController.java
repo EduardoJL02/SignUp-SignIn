@@ -425,13 +425,12 @@ public class GestionUsuariosController {
             }
 
         } catch (ForbiddenException e) {
-            // --- MANEJO DE ERROR 409 (EMAIL DUPLICADO) ---
-            // USAMOS ConflictException COMO PIDE EL REQUISITO
-            LOGGER.log(Level.WARNING, "Creación fallida: Email ya registrado (Conflict 409).", e);
+            // USAMOS ForbiddenException
+            LOGGER.log(Level.WARNING, "Creación fallida: Email ya registrado.", e);
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("Error de Creación");
             alert.setHeaderText("El correo ya está registrado.");
-            alert.setContentText("El correo proporcionado ya está registrado en el sistema.");
+            alert.setContentText("El correo proporcionado\nya está registrado en el sistema.");
             alert.showAndWait();
             setFieldsDisabled(false);
             checkGlobalValidation();
@@ -453,7 +452,7 @@ public class GestionUsuariosController {
         } catch (Exception e) {
             // Manejo de otros errores (400 Bad Request, o error de conexión)
             LOGGER.log(Level.SEVERE, "Error inesperado al crear usuario: " + e.getMessage(), e);
-            new Alert(Alert.AlertType.ERROR, "Datos inválidos o no se pudo conectar con el servidor.").showAndWait();
+            new Alert(Alert.AlertType.ERROR, "Datos inválidos\nO no se pudo conectar con el servidor.").showAndWait();
             setFieldsDisabled(false);
             checkGlobalValidation();
         }
