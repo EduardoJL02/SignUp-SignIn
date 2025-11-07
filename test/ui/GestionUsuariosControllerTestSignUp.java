@@ -27,7 +27,7 @@ import signupwindow.SignUpWindow;
  * @author david
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class GestionUsuariosControllerTest extends ApplicationTest{
+public class GestionUsuariosControllerTestSignUp extends ApplicationTest{
     
     @Override
     public void start(Stage stage) throws Exception{

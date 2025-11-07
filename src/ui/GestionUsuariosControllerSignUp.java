@@ -34,7 +34,7 @@ import java.util.regex.Pattern;
  *
  * @author pablo
  */
-public class GestionUsuariosController {
+public class GestionUsuariosControllerSignUp {
     // --- FXML INJECTIONS ---
     @FXML private TextField tfFName;
     @FXML private TextField tfMName;

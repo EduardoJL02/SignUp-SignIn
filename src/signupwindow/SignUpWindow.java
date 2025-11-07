@@ -9,7 +9,7 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.stage.Stage;
-import ui.GestionUsuariosController;
+import ui.GestionUsuariosControllerSignUp;
 
 /**
  *
@@ -23,7 +23,7 @@ public class SignUpWindow extends Application {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/FXMLDocument.fxml"));
         Parent root = (Parent)loader.load();
         
-        GestionUsuariosController controller=loader.getController();
+        GestionUsuariosControllerSignUp controller=loader.getController();
         
         // ⚠️ Nota: El método init() dentro del controlador ahora maneja la creación
         // del NUEVO Stage (myStage) y establece el 'stage' de start() como su propietario.
