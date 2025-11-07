@@ -35,7 +35,7 @@ public class GestionUsuariosController {
     @FXML private Button LoginButton;
     @FXML private PasswordField PasswordField;
     @FXML private TextField EmailTextField;
-    @FXML private Hyperlink GetPasswordLink;
+    //@FXML private Hyperlink GetPasswordLink;
     @FXML private Hyperlink SignUpLink;
     @FXML private Label LabelTooltipPassword;
     @FXML private Tooltip PasswordTooltip;
@@ -111,7 +111,7 @@ public class GestionUsuariosController {
             EmailTextField.focusedProperty().addListener(this::handleEmailFocusChange);
             PasswordField.textProperty().addListener(this::handlePasswordChange);
             PasswordField.focusedProperty().addListener(this::handlePasswordFocusChange);
-            GetPasswordLink.setOnAction(e -> handleForgotPassword());
+            //GetPasswordLink.setOnAction(e -> handleForgotPassword());
             SignUpLink.setOnAction(e -> handleSignUp());
             
             // Configurar tooltip de requisitos de contraseña
@@ -432,28 +432,28 @@ public class GestionUsuariosController {
     }
 
     /**
-     * Maneja el evento "Olvidé mi contraseña".
+     * Maneja el evento "Olvidé mi contraseña". (MAS ADELANTE)
      */
-    private void handleForgotPassword() {
-        LOGGER.info("Evento: forgot_password_requested");
-        
-        try {
-            // TODO: Implementar navegación a ventana de recuperación
-            /*
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/UI/ForgotPassword.fxml"));
-            Parent root = loader.load();
-            ForgotPasswordController controller = loader.getController();
-            controller.init(new Stage(), root);
-            */
-            
-            // TEMPORAL
-            showInfoAlert("Ir a ventana de recuperación de contraseña (a implementar)");
-            
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error al abrir ventana de recuperación", e);
-            showInlineError("", "No se pudo abrir la ventana de recuperación.");
-        }
-    }
+//    private void handleForgotPassword() {
+//        LOGGER.info("Evento: forgot_password_requested");
+//        
+//        try {
+//            // TODO: Implementar navegación a ventana de recuperación
+//            /*
+//            FXMLLoader loader = new FXMLLoader(getClass().getResource("/UI/ForgotPassword.fxml"));
+//            Parent root = loader.load();
+//            ForgotPasswordController controller = loader.getController();
+//            controller.init(new Stage(), root);
+//            */
+//            
+//            // TEMPORAL
+//            showInfoAlert("Ir a ventana de recuperación de contraseña (a implementar)");
+//            
+//        } catch (Exception e) {
+//            LOGGER.log(Level.SEVERE, "Error al abrir ventana de recuperación", e);
+//            showInlineError("", "No se pudo abrir la ventana de recuperación.");
+//        }
+//    }
 
     /**
      * Maneja el evento "Registrarse".
@@ -529,7 +529,7 @@ public class GestionUsuariosController {
         LoginButton.setDisable(disabled);
         EmailTextField.setDisable(disabled);
         PasswordField.setDisable(disabled);
-        GetPasswordLink.setDisable(disabled);
+        //GetPasswordLink.setDisable(disabled);
         SignUpLink.setDisable(disabled);
     }
 

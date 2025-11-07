@@ -30,7 +30,6 @@ public class PaginaPrincipalController {
     @FXML private Label CustomerNameLabel;
     @FXML private Label EmailLabel;
     @FXML private Label CustomerIdLabel;
-    @FXML private Button ContinueButton;
     @FXML private Button LogoutButton;
 
     // ======================== CONSTANTES ========================
