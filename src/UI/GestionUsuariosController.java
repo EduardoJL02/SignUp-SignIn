@@ -218,8 +218,7 @@ public class GestionUsuariosController {
         } else if (ex instanceof InternalServerErrorException) {
             // 500: Error del servidor
             LOGGER.severe("Evento: login_error_server - Error interno del servidor");
-            showErrorAlert("Error en el servidor.\nPor favor, inténtalo más tarde.\n\n" +
-                          "Si el problema persiste, contacta con el administrador.");
+            showErrorAlert("Error en el servidor.\nPor favor, inténtalo más tarde.");
             
         } else if (ex instanceof ClientErrorException) {
             ClientErrorException clientEx = (ClientErrorException) ex;
@@ -227,8 +226,7 @@ public class GestionUsuariosController {
             
             if (status == 404) {
                 LOGGER.severe("Error 404: El endpoint REST no existe");
-                showErrorAlert("Error: El servicio de autenticación no está disponible.\n\n" +
-                              "Contacta con el administrador del sistema.");
+                showErrorAlert("Error: El servicio de autenticación no está disponible.");
             } else {
                 LOGGER.severe("Error REST " + status + ": " + clientEx.getMessage());
                 showInlineError("", "Error del servidor: código " + status);
@@ -238,7 +236,7 @@ public class GestionUsuariosController {
             // Error genérico (red, timeout, etc.)
             String msg = ex != null && ex.getMessage() != null ? ex.getMessage() : "No se pudo conectar con el servicio.";
             LOGGER.log(Level.SEVERE, "Error durante autenticación REST", ex);
-            showErrorAlert("Error al conectar con el servidor:\n" + msg + "\n\n" +
+            showErrorAlert("Error al conectar con el servidor:\n" +
                           "Verifica tu conexión a internet y que el servidor esté activo.");
         }
     }

@@ -10,7 +10,6 @@ import org.junit.runners.MethodSorters;
 import org.testfx.framework.junit.ApplicationTest;
 import static org.testfx.api.FxAssert.verifyThat;
 import static org.testfx.matcher.base.NodeMatchers.*;
-import static org.testfx.matcher.control.LabeledMatchers.hasText;
 import static org.testfx.matcher.control.TextInputControlMatchers.hasText;
 import signup.signin.SignUpSignIn;
 
@@ -83,7 +82,8 @@ public class GestionUsuariosControllerTest extends ApplicationTest {
     @Test
     public void test1_InitialState() {
         // Verificar que los campos están vacíos
-        
+        verifyThat("#EmailTextField", hasText(""));
+        verifyThat("#PasswordField", hasText(""));
         
         // Verificar que el botón Login está deshabilitado inicialmente
         verifyThat("#LoginButton", isDisabled());
@@ -343,8 +343,5 @@ public class GestionUsuariosControllerTest extends ApplicationTest {
         } catch (Exception e) {
             // El botón Aceptar no existe, continuar
         }
-    }
-
-
-  
+    }  
 }
