@@ -19,7 +19,6 @@ import org.testfx.framework.junit.ApplicationTest;
 import static org.testfx.matcher.base.NodeMatchers.isDisabled;
 import static org.testfx.matcher.base.NodeMatchers.isEnabled;
 import static org.testfx.matcher.base.NodeMatchers.isFocused;
-import static org.testfx.matcher.base.NodeMatchers.isVisible;
 import signupwindow.SignUpWindow;
 
 
@@ -67,7 +66,6 @@ public class GestionUsuariosControllerTest extends ApplicationTest{
         write("Abcd!1234");
         verifyThat("#btCreate", isEnabled());
         clickOn("#btCreate");
-        clickOn("Aceptar");
     }
     
     @Test
@@ -96,6 +94,5 @@ public class GestionUsuariosControllerTest extends ApplicationTest{
         write("PabloRodriguez!1996");
         verifyThat("#btCreate", isEnabled());
         clickOn("#btCreate");
-        clickOn("Aceptar");
     }
 }
