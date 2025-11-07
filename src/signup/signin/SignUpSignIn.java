@@ -43,19 +43,12 @@ public class SignUpSignIn extends Application {
             }
             controller.init(stage, root);
 
-            // Crear escena
-            Scene scene = new Scene(root);
-            stage.setScene(scene);
-            stage.setTitle("LOGIN");
-            stage.setResizable(false);
-
             // Confirmación al cerrar
             stage.setOnCloseRequest(event -> {
                 event.consume(); // prevenir cierre automático
                 handleExit(stage);
             });
 
-            stage.show();
             LOGGER.info("Ventana LOGIN iniciada correctamente.");
 
         } catch (Exception e) {
