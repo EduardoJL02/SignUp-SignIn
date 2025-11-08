@@ -19,7 +19,7 @@ import org.testfx.framework.junit.ApplicationTest;
 import static org.testfx.matcher.base.NodeMatchers.isDisabled;
 import static org.testfx.matcher.base.NodeMatchers.isEnabled;
 import static org.testfx.matcher.base.NodeMatchers.isFocused;
-import signup.signin.SignUpWindow;
+import signup.signin.SignUpSignIn;
 
 
 /**
@@ -31,7 +31,7 @@ public class GestionUsuariosControllerSignUpTest extends ApplicationTest{
     
     @Override
     public void start(Stage stage) throws Exception{
-        new SignUpWindow().start(stage);
+        new SignUpSignIn().start(stage);
     }
 
     @Test

@@ -27,7 +27,7 @@ import model.Customer;
  * Controlador de la ventana Sign-In (Login)
  * Maneja autenticación de usuarios mediante REST API
  * 
- * @author Tu Nombre
+ * @author Eduardo
  */
 public class GestionUsuariosController {
 
@@ -454,28 +454,83 @@ public class GestionUsuariosController {
 //    }
 
     /**
-     * Maneja el evento "Registrarse".
-     */
-    private void handleSignUp() {
-        LOGGER.info("Evento: register_navigated");
+ * Maneja el evento "Registrarse" (Sign Up).
+ * Abre la ventana de registro como modal APPLICATION_MODAL.
+ * 
+ * IMPORTANTE: Según la tabla de comportamiento, si hay error al conectar
+ * con Sign-Up, mostrar error inline (no alert modal).
+ */
+private void handleSignUp() {
+    LOGGER.info("Evento: register_navigated");
+    
+    try {
+        // 1. Verificar que el recurso FXML existe
+        LOGGER.info("Cargando ventana de Sign-Up...");
+        java.net.URL fxmlUrl = getClass().getResource("/UI/FXMLDocumentSignUp.fxml");
         
-        try {
-            // TODO: Implementar navegación a ventana de registro
-            /*
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/UI/SignUp.fxml"));
-            Parent root = loader.load();
-            SignUpController controller = loader.getController();
-            controller.init(new Stage(), root);
-            */
-            
-            // TEMPORAL
-            showInfoAlert("Ir a ventana de registro (a implementar)");
-            
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error al abrir ventana de registro", e);
-            showInlineError("", "No se pudo abrir la ventana de registro.");
+        if (fxmlUrl == null) {
+            LOGGER.severe("ERROR: No se encontró FXMLDocumentSignUp.fxml");
+            showInlineError("", "Error: No se pudo abrir la ventana de registro.");
+            return;
         }
+        
+        // 2. Cargar el FXML
+        FXMLLoader loader = new FXMLLoader(fxmlUrl);
+        Parent root = loader.load();
+        
+        if (root == null) {
+            LOGGER.severe("ERROR: Root es null al cargar Sign-Up FXML");
+            showInlineError("", "Error al cargar la interfaz de registro.");
+            return;
+        }
+        
+        // 3. Obtener el controlador de Sign-Up
+        GestionUsuariosControllerSignUp controller = loader.getController();
+        
+        if (controller == null) {
+            LOGGER.severe("ERROR: Controller de Sign-Up es null");
+            showInlineError("", "Error al cargar el controlador de registro.");
+            return;
+        }
+        
+        // 4. Crear un nuevo Stage MODAL para Sign-Up
+        // El Stage principal (login) será el propietario (owner)
+        Stage signUpStage = new Stage();
+        signUpStage.initOwner(this.stage); // El login es el propietario
+        signUpStage.initModality(Modality.APPLICATION_MODAL); // Bloquea el login
+        signUpStage.setTitle("CREATE ACCOUNT");
+        signUpStage.setResizable(false);
+        
+        // 5. Configurar la escena
+        Scene scene = new Scene(root);
+        signUpStage.setScene(scene);
+        
+        // 6. Inicializar el controlador de Sign-Up
+        // NOTA: Pasamos signUpStage como "parentStage" porque en init()
+        // el controlador creará OTRO Stage interno (ver GestionUsuariosControllerSignUp)
+        // Pero como ya tenemos signUpStage listo, modificaremos init() para usarlo
+        
+        // CORRECCIÓN: Llamar a un método init mejorado (ver siguiente paso)
+        controller.initFromLogin(signUpStage, root);
+        
+        // 7. Mostrar la ventana Sign-Up y esperar a que se cierre
+        LOGGER.info("Ventana Sign-Up abierta correctamente.");
+        signUpStage.showAndWait(); // Bloquea hasta que se cierre Sign-Up
+        
+        LOGGER.info("Ventana Sign-Up cerrada. Control devuelto a Login.");
+        
+        // 8. Opcional: Si el registro fue exitoso, podrías mostrar un mensaje
+        // o pre-cargar el email en el campo de login
+        // (esto requeriría que GestionUsuariosControllerSignUp devuelva un resultado)
+        
+    } catch (java.io.IOException e) {
+        LOGGER.log(Level.SEVERE, "Error de I/O al abrir Sign-Up", e);
+        showInlineError("", "Error al cargar la ventana de registro.");
+    } catch (Exception e) {
+        LOGGER.log(Level.SEVERE, "Error inesperado al abrir Sign-Up", e);
+        showInlineError("", "No se pudo abrir la ventana de registro.");
     }
+}
 
     // ======================== MÉTODOS AUXILIARES ========================
 

@@ -20,7 +20,7 @@ public class SignUpSignIn extends Application {
 
     // Logger for main application events in SignUpSignIn
         private static final Logger LOGGER = Logger.getLogger("SignUpSignIn.Main");
-
+        
     @Override
     public void start(Stage stage) {
         try {
