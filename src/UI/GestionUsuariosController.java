@@ -39,10 +39,6 @@ public class GestionUsuariosController {
     @FXML private Hyperlink SignUpLink;
     @FXML private Label LabelTooltipPassword;
     @FXML private Tooltip PasswordTooltip;
-    @FXML private Label EmailText;
-    @FXML private Label PasswordText;
-    @FXML private Label LoginText;
-    @FXML private Text AccountText;
     @FXML private Label Error_email;
     @FXML private Label Error_password;
 
@@ -341,7 +337,7 @@ public class GestionUsuariosController {
         boolean valid = password != null && password.length() >= MIN_PASSWORD_LENGTH;
 
         if (!valid) {
-            Error_password.setText("The password must contain a minimum length of " + MIN_PASSWORD_LENGTH + " Characters");
+            Error_password.setText(password.isEmpty() ? "Password is required": "Invalid password format");
             return false;
         } else {
             Error_password.setText("");
