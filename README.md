@@ -271,7 +271,6 @@ Controllers   CustomerREST   JAX-RS Client   REST API
 5. Abrir Pull Request
 
 ### **Contacto**
-- Issues: [GitHub Issues](URL_REPOSITORIO/issues)
 - Email: eduardo.jimenez3@educa.madrid.org
 
 ---
