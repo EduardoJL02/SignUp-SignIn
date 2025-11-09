@@ -30,7 +30,7 @@ public class SignUpSignIn extends Application {
 
             if (root == null) {
                 LOGGER.severe("No se pudo cargar la interfaz FXML: root es null.");
-                showError("No se pudo cargar la interfaz de usuario.");
+                showError("The user interface could not be loaded.");
                 return;
             }
 
@@ -38,7 +38,7 @@ public class SignUpSignIn extends Application {
             GestionUsuariosController controller = loader.getController();
             if (controller == null) {
                 LOGGER.severe("No se encontró el controlador en el FXML.");
-                showError("No se encontró el controlador en el archivo FXML.");
+                showError("The driver was not found in the FXML file.");
                 return;
             }
             controller.init(stage, root);
@@ -53,7 +53,7 @@ public class SignUpSignIn extends Application {
 
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error al iniciar Sign-In", e);
-            showError("Ha ocurrido un error al iniciar la aplicación. Por favor, inténtalo de nuevo más tarde.");
+            showError("An error occurred while starting the application. Please try again later.");
         }
     }
 
@@ -64,9 +64,9 @@ public class SignUpSignIn extends Application {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.initModality(Modality.APPLICATION_MODAL);
         alert.initOwner(stage);
-        alert.setTitle("Confirmar salida");
-        alert.setHeaderText("¿Deseas salir de la aplicación?");
-        alert.setContentText("Se cerrarán todas las ventanas.");
+        alert.setTitle("Confirm exit");
+        alert.setHeaderText("Do you want to exit the application?");
+        alert.setContentText("All windows will be closed.");
 
         Optional<ButtonType> result = alert.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {

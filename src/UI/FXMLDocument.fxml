@@ -28,7 +28,7 @@
       <PasswordField fx:id="PasswordField" layoutX="346.0" layoutY="450.0" prefHeight="36.0" prefWidth="332.0" promptText="Password" />
       <Label fx:id="LabelTooltipPassword" layoutX="697.0" layoutY="458.0" text="?">
          <tooltip>
-            <Tooltip fx:id="PasswordTooltip" text="Must contain at least one capital letter and 2 different numbers" />
+            <Tooltip fx:id="PasswordTooltip" text="must contain a minimum length of 8 characters" />
          </tooltip>
          <font>
             <Font size="17.0" />

@@ -54,7 +54,7 @@
          <children>
             
             <!-- Botón para cerrar sesión -->
-            <Button fx:id="LogoutButton" mnemonicParsing="false" prefHeight="45.0" prefWidth="180.0" style="-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-size: 16px; -fx-cursor: hand;" text="Cerrar Sesión">
+            <Button fx:id="LogoutButton" mnemonicParsing="false" prefHeight="45.0" prefWidth="180.0" style="-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-size: 16px; -fx-cursor: hand;" text="Log out">
                <font>
                   <Font name="System Bold" size="16.0" />
                </font>

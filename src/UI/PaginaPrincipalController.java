@@ -53,13 +53,13 @@ public class PaginaPrincipalController {
             
             // Configuración de la ventana
             stage.setScene(new Scene(root));
-            stage.setTitle("Página Principal");
+            stage.setTitle("Main window");
             stage.setResizable(false);
             
             // Verificar que el customer no sea null
             if (customer == null) {
                 LOGGER.severe("Error: Customer is null in PaginaPrincipalController");
-                showErrorAlert("Error: No se pudo cargar la información del usuario.");
+                showErrorAlert("Error: User information could not be loaded.");
                 return;
             }
             
@@ -74,7 +74,7 @@ public class PaginaPrincipalController {
             
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error al inicializar ventana principal", e);
-            showErrorAlert("Error al cargar la ventana principal: " + e.getMessage());
+            showErrorAlert("Error loading the main window: " + e.getMessage());
         }
     }
 
@@ -106,7 +106,7 @@ public class PaginaPrincipalController {
             LOGGER.info("Customer data loaded successfully: " + fullName);
             
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Error al cargar datos del usuario", e);
+            LOGGER.log(Level.WARNING, "Error loading user data", e);
             CustomerNameLabel.setText("Usuario");
         }
     }
@@ -120,11 +120,11 @@ public class PaginaPrincipalController {
         int hour = java.time.LocalTime.now().getHour();
         
         if (hour >= 6 && hour < 12) {
-            return "Buenos días";
+            return "Good mornign";
         } else if (hour >= 12 && hour < 20) {
-            return "Buenas tardes";
+            return "Good afternoon";
         } else {
-            return "Buenas noches";
+            return "Good night";
         }
     }
 
@@ -143,16 +143,16 @@ public class PaginaPrincipalController {
             // Verificar que el stage no sea null
             if (stage == null) {
                 LOGGER.severe("ERROR: Stage es null en handleLogoutButtonAction");
-                showErrorAlert("Error: No se puede cerrar sesión correctamente.");
+                showErrorAlert("Error: Unable to log out successfully.");
                 return;
             }
             // Mostrar diálogo de confirmación
             Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
             confirmAlert.initModality(Modality.APPLICATION_MODAL);
             confirmAlert.initOwner(stage);
-            confirmAlert.setTitle("Confirmar cierre de sesión");
-            confirmAlert.setHeaderText("¿Deseas cerrar sesión?");
-            confirmAlert.setContentText("Tendrás que volver a iniciar sesión para acceder a la aplicación.");
+            confirmAlert.setTitle("Log out confirm");
+            confirmAlert.setHeaderText("Do you want to log out?");
+            confirmAlert.setContentText("You will need to log in again to access the application.");
             
             Optional<ButtonType> result = confirmAlert.showAndWait();
             
@@ -166,7 +166,7 @@ public class PaginaPrincipalController {
             
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error en handleLogoutButtonAction", e);
-            showErrorAlert("Error al cerrar sesión: " + e.getMessage());
+            showErrorAlert("Error to log out: " + e.getMessage());
         }
     }
 

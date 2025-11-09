@@ -115,12 +115,12 @@ public class GestionUsuariosController {
             SignUpLink.setOnAction(e -> handleSignUp());
             
             // Configurar tooltip de requisitos de contraseña
-            PasswordTooltip.setText("La contraseña debe tener al menos " + MIN_PASSWORD_LENGTH + " caracteres.");
+            PasswordTooltip.setText("The password must contain a minimum length of " + MIN_PASSWORD_LENGTH + " characters.");
             Tooltip.install(LabelTooltipPassword, PasswordTooltip);
             
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error al inicializar controlador de login", e);
-            showErrorAlert("Error al inicializar la ventana: " + e.getMessage());
+            showErrorAlert("Error initializing the window: " + e.getMessage());
         }
     }
 
@@ -138,8 +138,8 @@ public class GestionUsuariosController {
 
         // Validación final (por si acaso)
         if (!EMAIL_REGEX.matcher(email).matches() || password.length() < MIN_PASSWORD_LENGTH) {
-            String emailError = !EMAIL_REGEX.matcher(email).matches() ? "Formato de email inválido" : "";
-            String passwordError = password.length() < MIN_PASSWORD_LENGTH ? "Contraseña demasiado corta" : "";
+            String emailError = !EMAIL_REGEX.matcher(email).matches() ? "Invalid email format" : "";
+            String passwordError = password.length() < MIN_PASSWORD_LENGTH ? "Password too short" : "";
             showInlineError(emailError, passwordError);
             return;
         }
@@ -183,7 +183,7 @@ public class GestionUsuariosController {
                 navigateToMain();
             } else {
                 LOGGER.warning("Evento: login_failed - Customer null o sin ID");
-                showInlineError("", "Error inesperado: datos de usuario incompletos.");
+                showInlineError("", "Unexpected error: Incomplete user data.");
                 setControlsDisabled(false);
             }
         });
@@ -210,7 +210,7 @@ public class GestionUsuariosController {
         if (ex instanceof NotAuthorizedException) {
             // 401: Credenciales incorrectas
             LOGGER.info("Evento: login_failed - Credenciales inválidas");
-            showInlineError("", "Email o contraseña incorrectos.");
+            showInlineError("", "Incorrect email or password.");
             highlightErrorFields(true, true);
             PasswordField.requestFocus();
             PasswordField.selectAll();
@@ -218,7 +218,7 @@ public class GestionUsuariosController {
         } else if (ex instanceof InternalServerErrorException) {
             // 500: Error del servidor
             LOGGER.severe("Evento: login_error_server - Error interno del servidor");
-            showErrorAlert("Error en el servidor.\nPor favor, inténtalo más tarde.");
+            showErrorAlert("Server error.\nPlease, Try again later.");
             
         } else if (ex instanceof ClientErrorException) {
             ClientErrorException clientEx = (ClientErrorException) ex;
@@ -226,18 +226,18 @@ public class GestionUsuariosController {
             
             if (status == 404) {
                 LOGGER.severe("Error 404: El endpoint REST no existe");
-                showErrorAlert("Error: El servicio de autenticación no está disponible.");
+                showErrorAlert("Error: The authentication service is unavailable.");
             } else {
                 LOGGER.severe("Error REST " + status + ": " + clientEx.getMessage());
-                showInlineError("", "Error del servidor: código " + status);
+                showInlineError("", "Server error: code " + status);
             }
             
         } else {
             // Error genérico (red, timeout, etc.)
-            String msg = ex != null && ex.getMessage() != null ? ex.getMessage() : "No se pudo conectar con el servicio.";
+            String msg = ex != null && ex.getMessage() != null ? ex.getMessage() : "Unable to connect to the service.";
             LOGGER.log(Level.SEVERE, "Error durante autenticación REST", ex);
-            showErrorAlert("Error al conectar con el servidor:\n" +
-                          "Verifica tu conexión a internet y que el servidor esté activo.");
+            showErrorAlert("Error connecting to the server:\n" +
+                          "Check your internet connection and that the server is active.");
         }
     }
 
@@ -251,9 +251,9 @@ public class GestionUsuariosController {
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.initModality(Modality.APPLICATION_MODAL);
             alert.initOwner(stage);
-            alert.setTitle("Login exitoso");
-            alert.setHeaderText("¡Bienvenido!");
-            alert.setContentText("Hola, " + customer.getFirstName() + " " + customer.getLastName());
+            alert.setTitle("Login successful");
+            alert.setHeaderText("Welcome!");
+            alert.setContentText("Hi, " + customer.getFirstName() + " " + customer.getLastName());
             alert.showAndWait();
         });
     }
@@ -323,7 +323,7 @@ public class GestionUsuariosController {
         boolean valid = !email.isEmpty() && EMAIL_REGEX.matcher(email).matches();
 
         if (!valid) {
-            Error_email.setText(email.isEmpty() ? "El email es obligatorio" : "Formato de email inválido");
+            Error_email.setText(email.isEmpty() ? "Email is required": "Invalid email format");
             return false;
         } else {
             Error_email.setText("");
@@ -341,7 +341,7 @@ public class GestionUsuariosController {
         boolean valid = password != null && password.length() >= MIN_PASSWORD_LENGTH;
 
         if (!valid) {
-            Error_password.setText("La contraseña debe tener al menos " + MIN_PASSWORD_LENGTH + " caracteres");
+            Error_password.setText("The password must contain a minimum length of " + MIN_PASSWORD_LENGTH + " Characters");
             return false;
         } else {
             Error_password.setText("");
@@ -367,8 +367,8 @@ public class GestionUsuariosController {
                 
                 if (fxmlUrl == null) {
                     LOGGER.severe("ERROR: No se encontró el archivo PaginaPrincipal.fxml en /UI/");
-                    showErrorAlert("Error: No se encontró el archivo PaginaPrincipal.fxml\n\n" +
-                                  "Verifica que el archivo esté en src/UI/PaginaPrincipal.fxml");
+                    showErrorAlert("Error: PaginaPrincipal.fxml file not found\n\n" +
+                                  "Verify the file is on path src/UI/PaginaPrincipal.fxml");
                     return;
                 }
                 LOGGER.info("Recurso encontrado: " + fxmlUrl);
@@ -385,8 +385,8 @@ public class GestionUsuariosController {
                 
                 if (controller == null) {
                     LOGGER.severe("ERROR: Controller es NULL. Verifica fx:controller en PaginaPrincipal.fxml");
-                    showErrorAlert("Error: No se pudo cargar el controlador de la ventana principal.\n\n" +
-                                  "Verifica que PaginaPrincipal.fxml tenga: fx:controller=\"UI.PaginaPrincipalController\"");
+                    showErrorAlert("Error: Main window driver could not be loaded.\n\n" +
+                                  "Verify file PaginaPrincipal.fxml has: fx:controller=\"UI.PaginaPrincipalController\"");
                     return;
                 }
                 LOGGER.info("Controlador obtenido: " + controller.getClass().getName());
@@ -395,7 +395,7 @@ public class GestionUsuariosController {
                 LOGGER.info("Paso 4: Pasando customer al controlador...");
                 if (loggedCustomer == null) {
                     LOGGER.severe("ERROR: loggedCustomer es NULL");
-                    showErrorAlert("Error: No hay información del usuario autenticado.");
+                    showErrorAlert("Error: No information available for the authenticated user.");
                     return;
                 }
                 controller.setCustomer(loggedCustomer);
@@ -405,7 +405,7 @@ public class GestionUsuariosController {
                 LOGGER.info("Paso 5: Verificando stage...");
                 if (stage == null) {
                     LOGGER.severe("ERROR: Stage es NULL");
-                    showErrorAlert("Error: No hay ventana disponible para navegar.");
+                    showErrorAlert("Error: No window is available for browsing.");
                     return;
                 }
                 LOGGER.info("Stage verificado: OK");
@@ -419,12 +419,12 @@ public class GestionUsuariosController {
                 
             } catch (java.io.IOException e) {
                 LOGGER.log(Level.SEVERE, "Error de I/O al cargar FXML", e);
-                showErrorAlert("Error al cargar la interfaz:\n" + e.getMessage() + "\n\n" +
-                              "Verifica que PaginaPrincipal.fxml esté en src/UI/");
+                showErrorAlert("Error loading interface:\n" + e.getMessage() + "\n\n" +
+                              "Verify the file PaginaPrincipal.fxml is on path src/UI/");
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE, "Error inesperado al navegar", e);
                 e.printStackTrace(); // Para ver el stacktrace completo
-                showErrorAlert("Error inesperado: " + e.getMessage());
+                showErrorAlert("Unexpected error: " + e.getMessage());
             }
         });
     }
@@ -457,8 +457,8 @@ public class GestionUsuariosController {
  * Maneja el evento "Registrarse" (Sign Up).
  * Abre la ventana de registro como modal APPLICATION_MODAL.
  * 
- * IMPORTANTE: Según la tabla de comportamiento, si hay error al conectar
- * con Sign-Up, mostrar error inline (no alert modal).
+ * IMPORTANTE: Si hay error al conectar con Sign-Up,
+ * mostrar error inline (no alert modal).
  */
 private void handleSignUp() {
     LOGGER.info("Evento: register_navigated");
@@ -470,7 +470,7 @@ private void handleSignUp() {
         
         if (fxmlUrl == null) {
             LOGGER.severe("ERROR: No se encontró FXMLDocumentSignUp.fxml");
-            showInlineError("", "Error: No se pudo abrir la ventana de registro.");
+            showInlineError("", "Error: The registration window could not be opened.");
             return;
         }
         
@@ -480,7 +480,7 @@ private void handleSignUp() {
         
         if (root == null) {
             LOGGER.severe("ERROR: Root es null al cargar Sign-Up FXML");
-            showInlineError("", "Error al cargar la interfaz de registro.");
+            showInlineError("", "Error loading the registration window.");
             return;
         }
         
@@ -489,7 +489,7 @@ private void handleSignUp() {
         
         if (controller == null) {
             LOGGER.severe("ERROR: Controller de Sign-Up es null");
-            showInlineError("", "Error al cargar el controlador de registro.");
+            showInlineError("", "Error loading the registration controller.");
             return;
         }
         
@@ -525,10 +525,10 @@ private void handleSignUp() {
         
     } catch (java.io.IOException e) {
         LOGGER.log(Level.SEVERE, "Error de I/O al abrir Sign-Up", e);
-        showInlineError("", "Error al cargar la ventana de registro.");
+        showInlineError("", "Error loading the registration window.");
     } catch (Exception e) {
         LOGGER.log(Level.SEVERE, "Error inesperado al abrir Sign-Up", e);
-        showInlineError("", "No se pudo abrir la ventana de registro.");
+        showInlineError("", "Error: The registration window could not be opened.");
     }
 }
 
@@ -613,7 +613,7 @@ private void handleSignUp() {
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.initModality(Modality.APPLICATION_MODAL);
             alert.initOwner(stage);
-            alert.setTitle("Información");
+            alert.setTitle("Information");
             alert.setHeaderText(null);
             alert.setContentText(message);
             alert.showAndWait();
