@@ -12,16 +12,29 @@ import static org.testfx.api.FxAssert.verifyThat;
 import static org.testfx.matcher.control.TextInputControlMatchers.hasText;
 import signup.signin.SignUpSignIn;
 
-/** 
- * Entorno de pruebas para GestionUsuariosController (Sign-In)
+/**
+ * Test class for GestionUsuariosController that verifies the login functionality and UI behavior.
+ * Uses TestFX framework for JavaFX UI testing.
  * 
- * REQUISITOS:
- * - GlassFish activo
- * - Base de datos con usuario de prueba
- * - Dependencias TestFX agregadas al proyecto
+ * Test cases cover:
+ * - Initial state validation of the login window
+ * - Login button enable/disable behavior based on input
+ * - Email format and password length validation
+ * - Error handling for incorrect credentials
+ * - Navigation to registration window
+ * - Successful login flow
+ *
+ * Requirements:
+ * - JavaFX environment
+ * - TestFX framework
+ * - Active GlassFish server for authentication tests
  * 
- * @author Eduardo
- */ 
+ * Test execution order is controlled using @FixMethodOrder to ensure
+ * tests run in ascending name order.
+ *
+ * @see UI.GestionUsuariosController
+ * @see SignUpSignIn
+ */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING) public class GestionUsuariosControllerTest extends ApplicationTest{
     @Override
     public void start(Stage stage) throws Exception {

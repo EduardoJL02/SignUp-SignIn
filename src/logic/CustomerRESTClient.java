@@ -22,8 +22,31 @@ import javax.ws.rs.client.WebTarget;
  *        // do whatever with response
  *        client.close();
  * </pre>
+ * This class provides a REST client for managing customer operations.
+ * It handles HTTP requests to a REST API endpoint for customer-related CRUD operations
+ * and authentication.
  *
- * @author edu
+ * The client supports both XML and JSON data formats for requests and responses.
+ * It connects to a server running at localhost:8080.
+ *
+ * Methods include:
+ * - Creating new customers
+ * - Finding customers by ID
+ * - Finding customers by email/password (authentication)
+ * - Editing existing customers
+ * - Removing customers
+ * - Retrieving all customers
+ *
+ * All methods can throw ClientErrorException for HTTP client errors.
+ * Some methods may throw specific exceptions like:
+ * - ForbiddenException for 403 errors
+ * - InternalServerErrorException for 500 errors
+ * - NotAuthorizedException for 401 errors
+ *
+ * @author Generated REST client
+ * @version 1.0
+ * @see javax.ws.rs.client.WebTarget
+ * @see javax.ws.rs.client.Client
  */
 public class CustomerRESTClient {
 

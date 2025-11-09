@@ -18,10 +18,28 @@ import javafx.stage.Stage;
 import model.Customer;
 
 /**
- * Controlador de la Página Principal (después del login exitoso)
- * Muestra información del usuario autenticado y permite navegar a otras funcionalidades
+ * Controller class for the main page (PaginaPrincipal) of the application.
+ * Manages the user interface and interactions after successful login.
+ * 
+ * This controller handles:
+ * - Displaying user information (name, email, ID)
+ * - Customized welcome messages based on time of day
+ * - Logout functionality with confirmation
+ * - Error handling and user notifications
+ * 
+ * The class follows a standard JavaFX controller pattern with FXML injection
+ * and requires proper initialization through the init() method.
+ * 
+ * Important notes:
+ * - setCustomer() must be called BEFORE init()
+ * - Requires valid FXML components to be properly injected
+ * - Implements logging for debugging and error tracking
  * 
  * @author Eduardo
+ * @version 1.0
+ * @see Customer
+ * @see GestionUsuariosController
+ * @see PaginaPrincipal.fxml
  */
 public class PaginaPrincipalController {
 

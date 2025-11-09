@@ -14,7 +14,21 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Punto de entrada de la aplicación Sign-In / Login
+ * Main application class for the Sign Up/Sign In system.
+ * This class handles the initialization of the JavaFX application, including loading the FXML interface,
+ * setting up the main controller, and managing application lifecycle events.
+ * 
+ * The class provides functionality for:
+ * - Loading and initializing the main user interface
+ * - Setting up event handlers for application exit
+ * - Displaying error messages when necessary
+ * - Handling graceful application shutdown
+ * 
+ * This application uses FXML for UI definition and implements logging for tracking application events.
+ * 
+ * @extends Application JavaFX Application class
+ * @see javafx.application.Application
+ * @see GestionUsuariosController
  */
 public class SignUpSignIn extends Application {
 

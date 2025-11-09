@@ -24,10 +24,38 @@ import logic.CustomerRESTClient;
 import model.Customer;
 
 /**
- * Controlador de la ventana Sign-In (Login)
- * Maneja autenticación de usuarios mediante REST API
+ * Controller class for managing user authentication and navigation in the application.
+ * Handles login functionality, input validation, and navigation to other views.
+ * 
+ * This controller manages:
+ * - User login authentication through REST services
+ * - Real-time validation of email and password inputs
+ * - Error handling and user feedback
+ * - Navigation to main application window and sign-up window
+ * 
+ * The class follows these validation rules:
+ * - Email must match standard email format
+ * - Password must be at least 8 characters long
+ * 
+ * Key features:
+ * - Asynchronous REST authentication
+ * - Real-time input validation
+ * - Visual feedback for input errors
+ * - Modal dialogs for important messages
+ * - Logging of all significant events
+ * 
+ * Dependencies:
+ * - JavaFX for UI components
+ * - REST client for backend communication
+ * - Logger for event tracking
  * 
  * @author Eduardo
+ * @version 1.0
+ * @see FXMLDocument
+ * @see CustomerRESTClient
+ * @see PaginaPrincipalController
+ * @see GestionUsuariosControllerSignUp
+ * 
  */
 public class GestionUsuariosController {
 
