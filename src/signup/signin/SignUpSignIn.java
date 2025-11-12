@@ -17,7 +17,7 @@ import java.util.logging.Logger;
  * Main application class for the Sign Up/Sign In system.
  * This class handles the initialization of the JavaFX application, including loading the FXML interface,
  * setting up the main controller, and managing application lifecycle events.
- * 
+ *
  * The class provides functionality for:
  * - Loading and initializing the main user interface
  * - Setting up event handlers for application exit
@@ -31,7 +31,7 @@ import java.util.logging.Logger;
  * @see GestionUsuariosController
  */
 public class SignUpSignIn extends Application {
-
+    
     // Logger for main application events in SignUpSignIn
         private static final Logger LOGGER = Logger.getLogger("SignUpSignIn.Main");
         
@@ -41,13 +41,13 @@ public class SignUpSignIn extends Application {
             // Cargar interfaz desde FXML
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/UI/FXMLDocument.fxml"));
             Parent root = loader.load();
-
+        
             if (root == null) {
                 LOGGER.severe("No se pudo cargar la interfaz FXML: root es null.");
                 showError("The user interface could not be loaded.");
                 return;
             }
-
+        
             // Obtener controlador y pasar Stage
             GestionUsuariosController controller = loader.getController();
             if (controller == null) {
@@ -55,8 +55,8 @@ public class SignUpSignIn extends Application {
                 showError("The driver was not found in the FXML file.");
                 return;
             }
-            controller.init(stage, root);
-
+        controller.init(stage, root);
+        
             // Confirmación al cerrar
             stage.setOnCloseRequest(event -> {
                 event.consume(); // prevenir cierre automático
@@ -68,7 +68,7 @@ public class SignUpSignIn extends Application {
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error al iniciar Sign-In", e);
             showError("An error occurred while starting the application. Please try again later.");
-        }
+    }
     }
 
     /**

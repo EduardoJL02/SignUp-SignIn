@@ -99,13 +99,13 @@ public class GestionUsuariosControllerSignUp {
 // MÉTODOS DE INICIALIZACIÓN
 // ============================================================================
 
-/**
+    /**
  * Inicialización NUEVA: Para ser llamado desde Login.
  * Usa el Stage ya creado en lugar de crear uno nuevo.
  * 
  * @param stage El Stage ya configurado (modal) desde Login
  * @param root El Parent ya cargado desde Login
- */
+     */
 public void initFromLogin(Stage stage, Parent root) {
     try {
         LOGGER.log(Level.INFO, "Initializing SignUp from Login (using existing Stage)");
@@ -148,28 +148,28 @@ public void initFromLogin(Stage stage, Parent root) {
  * Inicialización ORIGINAL: Mantener para compatibilidad si se usa como app independiente.
  * (Conservar el método init() existente sin cambios por si acaso)
  */
-public void init(Stage parentStage, Parent root) {
-    try {
+    public void init(Stage parentStage, Parent root) {
+        try {
         LOGGER.log(Level.INFO, "Initializing SignUp (CREATE ACCOUNT) - Standalone mode");
 
-        Scene scene = new Scene(root);
+            Scene scene = new Scene(root);
 
         // Crear un nuevo Stage modal
-        Stage dialogStage = new Stage();
+            Stage dialogStage = new Stage();
         this.stage = dialogStage;
 
-        dialogStage.initOwner(parentStage);
-        dialogStage.initModality(Modality.APPLICATION_MODAL);
-        dialogStage.setScene(scene);
-        dialogStage.setTitle("CREATE ACCOUNT");
-        dialogStage.setResizable(false);
+            dialogStage.initOwner(parentStage);
+            dialogStage.initModality(Modality.APPLICATION_MODAL);
+            dialogStage.setScene(scene);
+            dialogStage.setTitle("CREATE ACCOUNT");
+            dialogStage.setResizable(false);
 
         // Estado inicial
-        btBack.setDisable(false);
-        btCreate.setDisable(true);
+            btBack.setDisable(false);
+            btCreate.setDisable(true);
 
         // Foco inicial
-        tfFName.requestFocus();
+            tfFName.requestFocus();
 
         // Configurar manejadores
         setupEventHandlers();
@@ -193,44 +193,44 @@ public void init(Stage parentStage, Parent root) {
  */
 private void setupEventHandlers() {
     // Asignación de manejadores a eventos
-    btCreate.setOnAction(this::handleBtCreateOnAction);
-    btBack.setOnAction(this::handleBtBackOnAction);
+            btCreate.setOnAction(this::handleBtCreateOnAction);
+            btBack.setOnAction(this::handleBtBackOnAction);
 
     // Listeners para todos los campos (FNAME, MNAME, LNAME, etc.)
-    tfFName.textProperty().addListener(this::handleTfFNameTextChange);
-    tfFName.focusedProperty().addListener(this::handleTfFNameFocusChange);
+            tfFName.textProperty().addListener(this::handleTfFNameTextChange);
+            tfFName.focusedProperty().addListener(this::handleTfFNameFocusChange);
     
-    tfMName.textProperty().addListener(this::handleTfMNameTextChange);
-    tfMName.focusedProperty().addListener(this::handleTfMNameFocusChange);
+            tfMName.textProperty().addListener(this::handleTfMNameTextChange);
+            tfMName.focusedProperty().addListener(this::handleTfMNameFocusChange);
     
-    tfLName.textProperty().addListener(this::handleTfLNameTextChange);
-    tfLName.focusedProperty().addListener(this::handleTfLNameFocusChange);
+            tfLName.textProperty().addListener(this::handleTfLNameTextChange);
+            tfLName.focusedProperty().addListener(this::handleTfLNameFocusChange);
     
-    tfAddress.textProperty().addListener(this::handleTfAddressTextChange);
-    tfAddress.focusedProperty().addListener(this::handleTfAddressFocusChange);
+            tfAddress.textProperty().addListener(this::handleTfAddressTextChange);
+            tfAddress.focusedProperty().addListener(this::handleTfAddressFocusChange);
     
-    tfCity.textProperty().addListener(this::handleTfCityTextChange);
-    tfCity.focusedProperty().addListener(this::handleTfCityFocusChange);
+            tfCity.textProperty().addListener(this::handleTfCityTextChange);
+            tfCity.focusedProperty().addListener(this::handleTfCityFocusChange);
     
-    tfState.textProperty().addListener(this::handleTfStateTextChange);
-    tfState.focusedProperty().addListener(this::handleTfStateFocusChange);
+            tfState.textProperty().addListener(this::handleTfStateTextChange);
+            tfState.focusedProperty().addListener(this::handleTfStateFocusChange);
     
-    tfZip.textProperty().addListener(this::handleTfZipTextChange);
-    tfZip.focusedProperty().addListener(this::handleTfZipFocusChange);
+            tfZip.textProperty().addListener(this::handleTfZipTextChange);
+            tfZip.focusedProperty().addListener(this::handleTfZipFocusChange);
     
-    tfPhone.textProperty().addListener(this::handleTfPhoneTextChange);
-    tfPhone.focusedProperty().addListener(this::handleTfPhoneFocusChange);
+            tfPhone.textProperty().addListener(this::handleTfPhoneTextChange);
+            tfPhone.focusedProperty().addListener(this::handleTfPhoneFocusChange);
     
-    tfEmail.textProperty().addListener(this::handleTfEmailTextChange);
-    tfEmail.focusedProperty().addListener(this::handleTfEmailFocusChange);
+            tfEmail.textProperty().addListener(this::handleTfEmailTextChange);
+            tfEmail.focusedProperty().addListener(this::handleTfEmailFocusChange);
     
-    tfPass.textProperty().addListener(this::handleTfPassTextChange);
-    tfPass.focusedProperty().addListener(this::handleTfPassFocusChange);
+            tfPass.textProperty().addListener(this::handleTfPassTextChange);
+            tfPass.focusedProperty().addListener(this::handleTfPassFocusChange);
     
-    tfRPass.textProperty().addListener(this::handleTfRPassTextChange);
-    tfRPass.focusedProperty().addListener(this::handleTfRPassFocusChange);
-}
-  
+            tfRPass.textProperty().addListener(this::handleTfRPassTextChange);
+            tfRPass.focusedProperty().addListener(this::handleTfRPassFocusChange);
+        }
+
     // -------------------------------------------------------------------------
     // --- LÓGICA DE VALIDACIÓN CENTRAL ---
     // -------------------------------------------------------------------------
