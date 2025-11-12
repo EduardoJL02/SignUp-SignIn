@@ -24,10 +24,10 @@ import signup.signin.SignUpSignIn;
 
 /**
  *
- * @author david
+ * @author Pablo
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class GestionUsuariosControllerSignUpTest extends ApplicationTest{
+public class GestionUsuariosControllerTestSignUp extends ApplicationTest{
     
     @Override
     public void start(Stage stage) throws Exception{

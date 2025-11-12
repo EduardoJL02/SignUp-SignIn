@@ -28,7 +28,6 @@ import logic.CustomerRESTClient;
 import model.Customer;
 import java.util.Optional;
 import java.util.regex.Pattern;
-import javafx.application.Platform;
 
 /**
  * Controlador para la ventana de Registro (CREATE ACCOUNT)
@@ -65,7 +64,7 @@ public class GestionUsuariosControllerSignUp {
     @FXML private Label repeatPasswordError;
 
     // --- ATRIBUTOS DE CLASE ---
-    private static final Logger LOGGER = Logger.getLogger("SignUpSignIn.SignUp");
+    private static final Logger LOGGER = Logger.getLogger("ui");
     /**
      * El Stage (ventana) de este controlador. Se inicializa en init().
      */
@@ -95,142 +94,91 @@ public class GestionUsuariosControllerSignUp {
     private boolean isPasswordValid = false;
     private boolean isRepeatPasswordMatching = false;
 
-// ============================================================================
-// MÉTODOS DE INICIALIZACIÓN
-// ============================================================================
+    // ------------------------------------------
 
-/**
- * Inicialización NUEVA: Para ser llamado desde Login.
- * Usa el Stage ya creado en lugar de crear uno nuevo.
- * 
- * @param stage El Stage ya configurado (modal) desde Login
- * @param root El Parent ya cargado desde Login
- */
-public void initFromLogin(Stage stage, Parent root) {
-    try {
-        LOGGER.log(Level.INFO, "Initializing SignUp from Login (using existing Stage)");
+    /**
+     * Inicializa la ventana y configura manejadores de eventos y propiedades.
+     * @param parentStage El Stage principal (propietario).
+     * @param root El Parent (root node) cargado desde el FXML.
+     */
+    public void init(Stage parentStage, Parent root) {
+        try {
+            LOGGER.log(Level.INFO, "Initializing SignUp (CREATE ACCOUNT)");
 
-        // Guardar referencia al Stage
-        this.stage = stage;
+            Scene scene = new Scene(root);
 
-        // Configurar el Stage (ya debería tener modality y owner desde Login)
-        stage.setTitle("CREATE ACCOUNT");
-        stage.setResizable(false);
-        
-        // Configurar la escena (ya debería estar asignada desde Login, pero por seguridad)
-        if (stage.getScene() == null) {
-            stage.setScene(new Scene(root));
+            // --- CORRECCIÓN DEL ERROR DE MODALIDAD ---
+            Stage dialogStage = new Stage();
+            this.stage = dialogStage; // Guardamos la referencia del nuevo Stage
+
+            dialogStage.initOwner(parentStage);
+            dialogStage.initModality(Modality.APPLICATION_MODAL);
+            // ----------------------------------------
+
+            dialogStage.setScene(scene);
+            dialogStage.setTitle("CREATE ACCOUNT");
+            dialogStage.setResizable(false);
+
+            // Estado inicial de los botones
+            btBack.setDisable(false);
+            btCreate.setDisable(true);
+
+            // Foco inicial en el campo Nombre
+            tfFName.requestFocus();
+
+            // Asignación de manejadores a eventos y properties
+            btCreate.setOnAction(this::handleBtCreateOnAction);
+            btBack.setOnAction(this::handleBtBackOnAction);
+
+            // Configuramos los listeners para todos los campos obligatorios
+
+            // FNAME
+            tfFName.textProperty().addListener(this::handleTfFNameTextChange);
+            tfFName.focusedProperty().addListener(this::handleTfFNameFocusChange);
+            // MIDDLE NAME
+            tfMName.textProperty().addListener(this::handleTfMNameTextChange);
+            tfMName.focusedProperty().addListener(this::handleTfMNameFocusChange);
+            // LAST NAME
+            tfLName.textProperty().addListener(this::handleTfLNameTextChange);
+            tfLName.focusedProperty().addListener(this::handleTfLNameFocusChange);
+            // ADDRESS
+            tfAddress.textProperty().addListener(this::handleTfAddressTextChange);
+            tfAddress.focusedProperty().addListener(this::handleTfAddressFocusChange);
+            // CITY
+            tfCity.textProperty().addListener(this::handleTfCityTextChange);
+            tfCity.focusedProperty().addListener(this::handleTfCityFocusChange);
+            // STATE
+            tfState.textProperty().addListener(this::handleTfStateTextChange);
+            tfState.focusedProperty().addListener(this::handleTfStateFocusChange);
+            // ZIP
+            tfZip.textProperty().addListener(this::handleTfZipTextChange);
+            tfZip.focusedProperty().addListener(this::handleTfZipFocusChange);
+            // PHONE
+            tfPhone.textProperty().addListener(this::handleTfPhoneTextChange);
+            tfPhone.focusedProperty().addListener(this::handleTfPhoneFocusChange);
+            // EMAIL
+            tfEmail.textProperty().addListener(this::handleTfEmailTextChange);
+            tfEmail.focusedProperty().addListener(this::handleTfEmailFocusChange);
+            // PASSWORD
+            tfPass.textProperty().addListener(this::handleTfPassTextChange);
+            tfPass.focusedProperty().addListener(this::handleTfPassFocusChange);
+            // REPEAT PASSWORD
+            tfRPass.textProperty().addListener(this::handleTfRPassTextChange);
+            tfRPass.focusedProperty().addListener(this::handleTfRPassFocusChange);
+
+            // Mostrar la ventana
+            dialogStage.show();
+
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error fatal al inicializar la ventana SignUp", e);
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Error de Aplicación");
+            alert.setHeaderText("No se pudo cargar la ventana de registro.");
+            alert.setContentText("Ocurrió un error inesperado: " + e.getMessage());
+            alert.showAndWait();
         }
-
-        // Estado inicial de los botones
-        btBack.setDisable(false);
-        btCreate.setDisable(true);
-
-        // Foco inicial en el campo Nombre
-        Platform.runLater(() -> tfFName.requestFocus());
-
-        // Configurar manejadores de eventos
-        setupEventHandlers();
-
-        LOGGER.log(Level.INFO, "SignUp initialized successfully from Login");
-
-    } catch (Exception e) {
-        LOGGER.log(Level.SEVERE, "Error fatal al inicializar Sign-Up desde Login", e);
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Error de Aplicación");
-        alert.setHeaderText("No se pudo cargar la ventana de registro.");
-        alert.setContentText("Ocurrió un error inesperado: " + e.getMessage());
-        alert.showAndWait();
     }
-}
 
-/**
- * Inicialización ORIGINAL: Mantener para compatibilidad si se usa como app independiente.
- * (Conservar el método init() existente sin cambios por si acaso)
- */
-public void init(Stage parentStage, Parent root) {
-    try {
-        LOGGER.log(Level.INFO, "Initializing SignUp (CREATE ACCOUNT) - Standalone mode");
-
-        Scene scene = new Scene(root);
-
-        // Crear un nuevo Stage modal
-        Stage dialogStage = new Stage();
-        this.stage = dialogStage;
-
-        dialogStage.initOwner(parentStage);
-        dialogStage.initModality(Modality.APPLICATION_MODAL);
-        dialogStage.setScene(scene);
-        dialogStage.setTitle("CREATE ACCOUNT");
-        dialogStage.setResizable(false);
-
-        // Estado inicial
-        btBack.setDisable(false);
-        btCreate.setDisable(true);
-
-        // Foco inicial
-        tfFName.requestFocus();
-
-        // Configurar manejadores
-        setupEventHandlers();
-
-        // Mostrar la ventana
-        dialogStage.show();
-
-    } catch (Exception e) {
-        LOGGER.log(Level.SEVERE, "Error fatal al inicializar Sign-Up", e);
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Error de Aplicación");
-        alert.setHeaderText("No se pudo cargar la ventana de registro.");
-        alert.setContentText("Ocurrió un error inesperado: " + e.getMessage());
-        alert.showAndWait();
-    }
-}
-
-/**
- * Método auxiliar para configurar todos los event handlers.
- * Evita duplicación de código entre init() e initFromLogin().
- */
-private void setupEventHandlers() {
-    // Asignación de manejadores a eventos
-    btCreate.setOnAction(this::handleBtCreateOnAction);
-    btBack.setOnAction(this::handleBtBackOnAction);
-
-    // Listeners para todos los campos (FNAME, MNAME, LNAME, etc.)
-    tfFName.textProperty().addListener(this::handleTfFNameTextChange);
-    tfFName.focusedProperty().addListener(this::handleTfFNameFocusChange);
-    
-    tfMName.textProperty().addListener(this::handleTfMNameTextChange);
-    tfMName.focusedProperty().addListener(this::handleTfMNameFocusChange);
-    
-    tfLName.textProperty().addListener(this::handleTfLNameTextChange);
-    tfLName.focusedProperty().addListener(this::handleTfLNameFocusChange);
-    
-    tfAddress.textProperty().addListener(this::handleTfAddressTextChange);
-    tfAddress.focusedProperty().addListener(this::handleTfAddressFocusChange);
-    
-    tfCity.textProperty().addListener(this::handleTfCityTextChange);
-    tfCity.focusedProperty().addListener(this::handleTfCityFocusChange);
-    
-    tfState.textProperty().addListener(this::handleTfStateTextChange);
-    tfState.focusedProperty().addListener(this::handleTfStateFocusChange);
-    
-    tfZip.textProperty().addListener(this::handleTfZipTextChange);
-    tfZip.focusedProperty().addListener(this::handleTfZipFocusChange);
-    
-    tfPhone.textProperty().addListener(this::handleTfPhoneTextChange);
-    tfPhone.focusedProperty().addListener(this::handleTfPhoneFocusChange);
-    
-    tfEmail.textProperty().addListener(this::handleTfEmailTextChange);
-    tfEmail.focusedProperty().addListener(this::handleTfEmailFocusChange);
-    
-    tfPass.textProperty().addListener(this::handleTfPassTextChange);
-    tfPass.focusedProperty().addListener(this::handleTfPassFocusChange);
-    
-    tfRPass.textProperty().addListener(this::handleTfRPassTextChange);
-    tfRPass.focusedProperty().addListener(this::handleTfRPassFocusChange);
-}
-  
     // -------------------------------------------------------------------------
     // --- LÓGICA DE VALIDACIÓN CENTRAL ---
     // -------------------------------------------------------------------------
