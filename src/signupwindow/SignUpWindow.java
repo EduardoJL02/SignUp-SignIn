@@ -13,14 +13,14 @@ import UI.GestionUsuariosControllerSignUp;
 
 /**
  *
- * @author edu
+ * @author Pablo
  */
 public class SignUpWindow extends Application {
     
     @Override
     public void start(Stage stage) throws Exception {
         
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/FXMLDocument.fxml"));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/UI/FXMLDocumentSignUp.fxml"));
         Parent root = (Parent)loader.load();
         
         GestionUsuariosControllerSignUp controller=loader.getController();
