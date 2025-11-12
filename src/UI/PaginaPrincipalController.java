@@ -138,7 +138,7 @@ public class PaginaPrincipalController {
         int hour = java.time.LocalTime.now().getHour();
         
         if (hour >= 6 && hour < 12) {
-            return "Good mornign";
+            return "Good morning";
         } else if (hour >= 12 && hour < 20) {
             return "Good afternoon";
         } else {
