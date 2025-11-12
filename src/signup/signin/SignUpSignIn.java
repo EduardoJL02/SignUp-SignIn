@@ -29,6 +29,7 @@ import java.util.logging.Logger;
  * @extends Application JavaFX Application class
  * @see javafx.application.Application
  * @see GestionUsuariosController
+ * @author Eduardo y Pablo
  */
 public class SignUpSignIn extends Application {
     
