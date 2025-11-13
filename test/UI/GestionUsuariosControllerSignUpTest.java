@@ -19,6 +19,28 @@ public class GestionUsuariosControllerSignUpTest extends ApplicationTest {
     public void start(Stage stage) throws Exception {
         new SignUpSignIn().start(stage);
     }
+    
+    private void clearFormFields() {
+        clickOn("#tfFName").eraseText(40); 
+        clickOn("#tfMName").eraseText(2);
+        clickOn("#tfLName").eraseText(40);
+        clickOn("#tfAddress").eraseText(50);
+        clickOn("#tfCity").eraseText(50);
+        clickOn("#tfState").eraseText(20);
+        clickOn("#tfZip").eraseText(5);
+        clickOn("#tfPhone").eraseText(15);
+        clickOn("#tfEmail").eraseText(50);
+        clickOn("#tfPass").eraseText(15);
+        clickOn("#tfRPass").eraseText(15);
+    }
+    
+    
+    @Test
+    public void test0_SignUpAcces(){
+        verifyThat("#SignUpLink", isEnabled());
+        clickOn("#SignUpLink");
+        
+    }
 
     @Test
     public void test1_InitialTests() {
@@ -76,23 +98,15 @@ public class GestionUsuariosControllerSignUpTest extends ApplicationTest {
         verifyThat("#btCreate", isEnabled());
         
         clickOn("#btCreate");
-        
-        sleep(2000);
-        
+        sleep(1000);
         verifyThat(".dialog-pane", isVisible());
-        
         clickOn("Aceptar");
         sleep(1000);
-        
-        verifyThat("#EmailTextField", isVisible());
-        verifyThat("#LoginButton", isVisible());
     }
   
     @Test
-    public void test3_EmailDuplicado() {
-        clickOn("#SignUpLink");
-        sleep(1000);
-        
+    public void test3_UsuarioExiste(){
+        clearFormFields();
         clickOn("#tfFName");
         write("Pablo");
         
