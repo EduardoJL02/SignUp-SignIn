@@ -40,16 +40,16 @@ public class GestionUsuariosControllerSignUpTest extends ApplicationTest {
         clickOn("#SignUpLink");
         sleep(1000);
         clickOn("#tfFName");
-        write("Nisa");
+        write("Jorge");
         
         clickOn("#tfMName");
-        write("A.");
+        write("G.");
         
         clickOn("#tfLName");
-        write("Abyss");
+        write("Linares");
         
         clickOn("#tfAddress");
-        write("67 street number 67"); 
+        write("Calle Contubernio 45"); 
         
         clickOn("#tfCity");
         write("Istanbul"); 
@@ -64,7 +64,7 @@ public class GestionUsuariosControllerSignUpTest extends ApplicationTest {
         write("905551234567"); 
         
         clickOn("#tfEmail");
-        String uniqueEmail = "nisa.abyss." + System.currentTimeMillis() + "@gmail.com";
+        String uniqueEmail = "jorge.gonzalez." + System.currentTimeMillis() + "@gmail.com";
         write(uniqueEmail);
         
         clickOn("#tfPass");
