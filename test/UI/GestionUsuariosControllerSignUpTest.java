@@ -19,6 +19,7 @@ import org.testfx.framework.junit.ApplicationTest;
 import static org.testfx.matcher.base.NodeMatchers.isDisabled;
 import static org.testfx.matcher.base.NodeMatchers.isEnabled;
 import static org.testfx.matcher.base.NodeMatchers.isFocused;
+import static org.testfx.matcher.base.NodeMatchers.isVisible;
 import signup.signin.SignUpSignIn;
 
 
@@ -32,6 +33,28 @@ public class GestionUsuariosControllerSignUpTest extends ApplicationTest{
     @Override
     public void start(Stage stage) throws Exception{
         new SignUpSignIn().start(stage);
+    }
+    
+    private void clearFormFields() {
+        clickOn("#tfFName").eraseText(40); 
+        clickOn("#tfMName").eraseText(2);
+        clickOn("#tfLName").eraseText(40);
+        clickOn("#tfAddress").eraseText(50);
+        clickOn("#tfCity").eraseText(50);
+        clickOn("#tfState").eraseText(20);
+        clickOn("#tfZip").eraseText(5);
+        clickOn("#tfPhone").eraseText(15);
+        clickOn("#tfEmail").eraseText(50);
+        clickOn("#tfPass").eraseText(15);
+        clickOn("#tfRPass").eraseText(15);
+    }
+    
+    
+    @Test
+    public void test0_SignUpAcces(){
+        verifyThat("#SignUpLink", isEnabled());
+        clickOn("#SignUpLink");
+        
     }
 
     @Test
@@ -66,10 +89,15 @@ public class GestionUsuariosControllerSignUpTest extends ApplicationTest{
         write("Abcd!1234");
         verifyThat("#btCreate", isEnabled());
         clickOn("#btCreate");
+        sleep(1000);
+        verifyThat(".dialog-pane", isVisible());
+        clickOn("Aceptar");
+        sleep(1000);
     }
     
     @Test
     public void test3_UsuarioExiste(){
+        clearFormFields();
         clickOn("#tfFName");
         write("Pablo");
         clickOn("#tfMName");

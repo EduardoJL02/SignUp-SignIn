@@ -13,7 +13,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
-import javafx.scene.control.Label; // Asegúrate de importar Label
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -22,7 +22,7 @@ import java.util.logging.Level;
 
 // Imports de JAX-RS
 import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.ForbiddenException; // Ya no la necesitas aquí si usas ConflictException
+import javax.ws.rs.ForbiddenException;
 
 import logic.CustomerRESTClient;
 import model.Customer;
@@ -71,16 +71,36 @@ public class GestionUsuariosControllerSignUp {
      */
     private Stage stage;
 
-    // --- CONSTANTES DE VALIDACIÓN ---
-    private final int MIN_PASSWORD_LENGTH = 8;
-
-    // Patrones de validación (compilados para eficiencia)
-    private static final Pattern LETTER_PATTERN = Pattern.compile("^[a-zA-ZÁáÉéÍíÓóÚúñÑ\\s]+$");
+    // --- CONSTANTES DE VALIDACIÓN (De la base de datos) ---
+    private static final int MIN_PASSWORD_LENGTH = 8;
+    private static final int MAX_PASSWORD_LENGTH = 15;
+    
+    // --- PATRONES DE VALIDACIÓN ACTUALIZADOS CON RESTRICCIONES DE LONGITUD ---
+    // FName, LName (Máx 40 caracteres)
+    private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-ZÁáÉéÍíÓóÚúñÑ\\s]{1,40}$");
+    
+    // MName (Máx 2 caracteres: Letra y punto)
     private static final Pattern MNAME_PATTERN = Pattern.compile("^[a-zA-Z]\\.$");
-    private static final Pattern ADDRESS_PATTERN = Pattern.compile("^[a-zA-ZÁáÉéÍíÓóÚúñÑ0-9.,\\-/ºª\\s]+$");
+    
+    // Address (Máx 50 caracteres)
+    private static final Pattern ADDRESS_PATTERN = Pattern.compile("^[a-zA-ZÁáÉéÍíÓóÚúñÑ0-9.,\\-/ºª\\s]{1,50}$");
+    
+    // City, State (Máx 20 caracteres) - Usaremos un patrón para letras con límite 20
+    private static final Pattern CITY_STATE_PATTERN = Pattern.compile("^[a-zA-ZÁáÉéÍíÓóÚúñÑ\\s]{1,20}$"); 
+    
+    // Zip (Exactamente 5 dígitos)
     private static final Pattern ZIP_PATTERN = Pattern.compile("^\\d{5}$");
-    private static final Pattern PHONE_PATTERN = Pattern.compile("^\\d{9,}$");
-    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$");
+    
+    // Phone (Mín 9, Máx 15 dígitos - Por seguridad, la base de datos es 9)
+    private static final Pattern PHONE_PATTERN = Pattern.compile("^\\d{9,15}$"); 
+    
+    // Email (Máx 50 caracteres - La longitud se controlará principalmente por el String.length() 
+    // y el TextField max length, la regex valida el formato).
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[a-zA-Z0-9._%+-]{1,35}+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$");
+    
+    // Contraseña (Min 8, Max 15, requiere Mayús, minús, número y símbolo)
+    private static final Pattern PASSWORD_PATTERN = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^a-zA-Z0-9\\s]).{" + MIN_PASSWORD_LENGTH + "," + MAX_PASSWORD_LENGTH + "}$");
+
 
     // --- VARIABLES DE ESTADO PARA VALIDACIÓN (Todos los campos son obligatorios) ---
     private boolean isFNameValid = false;
@@ -100,11 +120,10 @@ public class GestionUsuariosControllerSignUp {
 // ============================================================================
 
     /**
- * Inicialización NUEVA: Para ser llamado desde Login.
- * Usa el Stage ya creado en lugar de crear uno nuevo.
- * 
- * @param stage El Stage ya configurado (modal) desde Login
- * @param root El Parent ya cargado desde Login
+     * Inicialización NUEVA: Para ser llamado desde Login.
+     * Usa el Stage ya creado en lugar de crear uno nuevo.
+     * * @param stage El Stage ya configurado (modal) desde Login
+     * @param root El Parent ya cargado desde Login
      */
 public void initFromLogin(Stage stage, Parent root) {
     try {
@@ -131,6 +150,10 @@ public void initFromLogin(Stage stage, Parent root) {
 
         // Configurar manejadores de eventos
         setupEventHandlers();
+        
+        // Aplicar listener de longitud máxima
+        applyTextLengthLimiters();
+
 
         LOGGER.log(Level.INFO, "SignUp initialized successfully from Login");
 
@@ -173,6 +196,9 @@ public void initFromLogin(Stage stage, Parent root) {
 
         // Configurar manejadores
         setupEventHandlers();
+        
+        // Aplicar listener de longitud máxima
+        applyTextLengthLimiters();
 
         // Mostrar la ventana
         dialogStage.show();
@@ -231,6 +257,77 @@ private void setupEventHandlers() {
             tfRPass.focusedProperty().addListener(this::handleTfRPassFocusChange);
         }
 
+/**
+ * Aplica un Listener para truncar el texto si excede la longitud máxima.
+ * Esto evita que el usuario pueda introducir más de lo permitido por la base de datos.
+ */
+private void applyTextLengthLimiters() {
+    // FName (40)
+    tfFName.textProperty().addListener((observable, oldValue, newValue) -> {
+        if (newValue != null && newValue.length() > 40) {
+            tfFName.setText(oldValue);
+        }
+    });
+    // MName (2)
+    tfMName.textProperty().addListener((observable, oldValue, newValue) -> {
+        if (newValue != null && newValue.length() > 2) {
+            tfMName.setText(oldValue);
+        }
+    });
+    // LName (40)
+    tfLName.textProperty().addListener((observable, oldValue, newValue) -> {
+        if (newValue != null && newValue.length() > 40) {
+            tfLName.setText(oldValue);
+        }
+    });
+    // Address (50)
+    tfAddress.textProperty().addListener((observable, oldValue, newValue) -> {
+        if (newValue != null && newValue.length() > 50) {
+            tfAddress.setText(oldValue);
+        }
+    });
+    // City (20)
+    tfCity.textProperty().addListener((observable, oldValue, newValue) -> {
+        if (newValue != null && newValue.length() > 20) {
+            tfCity.setText(oldValue);
+        }
+    });
+    // State (20)
+    tfState.textProperty().addListener((observable, oldValue, newValue) -> {
+        if (newValue != null && newValue.length() > 20) {
+            tfState.setText(oldValue);
+        }
+    });
+    // Zip (5)
+    tfZip.textProperty().addListener((observable, oldValue, newValue) -> {
+        if (newValue != null && newValue.length() > 5) {
+            tfZip.setText(oldValue);
+        }
+    });
+    // Phone (9 - Usaremos 15 como límite superior en el UI, aunque la validación pide 9 mínimo)
+    tfPhone.textProperty().addListener((observable, oldValue, newValue) -> {
+        if (newValue != null && newValue.length() > 15) {
+            tfPhone.setText(oldValue);
+        }
+    });
+    // Email (50)
+    tfEmail.textProperty().addListener((observable, oldValue, newValue) -> {
+        if (newValue != null && newValue.length() > 50) {
+            tfEmail.setText(oldValue);
+        }
+    });
+    // Pass/RPass (15)
+    tfPass.textProperty().addListener((observable, oldValue, newValue) -> {
+        if (newValue != null && newValue.length() > MAX_PASSWORD_LENGTH) {
+            tfPass.setText(oldValue);
+        }
+    });
+    tfRPass.textProperty().addListener((observable, oldValue, newValue) -> {
+        if (newValue != null && newValue.length() > MAX_PASSWORD_LENGTH) {
+            tfRPass.setText(oldValue);
+        }
+    });
+}
     // -------------------------------------------------------------------------
     // --- LÓGICA DE VALIDACIÓN CENTRAL ---
     // -------------------------------------------------------------------------
@@ -271,50 +368,53 @@ private void setupEventHandlers() {
     // -------------------------------------------------------------------------
 
     private void validateTfFName(String text) {
-        boolean isValid = !isTextEmpty(text) && LETTER_PATTERN.matcher(text).matches();
-        String errorMsg = isTextEmpty(text) ? "Campo obligatorio" : "Solo letras permitidas";
+        boolean isValid = !isTextEmpty(text) && NAME_PATTERN.matcher(text).matches();
+        String errorMsg = isTextEmpty(text) ? "Campo obligatorio" : "Máx 40 caracteres, solo letras";
         updateErrorLabel(firstNameError, isValid, errorMsg);
         isFNameValid = isValid;
     }
 
     private void validateTfMName(String text) {
+        // MName es obligatorio y debe cumplir el patrón A.
         boolean isValid = !isTextEmpty(text) && MNAME_PATTERN.matcher(text).matches();
-        String errorMsg = isTextEmpty(text) ? "Campo obligatorio" : "Formato: 'A.'";
+        String errorMsg = isTextEmpty(text) ? "Campo obligatorio" : "Formato: 'A.' (2 carac.)";
         updateErrorLabel(middleNameError, isValid, errorMsg);
         isMNameValid = isValid;
     }
 
     private void validateTfLName(String text) {
-        boolean isValid = !isTextEmpty(text) && LETTER_PATTERN.matcher(text).matches();
-        String errorMsg = isTextEmpty(text) ? "Campo obligatorio" : "Solo letras permitidas";
+        boolean isValid = !isTextEmpty(text) && NAME_PATTERN.matcher(text).matches();
+        String errorMsg = isTextEmpty(text) ? "Campo obligatorio" : "Máx 40 caracteres, solo letras";
         updateErrorLabel(lastNameError, isValid, errorMsg);
         isLNameValid = isValid;
     }
 
     private void validateTfAddress(String text) {
         boolean isValid = !isTextEmpty(text) && ADDRESS_PATTERN.matcher(text).matches();
-        String errorMsg = isTextEmpty(text) ? "Campo obligatorio" : "Caracteres inválidos";
+        String errorMsg = isTextEmpty(text) ? "Campo obligatorio" : "Máx 50 caracteres. Caracteres inválidos";
         updateErrorLabel(addressError, isValid, errorMsg);
         isAddressValid = isValid;
     }
 
     private void validateTfCity(String text) {
-        boolean isValid = !isTextEmpty(text) && LETTER_PATTERN.matcher(text).matches();
-        String errorMsg = isTextEmpty(text) ? "Campo obligatorio" : "Solo letras permitidas";
+        // Usa el patrón de Ciudad/Estado
+        boolean isValid = !isTextEmpty(text) && CITY_STATE_PATTERN.matcher(text).matches();
+        String errorMsg = isTextEmpty(text) ? "Campo obligatorio" : "Máx 20 caracteres, solo letras";
         updateErrorLabel(cityError, isValid, errorMsg);
         isCityValid = isValid;
     }
 
     private void validateTfState(String text) {
-        boolean isValid = !isTextEmpty(text) && (LETTER_PATTERN.matcher(text).matches() || text.matches("^[A-Z]{2}$"));
-        String errorMsg = isTextEmpty(text) ? "Campo obligatorio" : "Solo letras o formato 'NY'";
+        // Usa el patrón de Ciudad/Estado
+        boolean isValid = !isTextEmpty(text) && CITY_STATE_PATTERN.matcher(text).matches();
+        String errorMsg = isTextEmpty(text) ? "Campo obligatorio" : "Máx 20 caracteres, solo letras";
         updateErrorLabel(stateError, isValid, errorMsg);
         isStateValid = isValid;
     }
 
     private void validateTfZip(String text) {
         boolean isValid = !isTextEmpty(text) && ZIP_PATTERN.matcher(text).matches();
-        String errorMsg = isTextEmpty(text) ? "Campo obligatorio" : "Debe tener minimo 5 dígitos";
+        String errorMsg = isTextEmpty(text) ? "Campo obligatorio" : "Debe tener exactamente 5 dígitos";
         updateErrorLabel(zipError, isValid, errorMsg);
         isZipValid = isValid;
     }
@@ -327,27 +427,30 @@ private void setupEventHandlers() {
     }
 
     private void validateTfEmail(String text) {
+        // La longitud se maneja en el Listener de longitud, aquí validamos el formato.
         boolean isValid = !isTextEmpty(text) && EMAIL_PATTERN.matcher(text).matches();
-        String errorMsg = isTextEmpty(text) ? "Campo obligatorio" : "Formato de email inválido";
+        String errorMsg = isTextEmpty(text) ? "Campo obligatorio" : "Formato de email inválido (Máx 50)";
         updateErrorLabel(emailError, isValid, errorMsg);
         isEmailValid = isValid;
     }
 
     private void validateTfPassword(String text) {
-        if (isTextEmpty(text) || text.length() < MIN_PASSWORD_LENGTH) {
-            isPasswordValid = false;
-            updateErrorLabel(passwordError, false, "Mínimo " + MIN_PASSWORD_LENGTH + " caracteres");
-            return;
+        // Usamos la regex robusta para la validación de complejidad y longitud.
+        boolean isValid = !isTextEmpty(text) && PASSWORD_PATTERN.matcher(text).matches();
+        
+        if (isTextEmpty(text)) {
+            updateErrorLabel(passwordError, false, "Campo obligatorio");
+        } else if (text.length() < MIN_PASSWORD_LENGTH) {
+             updateErrorLabel(passwordError, false, "Mínimo " + MIN_PASSWORD_LENGTH + " caracteres");
+        } else if (text.length() > MAX_PASSWORD_LENGTH) {
+             updateErrorLabel(passwordError, false, "Máximo " + MAX_PASSWORD_LENGTH + " caracteres");
+        } else if (!isValid) {
+            updateErrorLabel(passwordError, false, "Requiere: Mayús, minús, número y símbolo");
+        } else {
+            updateErrorLabel(passwordError, true, "");
         }
-
-        boolean hasUpperCase = text.matches(".*[A-Z].*");
-        boolean hasLowerCase = text.matches(".*[a-z].*");
-        boolean hasDigit = text.matches(".*[0-9].*");
-        boolean hasSymbol = text.matches(".*[^a-zA-Z0-9\\s].*");
-
-        isPasswordValid = hasUpperCase && hasLowerCase && hasDigit && hasSymbol;
-        String errorMsg = "Requiere: Mayús, minús, número y símbolo";
-        updateErrorLabel(passwordError, isPasswordValid, errorMsg);
+        
+        isPasswordValid = isValid;
     }
 
     private void validateTfRPass(String text) {
@@ -358,6 +461,8 @@ private void setupEventHandlers() {
     // -------------------------------------------------------------------------
     // --- MANEJADORES DE TEXT CHANGE (Validación en tiempo real) ---
     // -------------------------------------------------------------------------
+    // NOTA: Se ha añadido la comprobación de longitud en applyTextLengthLimiters()
+    // para evitar que el usuario pueda escribir más de la longitud máxima.
 
     private void handleTfFNameTextChange(ObservableValue observable, String oldValue, String newValue) {
         validateTfFName(newValue); checkGlobalValidation();
@@ -396,6 +501,8 @@ private void setupEventHandlers() {
     // -------------------------------------------------------------------------
     // --- MANEJADORES DE FOCUS CHANGE (Validación al perder el foco) ---
     // -------------------------------------------------------------------------
+    
+    // Se mantienen igual, ya que solo fuerzan la validación cuando el usuario cambia de campo.
 
     private void handleTfFNameFocusChange(ObservableValue observable, Boolean oldValue, Boolean newValue) {
         if (!newValue) { validateTfFName(tfFName.getText()); checkGlobalValidation(); }
@@ -454,7 +561,9 @@ private void setupEventHandlers() {
             customer.setState(tfState.getText());
 
             // --- CORRECCIÓN DE TIPOS (ZIP y PHONE) ---
+            // Asumiendo que el campo zip es un entero de 5 dígitos
             customer.setZip(Integer.parseInt(tfZip.getText()));
+            // Asumiendo que el campo phone es un Long
             customer.setPhone(Long.parseLong(tfPhone.getText()));
             // ------------------------------------------
 
@@ -477,7 +586,7 @@ private void setupEventHandlers() {
             }
 
         } catch (ForbiddenException e) {
-            // USAMOS ForbiddenException
+            // USAMOS ForbiddenException (o ConflictException, si es un 409)
             LOGGER.log(Level.WARNING, "Creación fallida: Email ya registrado.", e);
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("Error de Creación");
@@ -497,7 +606,7 @@ private void setupEventHandlers() {
         } catch (NumberFormatException nfe) {
             // Manejo de error de conversión de ZIP/Phone
             LOGGER.log(Level.WARNING, "Error de formato: El ZIP o Teléfono no son números válidos.", nfe);
-            new Alert(Alert.AlertType.ERROR, "Por favor, introduzca solo dígitos en Código Postal y Teléfono.").showAndWait();
+            new Alert(Alert.AlertType.ERROR, "Por favor, introduzca solo dígitos\nEn Código Postal y Teléfono.").showAndWait();
             setFieldsDisabled(false);
             checkGlobalValidation();
 
