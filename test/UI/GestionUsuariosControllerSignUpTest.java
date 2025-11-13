@@ -1,14 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package UI;
-
-/**
- *
- * @author pablo
- */
 
 import javafx.stage.Stage;
 import org.junit.Test;
@@ -22,16 +12,11 @@ import static org.testfx.matcher.base.NodeMatchers.isFocused;
 import static org.testfx.matcher.base.NodeMatchers.isVisible;
 import signup.signin.SignUpSignIn;
 
-
-/**
- *
- * @author david
- */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class GestionUsuariosControllerSignUpTest extends ApplicationTest{
+public class GestionUsuariosControllerSignUpTest extends ApplicationTest {
     
     @Override
-    public void start(Stage stage) throws Exception{
+    public void start(Stage stage) throws Exception {
         new SignUpSignIn().start(stage);
     }
     
@@ -59,68 +44,121 @@ public class GestionUsuariosControllerSignUpTest extends ApplicationTest{
 
     @Test
     public void test1_InitialTests() {
+        verifyThat("#SignUpLink", isEnabled());
+        verifyThat("#LoginButton", isDisabled());
+        
+        clickOn("#SignUpLink");
+        sleep(1000); 
+        
         verifyThat("#btCreate", isDisabled());
         verifyThat("#tfFName", isFocused());
+        
+        clickOn("#btBack");
+        sleep(500);
     }
     
     @Test
-    public void test2_SignUp(){
+    public void test2_SignUpExitoso() {
+        clickOn("#SignUpLink");
+        sleep(1000);
         clickOn("#tfFName");
         write("Nisa");
+        
         clickOn("#tfMName");
         write("A.");
+        
         clickOn("#tfLName");
         write("Abyss");
+        
         clickOn("#tfAddress");
-        write("67 streen number 67");
+        write("67 street number 67"); 
+        
         clickOn("#tfCity");
-        write("Turkey");
+        write("Istanbul"); 
+        
         clickOn("#tfState");
-        write("idkXD");
+        write("TR");
+        
         clickOn("#tfZip");
-        write("67676");
+        write("34000"); 
+        
         clickOn("#tfPhone");
-        write("676767670");
+        write("905551234567"); 
+        
         clickOn("#tfEmail");
-        write("6767676754@gmail.com");
+        String uniqueEmail = "nisa.abyss." + System.currentTimeMillis() + "@gmail.com";
+        write(uniqueEmail);
+        
         clickOn("#tfPass");
-        write("Abcd!1234");
+        write("Abcd!1234"); 
+        
         clickOn("#tfRPass");
         write("Abcd!1234");
+        
         verifyThat("#btCreate", isEnabled());
+        
         clickOn("#btCreate");
         sleep(1000);
         verifyThat(".dialog-pane", isVisible());
         clickOn("Aceptar");
         sleep(1000);
     }
-    
+  
     @Test
     public void test3_UsuarioExiste(){
         clearFormFields();
         clickOn("#tfFName");
         write("Pablo");
+        
         clickOn("#tfMName");
         write("R.");
+        
         clickOn("#tfLName");
         write("Rodriguez");
+        
         clickOn("#tfAddress");
         write("C/ Arcipreste de Hita, 5");
+        
         clickOn("#tfCity");
         write("Madrid");
+        
         clickOn("#tfState");
-        write("SP");
+        write("MD");
+        
         clickOn("#tfZip");
         write("28220");
+        
         clickOn("#tfPhone");
         write("692879385");
+        
         clickOn("#tfEmail");
+       
         write("rodrguezdelgado.pablo@gmail.com");
+        
         clickOn("#tfPass");
         write("PabloRodriguez!1996");
+        
         clickOn("#tfRPass");
         write("PabloRodriguez!1996");
+        
         verifyThat("#btCreate", isEnabled());
+        
         clickOn("#btCreate");
+        
+        sleep(2000);
+        
+        verifyThat(".dialog-pane", isVisible());
+        
+        clickOn("Aceptar");
+        sleep(500);
+        
+        verifyThat("#tfFName", isVisible());
+        verifyThat("#btCreate", isVisible());
+        verifyThat("#btBack", isVisible());
+        
+        clickOn("#btBack");
+        sleep(500);
+        
+        verifyThat("#EmailTextField", isVisible());
     }
 }

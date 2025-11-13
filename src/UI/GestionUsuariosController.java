@@ -76,6 +76,10 @@ public class GestionUsuariosController {
             "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
     private static final int MIN_PASSWORD_LENGTH = 8;
     
+    //Constantes para limites maximos
+    private static final int MAX_EMAIL_LENGTH = 50;
+    private static final int MAX_PASSWORD_LENGTH = 15;
+    
     // Estilos CSS inline para feedback visual
     private static final String STYLE_ERROR_BORDER = "-fx-border-color: red; -fx-border-width: 2px;";
     private static final String STYLE_NORMAL_BORDER = "-fx-border-color: grey; -fx-border-width: 1px;";
@@ -128,6 +132,8 @@ public class GestionUsuariosController {
             // Estado inicial de controles
             LoginButton.setDisable(true);
             clearErrorMessages();
+            
+            TextFieldLengthLimits();
             
             // Asociar eventos a manejadores
             LoginButton.setOnAction(this::handleLoginButtonOnAction);
@@ -662,5 +668,37 @@ private void handleSignUp() {
      */
     public void setStage(Stage stage) {
         this.stage = stage;
+    }
+
+    private void TextFieldLengthLimits() {
+        try {
+        // Limitar email a 50 caracteres
+        TextFormatter<String> emailFormatter = new TextFormatter<>(change -> {
+            // Si el nuevo texto excede el límite, rechazar el cambio
+            if (change.getControlNewText().length() > MAX_EMAIL_LENGTH) {
+                LOGGER.fine("Email input rejected: exceeds " + MAX_EMAIL_LENGTH + " characters");
+                return null; // Rechaza el cambio
+            }
+            return change; // Acepta el cambio
+        });
+        EmailTextField.setTextFormatter(emailFormatter);
+        
+        // Limitar email a 50 caracteres
+        TextFormatter<String> passwordFormatter = new TextFormatter<>(change -> {
+            // Si el nuevo texto excede el límite, rechazar el cambio
+            if (change.getControlNewText().length() > MAX_PASSWORD_LENGTH) {
+                LOGGER.fine("Password input rejected: exceeds " + MAX_PASSWORD_LENGTH + " characters");
+                return null; // Rechaza el cambio
+            }
+            return change; // Acepta el cambio
+        });
+        PasswordField.setTextFormatter(passwordFormatter);
+        
+        LOGGER.info("Length limits applied successfully: Email=" + MAX_EMAIL_LENGTH + ", Password=" + MAX_PASSWORD_LENGTH);
+        
+    } catch (Exception e) {
+        LOGGER.log(Level.WARNING, "Error applying text field length limits", e);
+        // No lanzar excepción: el formulario puede funcionar sin límites
+    }
     }
 }
