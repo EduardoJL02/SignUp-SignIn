@@ -13,35 +13,35 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
 
 /**
- * Jersey REST client generated for REST resource:CustomerFacadeREST
- * [customer]<br>
- * USAGE:
+ * Cliente REST de Jersey generado para el recurso REST: CustomerFacadeREST
+ * [customer]
+ * USO:
  * <pre>
- *        CustomerRESTClient client = new CustomerRESTClient();
- *        Object response = client.XXX(...);
- *        // do whatever with response
- *        client.close();
+ * CustomerRESTClient client = new CustomerRESTClient();
+ * Object response = client.XXX(...);
+ * // hacer lo que sea con la respuesta
+ * client.close();
  * </pre>
- * This class provides a REST client for managing customer operations.
- * It handles HTTP requests to a REST API endpoint for customer-related CRUD operations
- * and authentication.
+ * Esta clase proporciona un cliente REST para gestionar las operaciones relacionadas con el cliente (customer).
+ * Maneja las solicitudes HTTP a un endpoint de la API REST para las **operaciones CRUD**
+ * (Crear, Leer, Actualizar, Eliminar) relacionadas con el cliente y la autenticación.
  *
- * The client supports both XML and JSON data formats for requests and responses.
- * It connects to a server running at localhost:8080.
+ * El cliente admite los formatos de datos **XML** y **JSON** tanto para las solicitudes como para las respuestas.
+ * Se conecta a un servidor que se ejecuta en **localhost:8080**.
  *
- * Methods include:
- * - Creating new customers
- * - Finding customers by ID
- * - Finding customers by email/password (authentication)
- * - Editing existing customers
- * - Removing customers
- * - Retrieving all customers
+ * Los métodos incluyen:
+ * - Crear nuevos clientes
+ * - Encontrar clientes por ID
+ * - Encontrar clientes por correo electrónico/contraseña (autenticación)
+ * - Editar clientes existentes
+ * - Eliminar clientes
+ * - Recuperar todos los clientes
  *
- * All methods can throw ClientErrorException for HTTP client errors.
- * Some methods may throw specific exceptions like:
- * - ForbiddenException for 403 errors
- * - InternalServerErrorException for 500 errors
- * - NotAuthorizedException for 401 errors
+ * Todos los métodos pueden lanzar una **ClientErrorException** para errores HTTP del cliente.
+ * Algunos métodos pueden lanzar excepciones específicas como:
+ * - **ForbiddenException** para errores 403
+ * - **InternalServerErrorException** para errores 500
+ * - **NotAuthorizedException** para errores 401
  *
  * @author Generated REST client
  * @version 1.0

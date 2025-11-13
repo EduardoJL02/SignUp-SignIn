@@ -14,7 +14,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javax.ws.rs.ClientErrorException;
@@ -24,30 +23,26 @@ import logic.CustomerRESTClient;
 import model.Customer;
 
 /**
- * Controller class for managing user authentication and navigation in the application.
- * Handles login functionality, input validation, and navigation to other views.
- * 
- * This controller manages:
- * - User login authentication through REST services
- * - Real-time validation of email and password inputs
- * - Error handling and user feedback
- * - Navigation to main application window and sign-up window
- * 
- * The class follows these validation rules:
- * - Email must match standard email format
- * - Password must be at least 8 characters long
- * 
- * Key features:
- * - Asynchronous REST authentication
- * - Real-time input validation
- * - Visual feedback for input errors
- * - Modal dialogs for important messages
- * - Logging of all significant events
- * 
- * Dependencies:
- * - JavaFX for UI components
- * - REST client for backend communication
- * - Logger for event tracking
+ * Clase controladora para gestionar la autenticación de usuarios y la navegación en la aplicación.
+ * Maneja la funcionalidad de inicio de sesión (login), la validación de entrada de datos (input validation) y la navegación a otras vistas.
+ * Este controlador gestiona:
+ * - La autenticación del inicio de sesión del usuario a través de servicios REST.
+ * - La validación en tiempo real de las entradas de correo electrónico y contraseña.
+ * - El manejo de errores y la retroalimentación al usuario.
+ * - La navegación a la ventana principal de la aplicación y a la ventana de registro (sign-up).
+ * La clase sigue estas reglas de validación:
+ * - El correo electrónico debe coincidir con el formato de correo electrónico estándar (máximo 50 caraceres).
+ * - La contraseña debe tener al menos 8 caracteres de longitud y un maximo de 15 caracteres.
+ * Características clave:
+ * - Autenticación REST asíncrona.
+ * - Validación de entradas en tiempo real.
+ * - Retroalimentación visual para errores de entrada.
+ * - Diálogos modales para mensajes importantes.
+ * - Registro (logging) de todos los eventos significativos.
+ * Dependencias:
+ * - JavaFX para los componentes de la interfaz de usuario (UI).
+ * - Cliente REST para la comunicación con el backend.
+ * - Logger (registrador) para el seguimiento de eventos.
  * 
  * @author Eduardo
  * @version 1.0
@@ -104,8 +99,8 @@ public class GestionUsuariosController {
     /**
      * Inicializa el controlador sin mostrar la ventana (para navegación desde logout).
      * 
-     * @param stage Stage principal de la aplicación
-     * @param root Nodo raíz del FXML
+     * @param stage
+     * @param root
      */
     public void initWithoutShow(Stage stage, Parent root) {
         initializeController(stage, root);
@@ -115,8 +110,8 @@ public class GestionUsuariosController {
     /**
      * Lógica común de inicialización del controlador.
      * 
-     * @param stage Stage principal
-     * @param root Nodo raíz del FXML
+     * @param stage 
+     * @param root 
      */
     private void initializeController(Stage stage, Parent root) {
         try {
@@ -269,23 +264,6 @@ public class GestionUsuariosController {
             showErrorAlert("Error connecting to the server:\n" +
                           "Check your internet connection and that the server is active.");
         }
-    }
-
-    /**
-     * Muestra mensaje de bienvenida al usuario.
-     * 
-     * @param customer Usuario autenticado
-     */
-    private void showWelcomeMessage(Customer customer) {
-        Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.initModality(Modality.APPLICATION_MODAL);
-            alert.initOwner(stage);
-            alert.setTitle("Login successful");
-            alert.setHeaderText("Welcome!");
-            alert.setContentText("Hi, " + customer.getFirstName() + " " + customer.getLastName());
-            alert.showAndWait();
-        });
     }
 
     // ======================== VALIDACIONES EN TIEMPO REAL ========================
@@ -483,6 +461,7 @@ public class GestionUsuariosController {
 //        }
 //    }
 
+    
     /**
  * Maneja el evento "Registrarse" (Sign Up).
  * Abre la ventana de registro como modal APPLICATION_MODAL.
@@ -549,9 +528,9 @@ private void handleSignUp() {
         
         LOGGER.info("Ventana Sign-Up cerrada. Control devuelto a Login.");
         
-        // 8. Opcional: Si el registro fue exitoso, podrías mostrar un mensaje
+        // Si el registro fue exitoso, mostrar un mensaje
         // o pre-cargar el email en el campo de login
-        // (esto requeriría que GestionUsuariosControllerSignUp devuelva un resultado)
+        // (GestionUsuariosControllerSignUp debe devolver un resultado)
         
     } catch (java.io.IOException e) {
         LOGGER.log(Level.SEVERE, "Error de I/O al abrir Sign-Up", e);

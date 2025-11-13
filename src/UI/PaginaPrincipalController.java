@@ -18,22 +18,19 @@ import javafx.stage.Stage;
 import model.Customer;
 
 /**
- * Controller class for the main page (PaginaPrincipal) of the application.
- * Manages the user interface and interactions after successful login.
- * 
- * This controller handles:
- * - Displaying user information (name, email, ID)
- * - Customized welcome messages based on time of day
- * - Logout functionality with confirmation
- * - Error handling and user notifications
- * 
- * The class follows a standard JavaFX controller pattern with FXML injection
- * and requires proper initialization through the init() method.
- * 
- * Important notes:
- * - setCustomer() must be called BEFORE init()
- * - Requires valid FXML components to be properly injected
- * - Implements logging for debugging and error tracking
+ * Clase controladora para la página principal (PaginaPrincipal.fxml) de la aplicación.
+ * Gestiona la interfaz de usuario y las interacciones después de un inicio de sesión exitoso.
+ * Este controlador maneja:
+ * - La visualización de la información del usuario (nombre, correo electrónico, ID).
+ * - Mensajes de bienvenida personalizados basados en la hora del día.
+ * - La funcionalidad de cierre de sesión (logout) con confirmación.
+ * - El manejo de errores y las notificaciones al usuario.
+ * La clase sigue un patrón de controlador JavaFX estándar con inyección FXML
+ * y requiere una inicialización adecuada a través del método init().
+ * Notas importantes:
+ * - setCustomer() debe ser llamado ANTES de init().
+ * - Requiere que los componentes FXML válidos sean inyectados correctamente.
+ * - Implementa el registro (logging) para la depuración y el seguimiento de errores.
  * 
  * @author Eduardo
  * @version 1.0
@@ -132,7 +129,7 @@ public class PaginaPrincipalController {
     /**
      * Obtiene un saludo personalizado según la hora del día.
      * 
-     * @return Saludo apropiado ("Buenos días", "Buenas tardes", etc.)
+     * @return Saludo apropiado ("Good morning", "Good afternoon" y "Good night")
      */
     private String getGreetingByTime() {
         int hour = java.time.LocalTime.now().getHour();

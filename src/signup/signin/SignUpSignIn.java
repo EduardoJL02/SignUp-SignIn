@@ -14,17 +14,16 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Main application class for the Sign Up/Sign In system.
- * This class handles the initialization of the JavaFX application, including loading the FXML interface,
- * setting up the main controller, and managing application lifecycle events.
+ * Clase principal de la aplicación para el sistema de Registro/Inicio de Sesión (Sign Up/Sign In).
+ * Esta clase maneja la inicialización de la aplicación JavaFX, incluyendo la carga de la interfaz FXML,
+ * la configuración del controlador principal y la gestión de los eventos del ciclo de vida de la aplicación.
  *
- * The class provides functionality for:
- * - Loading and initializing the main user interface
- * - Setting up event handlers for application exit
- * - Displaying error messages when necessary
- * - Handling graceful application shutdown
- * 
- * This application uses FXML for UI definition and implements logging for tracking application events.
+ * La clase proporciona funcionalidad para:
+ * - Cargar e inicializar la interfaz de usuario principal.
+ * - Configurar manejadores de eventos (event handlers) para la salida de la aplicación.
+ * - Mostrar mensajes de error cuando sea necesario.
+ * - Manejar el apagado (shutdown) de la aplicación.
+ * Esta aplicación utiliza FXML para la definición de la interfaz de usuario e implementa el registro (logging) para el seguimiento de los eventos de la aplicación.
  * 
  * @extends Application JavaFX Application class
  * @see javafx.application.Application
@@ -33,7 +32,7 @@ import java.util.logging.Logger;
  */
 public class SignUpSignIn extends Application {
     
-    // Logger for main application events in SignUpSignIn
+    // Logger de los eventos principales de la aplicación en SignUpSignIn
         private static final Logger LOGGER = Logger.getLogger("SignUpSignIn.Main");
         
     @Override
@@ -102,8 +101,8 @@ public class SignUpSignIn extends Application {
         alert.showAndWait();
     }
     /**
-     * Launches the JavaFX application.
-     * @param args the command line arguments
+     * Lanza la aplicacion JavaFX.
+     * @param args
      */
     public static void main(String[] args) {
         launch(args);
