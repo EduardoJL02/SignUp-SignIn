@@ -83,6 +83,9 @@ public class GestionUsuariosController {
     // ======================== VARIABLES DE INSTANCIA ========================
     private Stage stage;
     private Customer loggedCustomer; // Almacena el usuario autenticado
+    
+    //Variable para contador de fallos
+    private int contadorFallos = 0;
 
     /**
      * Inicializa el controlador y configura la ventana de login.
@@ -142,6 +145,23 @@ public class GestionUsuariosController {
             // Configurar tooltip de requisitos de contraseña
             PasswordTooltip.setText("The password must contain a minimum length of " + MIN_PASSWORD_LENGTH + " characters.");
             Tooltip.install(LabelTooltipPassword, PasswordTooltip);
+            
+            
+            EmailTextField.setOnKeyPressed(event->{
+            if(event.getCode()==javafx.scene.input.KeyCode.ENTER){
+                if(!LoginButton.isDisabled()){
+                    LoginButton.fire();
+                }
+            }
+            });
+            PasswordField.setOnKeyPressed(event ->{
+              if(event.getCode()== javafx.scene.input.KeyCode.ENTER){
+                  if(!LoginButton.isDisabled()){
+                      LoginButton.fire();
+                  }
+              }
+            });
+           
             
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error al inicializar controlador de login", e);
@@ -203,13 +223,14 @@ public class GestionUsuariosController {
             if (customer != null && customer.getId() != null) {
                 LOGGER.info("Evento: login_success para ID: " + customer.getId());
                 loggedCustomer = customer; // Almacenar usuario autenticado
-                
+                contadorFallos=0;
                 // Navegar directamente a la ventana principal
                 navigateToMain();
             } else {
                 LOGGER.warning("Evento: login_failed - Customer null o sin ID");
                 showInlineError("", "Unexpected error: Incomplete user data.");
                 setControlsDisabled(false);
+                handleNumeroFallos();
             }
         });
 
@@ -264,8 +285,20 @@ public class GestionUsuariosController {
             showErrorAlert("Error connecting to the server:\n" +
                           "Check your internet connection and that the server is active.");
         }
+        handleNumeroFallos();
     }
 
+    
+     private void handleNumeroFallos(){
+        contadorFallos++;
+        if(contadorFallos >= 3){
+           EmailTextField.setDisable(true);
+           PasswordField.setDisable(true);
+           LoginButton.setDisable(true);
+           showInfoAlert("Se ha alcanzado el limite de intentos.\n" + 
+                   "intentelo de nuevo más tarde.");
+        }
+    }
     // ======================== VALIDACIONES EN TIEMPO REAL ========================
 
     /**
