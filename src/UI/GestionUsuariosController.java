@@ -5,9 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import javafx.application.Platform;
 import javafx.beans.value.ObservableValue;
-import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -126,8 +124,12 @@ public class GestionUsuariosController {
             
             // Estado inicial de controles
             LoginButton.setDisable(true);
-            clearErrorMessages();
             
+            //Establecer el botón Login como defaultButton.
+            LoginButton.setDefaultButton(true);
+            LOGGER.info("LoginButton configurado como defaultButton");
+            
+            clearErrorMessages();
             TextFieldLengthLimits();
             
             // Asociar eventos a manejadores
@@ -136,8 +138,11 @@ public class GestionUsuariosController {
             EmailTextField.focusedProperty().addListener(this::handleEmailFocusChange);
             PasswordField.textProperty().addListener(this::handlePasswordChange);
             PasswordField.focusedProperty().addListener(this::handlePasswordFocusChange);
-            //GetPasswordLink.setOnAction(e -> handleForgotPassword());
-            SignUpLink.setOnAction(e -> handleSignUp());
+            
+            // Referencia de método directa
+            // Cambio el metodo lambda por referencia de metodo poniendo this::
+            SignUpLink.setOnAction(this::handleSignUp);
+            LOGGER.info("SignUpLink configurado por referencia de metodo de SignUp");
             
             // Configurar tooltip de requisitos de contraseña
             PasswordTooltip.setText("The password must contain a minimum length of " + MIN_PASSWORD_LENGTH + " characters.");
@@ -153,7 +158,6 @@ public class GestionUsuariosController {
 
     /**
      * Maneja el evento de clic en el botón Login.
-     * Realiza autenticación contra el backend REST.
      * 
      * @param event Evento de acción del botón
      */
@@ -175,94 +179,80 @@ public class GestionUsuariosController {
         setControlsDisabled(true);
         clearErrorMessages();
 
-        // Crear tarea asíncrona para autenticación REST
-        Task<Customer> loginTask = new Task<Customer>() {
-            @Override
-            protected Customer call() throws Exception {
-                CustomerRESTClient client = new CustomerRESTClient();
-                try {
-                    // Codificar parámetros para URL
-                    String encEmail = URLEncoder.encode(email, StandardCharsets.UTF_8.toString());
-                    String encPassword = URLEncoder.encode(password, StandardCharsets.UTF_8.toString());
-                    
-                    LOGGER.info("Conectando a REST API para autenticación...");
-                    
-                    // Llamada al servicio REST
-                    return client.findCustomerByEmailPassword_XML(Customer.class, encEmail, encPassword);
-                    
-                } finally {
-                    client.close();
-                }
-            }
-        };
-
-        // Manejo de éxito
-        loginTask.setOnSucceeded(workerStateEvent -> {
-            Customer customer = loginTask.getValue();
+        // Convertir todo el código asíncrono y multihilo  del método handleLoginButtonOnAction en código síncrono.
+        CustomerRESTClient client = null;
+        Customer customer = null;
+        
+        try {
+            // Crear cliente REST
+            client = new CustomerRESTClient();
             
+            // Codificar parámetros para URL
+            String encEmail = URLEncoder.encode(email, StandardCharsets.UTF_8.toString());
+            String encPassword = URLEncoder.encode(password, StandardCharsets.UTF_8.toString());
+            
+            LOGGER.info("Conectando a REST API para autenticación...");
+            
+            customer = client.findCustomerByEmailPassword_XML(Customer.class, encEmail, encPassword);
+            
+            // Autenticación exitosa
             if (customer != null && customer.getId() != null) {
                 LOGGER.info("Evento: login_success para ID: " + customer.getId());
                 loggedCustomer = customer; // Almacenar usuario autenticado
                 
-                // Navegar directamente a la ventana principal
+                // Navegar a la ventana principal
                 navigateToMain();
+                
             } else {
                 LOGGER.warning("Evento: login_failed - Customer null o sin ID");
                 showInlineError("", "Unexpected error: Incomplete user data.");
                 setControlsDisabled(false);
             }
-        });
-
-        // Manejo de errores
-        loginTask.setOnFailed(workerStateEvent -> {
-            Throwable ex = loginTask.getException();
-            handleLoginError(ex);
-            setControlsDisabled(false);
-        });
-
-        // Ejecutar tarea en hilo separado
-        Thread loginThread = new Thread(loginTask, "login-rest-thread");
-        loginThread.setDaemon(true);
-        loginThread.start();
-    }
-
-    /**
-     * Maneja los diferentes tipos de errores de autenticación.
-     * 
-     * @param ex Excepción capturada durante el login
-     */
-    private void handleLoginError(Throwable ex) {
-        if (ex instanceof NotAuthorizedException) {
+            
+            // Elimino el manejador de errores handleLoginError y meto las excepciones en varios catch
+        } catch (NotAuthorizedException e) {
             // 401: Credenciales incorrectas
             LOGGER.info("Evento: login_failed - Credenciales inválidas");
             showInlineError("", "Incorrect email or password.");
             highlightErrorFields(true, true);
             PasswordField.requestFocus();
             PasswordField.selectAll();
+            setControlsDisabled(false);
             
-        } else if (ex instanceof InternalServerErrorException) {
+        } catch (InternalServerErrorException e) {
             // 500: Error del servidor
             LOGGER.severe("Evento: login_error_server - Error interno del servidor");
             showErrorAlert("Server error.\nPlease, Try again later.");
             
-        } else if (ex instanceof ClientErrorException) {
-            ClientErrorException clientEx = (ClientErrorException) ex;
-            int status = clientEx.getResponse().getStatus();
+        } catch (ClientErrorException e) {
+            // Otros errores del cliente (400, 404, etc.)
+            int status = e.getResponse().getStatus();
             
             if (status == 404) {
                 LOGGER.severe("Error 404: El endpoint REST no existe");
                 showErrorAlert("Error: The authentication service is unavailable.");
             } else {
-                LOGGER.severe("Error REST " + status + ": " + clientEx.getMessage());
+                LOGGER.severe("REST Error " + status + ": " + e.getMessage());
                 showInlineError("", "Server error: code " + status);
             }
+            setControlsDisabled(false);
             
-        } else {
-            // Error genérico (red, timeout, etc.)
-            String msg = ex != null && ex.getMessage() != null ? ex.getMessage() : "Unable to connect to the service.";
-            LOGGER.log(Level.SEVERE, "Error durante autenticación REST", ex);
+        } catch (Exception e) {
+            // Error genérico (red, timeout, encoding, etc.)
+            LOGGER.log(Level.SEVERE, "Error autenticacion REST", e);
             showErrorAlert("Error connecting to the server:\n" +
                           "Check your internet connection and that the server is active.");
+            setControlsDisabled(false);
+            
+        } finally {
+            if (client != null) {
+                try {
+                    client.close();
+                    LOGGER.fine("REST client closed successfully");
+                } catch (Exception e) {
+                    LOGGER.log(Level.WARNING, "Error closing REST client", e);
+                }
+            }
         }
     }
 
@@ -361,185 +351,173 @@ public class GestionUsuariosController {
 
     /**
      * Navega a la ventana principal de la aplicación.
+     * 
+     * Sustituir el Platform.runLater() del método navigateToMain() por código síncrono. 
      */
     private void navigateToMain() {
         LOGGER.info("=== INICIO NAVEGACIÓN A VENTANA PRINCIPAL ===");
         LOGGER.info("Stage actual: " + (stage != null ? "OK" : "NULL"));
         LOGGER.info("Logged customer: " + (loggedCustomer != null ? loggedCustomer.getEmail() : "NULL"));
         
-        Platform.runLater(() -> {
-            try {
-                // 1. Verificar recurso FXML
-                LOGGER.info("Paso 1: Buscando recurso /UI/PaginaPrincipal.fxml");
-                java.net.URL fxmlUrl = getClass().getResource("/UI/PaginaPrincipal.fxml");
-                
-                if (fxmlUrl == null) {
-                    LOGGER.severe("ERROR: No se encontró el archivo PaginaPrincipal.fxml en /UI/");
-                    showErrorAlert("Error: PaginaPrincipal.fxml file not found\n\n" +
-                                  "Verify the file is on path src/UI/PaginaPrincipal.fxml");
-                    return;
-                }
-                LOGGER.info("Recurso encontrado: " + fxmlUrl);
-                
-                // 2. Cargar el FXML
-                LOGGER.info("Paso 2: Cargando FXML...");
-                FXMLLoader loader = new FXMLLoader(fxmlUrl);
-                Parent root = loader.load();
-                LOGGER.info("FXML cargado exitosamente. Root: " + (root != null ? "OK" : "NULL"));
-                
-                // 3. Obtener el controlador
-                LOGGER.info("Paso 3: Obteniendo controlador...");
-                PaginaPrincipalController controller = loader.getController();
-                
-                if (controller == null) {
-                    LOGGER.severe("ERROR: Controller es NULL. Verifica fx:controller en PaginaPrincipal.fxml");
-                    showErrorAlert("Error: Main window driver could not be loaded.\n\n" +
-                                  "Verify file PaginaPrincipal.fxml has: fx:controller=\"UI.PaginaPrincipalController\"");
-                    return;
-                }
-                LOGGER.info("Controlador obtenido: " + controller.getClass().getName());
-                
-                // 4. Pasar el usuario autenticado
-                LOGGER.info("Paso 4: Pasando customer al controlador...");
-                if (loggedCustomer == null) {
-                    LOGGER.severe("ERROR: loggedCustomer es NULL");
-                    showErrorAlert("Error: No information available for the authenticated user.");
-                    return;
-                }
-                controller.setCustomer(loggedCustomer);
-                LOGGER.info("Customer pasado correctamente");
-                
-                // 5. Verificar stage
-                LOGGER.info("Paso 5: Verificando stage...");
-                if (stage == null) {
-                    LOGGER.severe("ERROR: Stage es NULL");
-                    showErrorAlert("Error: No window is available for browsing.");
-                    return;
-                }
-                LOGGER.info("Stage verificado: OK");
-                
-                // 6. Inicializar la ventana principal
-                LOGGER.info("Paso 6: Inicializando ventana principal...");
-                controller.init(stage, root);
-                
-                LOGGER.info("=== NAVEGACIÓN EXITOSA ===");
-                LOGGER.info("Usuario: " + loggedCustomer.getEmail());
-                
-            } catch (java.io.IOException e) {
-                LOGGER.log(Level.SEVERE, "Error de I/O al cargar FXML", e);
-                showErrorAlert("Error loading interface:\n" + e.getMessage() + "\n\n" +
-                              "Verify the file PaginaPrincipal.fxml is on path src/UI/");
-            } catch (Exception e) {
-                LOGGER.log(Level.SEVERE, "Error inesperado al navegar", e);
-                e.printStackTrace(); // Para ver el stacktrace completo
-                showErrorAlert("Unexpected error: " + e.getMessage());
+        try {
+            // 1. Verificar recurso FXML
+            LOGGER.info("Paso 1: Buscando recurso /UI/PaginaPrincipal.fxml");
+            java.net.URL fxmlUrl = getClass().getResource("/UI/PaginaPrincipal.fxml");
+            
+            if (fxmlUrl == null) {
+                LOGGER.severe("ERROR: No se encontró el archivo PaginaPrincipal.fxml en /UI/");
+                showErrorAlert("Error: PaginaPrincipal.fxml file not found\n\n" +
+                              "Verify the file is on path src/UI/PaginaPrincipal.fxml");
+                return;
             }
-        });
+            LOGGER.info("Recurso encontrado: " + fxmlUrl);
+            
+            // 2. Cargar el FXML
+            LOGGER.info("Paso 2: Cargando FXML...");
+            FXMLLoader loader = new FXMLLoader(fxmlUrl);
+            Parent root = loader.load();
+            LOGGER.info("FXML cargado exitosamente. Root: " + (root != null ? "OK" : "NULL"));
+            
+            // 3. Obtener el controlador
+            LOGGER.info("Paso 3: Obteniendo controlador...");
+            PaginaPrincipalController controller = loader.getController();
+            
+            if (controller == null) {
+                LOGGER.severe("ERROR: Controller es NULL. Verifica fx:controller en PaginaPrincipal.fxml");
+                showErrorAlert("Error: Main window driver could not be loaded.\n\n" +
+                        "Verify file PaginaPrincipal.fxml has: fx:controller=\"UI.PaginaPrincipalController\"");
+                return;
+            }
+            LOGGER.info("Controlador obtenido: " + controller.getClass().getName());
+            
+            // 4. Pasar el usuario autenticado
+            LOGGER.info("Paso 4: Pasando customer al controlador...");
+            if (loggedCustomer == null) {
+                LOGGER.severe("ERROR: loggedCustomer es NULL");
+                showErrorAlert("Error: No information available for the authenticated user.");
+                return;
+            }
+            controller.setCustomer(loggedCustomer);
+            LOGGER.info("Customer pasado correctamente");
+            
+            // 5. Verificar stage
+            LOGGER.info("Paso 5: Verificando stage...");
+            if (stage == null) {
+                LOGGER.severe("ERROR: Stage es NULL");
+                showErrorAlert("Error: No window is available for browsing.");
+                return;
+            }
+            LOGGER.info("Stage verificado: OK");
+            
+            // 6. Inicializar la ventana principal
+            LOGGER.info("Paso 6: Inicializando ventana principal...");
+            controller.init(stage, root);
+            
+            LOGGER.info("=== NAVEGACIÓN EXITOSA ===");
+            LOGGER.info("Usuario: " + loggedCustomer.getEmail());
+            
+        } catch (java.io.IOException e) {
+            LOGGER.log(Level.SEVERE, "Error de I/O al cargar FXML", e);
+            showErrorAlert("Error loading interface:\n" + e.getMessage() + "\n\n" +
+                          "Verify the file PaginaPrincipal.fxml is on path src/UI/");
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error inesperado al navegar", e);
+            e.printStackTrace(); // Para ver el stacktrace completo
+            showErrorAlert("Unexpected error: " + e.getMessage());
+        }
     }
 
     /**
      * Maneja el evento "Olvidé mi contraseña". (MAS ADELANTE)
      */
-//    private void handleForgotPassword() {
-//        LOGGER.info("Evento: forgot_password_requested");
-//        
-//        try {
-//            // TODO: Implementar navegación a ventana de recuperación
-//            /*
-//            FXMLLoader loader = new FXMLLoader(getClass().getResource("/UI/ForgotPassword.fxml"));
-//            Parent root = loader.load();
-//            ForgotPasswordController controller = loader.getController();
-//            controller.init(new Stage(), root);
-//            */
-//            
-//            // TEMPORAL
-//            showInfoAlert("Ir a ventana de recuperación de contraseña (a implementar)");
-//            
-//        } catch (Exception e) {
-//            LOGGER.log(Level.SEVERE, "Error al abrir ventana de recuperación", e);
-//            showInlineError("", "No se pudo abrir la ventana de recuperación.");
-//        }
-//    }
+    //    private void handleForgotPassword() {
+    //        LOGGER.info("Evento: forgot_password_requested");
+    //        
+    //        try {
+    //            // TODO: Implementar navegación a ventana de recuperación
+    //            /*
+    //            FXMLLoader loader = new FXMLLoader(getClass().getResource("/UI/ForgotPassword.fxml"));
+    //            Parent root = loader.load();
+    //            ForgotPasswordController controller = loader.getController();
+    //            controller.init(new Stage(), root);
+    //            */
+    //            
+    //            // TEMPORAL
+    //            showInfoAlert("Ir a ventana de recuperación de contraseña (a implementar)");
+    //            
+    //        } catch (Exception e) {
+    //            LOGGER.log(Level.SEVERE, "Error al abrir ventana de recuperación", e);
+    //            showInlineError("", "No se pudo abrir la ventana de recuperación.");
+    //        }
+    //    }
 
     
     /**
- * Maneja el evento "Registrarse" (Sign Up).
- * Abre la ventana de registro como modal APPLICATION_MODAL.
- * 
- * IMPORTANTE: Si hay error al conectar con Sign-Up,
- * mostrar error inline (no alert modal).
- */
-private void handleSignUp() {
-    LOGGER.info("Evento: register_navigated");
-    
-    try {
-        // 1. Verificar que el recurso FXML existe
-        LOGGER.info("Cargando ventana de Sign-Up...");
-        java.net.URL fxmlUrl = getClass().getResource("/UI/FXMLDocumentSignUp.fxml");
+     * Maneja el evento "Registrarse" (Sign Up).
+     * Abre la ventana de registro como modal APPLICATION_MODAL.
+     * 
+     * IMPORTANTE: Si hay error al conectar con Sign-Up,
+     * mostrar error inline (no alert modal).
+     */
+    private void handleSignUp(ActionEvent event) {
+        LOGGER.info("Event: register_navigated");
         
-        if (fxmlUrl == null) {
-            LOGGER.severe("ERROR: No se encontró FXMLDocumentSignUp.fxml");
-            showInlineError("", "Error: The registration window could not be opened.");
-            return;
-        }
-        
-        // 2. Cargar el FXML
-        FXMLLoader loader = new FXMLLoader(fxmlUrl);
-        Parent root = loader.load();
-        
-        if (root == null) {
-            LOGGER.severe("ERROR: Root es null al cargar Sign-Up FXML");
+        try {
+            // 1. Verificar que el recurso FXML existe
+            LOGGER.info("Cargando ventana de Sign-Up...");
+            java.net.URL fxmlUrl = getClass().getResource("/UI/FXMLDocumentSignUp.fxml");
+            
+            if (fxmlUrl == null) {
+                LOGGER.severe("ERROR: No se encontró FXMLDocumentSignUp.fxml");
+                showInlineError("", "Error: The registration window could not be opened.");
+                return;
+            }
+            
+            // 2. Cargar el FXML
+            FXMLLoader loader = new FXMLLoader(fxmlUrl);
+            Parent root = loader.load();
+            
+            if (root == null) {
+                LOGGER.severe("ERROR: Root es null al cargar Sign-Up FXML");
+                showInlineError("", "Error loading the registration window.");
+                return;
+            }
+            
+            // 3. Obtener el controlador de Sign-Up
+            GestionUsuariosControllerSignUp controller = loader.getController();
+            
+            if (controller == null) {
+                LOGGER.severe("ERROR: Controller de Sign-Up es null");
+                showInlineError("", "Error loading the registration controller.");
+                return;
+            }
+            
+            Stage signUpStage = new Stage();
+            signUpStage.initOwner(this.stage); // El login es el propietario
+            signUpStage.initModality(Modality.APPLICATION_MODAL); // Bloquea el login
+            signUpStage.setTitle("CREATE ACCOUNT");
+            signUpStage.setResizable(false);
+            
+            // 5. Configurar la escena
+            Scene scene = new Scene(root);
+            signUpStage.setScene(scene);
+            
+            controller.initFromLogin(signUpStage, root);
+            
+            // 7. Mostrar la ventana Sign-Up y esperar a que se cierre
+            LOGGER.info("Ventana Sign-Up abierta correctamente.");
+            signUpStage.showAndWait(); // Bloquea hasta que se cierre Sign-Up
+            
+            LOGGER.info("Ventana Sign-Up cerrada. Control devuelto a Login.");
+            
+        } catch (java.io.IOException e) {
+            LOGGER.log(Level.SEVERE, "Error de I/O al abrir Sign-Up", e);
             showInlineError("", "Error loading the registration window.");
-            return;
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error inesperado al abrir Sign-Up", e);
+            showInlineError("", "Error: The registration window could not be opened.");
         }
-        
-        // 3. Obtener el controlador de Sign-Up
-        GestionUsuariosControllerSignUp controller = loader.getController();
-        
-        if (controller == null) {
-            LOGGER.severe("ERROR: Controller de Sign-Up es null");
-            showInlineError("", "Error loading the registration controller.");
-            return;
-        }
-        
-        // 4. Crear un nuevo Stage MODAL para Sign-Up
-        // El Stage principal (login) será el propietario (owner)
-        Stage signUpStage = new Stage();
-        signUpStage.initOwner(this.stage); // El login es el propietario
-        signUpStage.initModality(Modality.APPLICATION_MODAL); // Bloquea el login
-        signUpStage.setTitle("CREATE ACCOUNT");
-        signUpStage.setResizable(false);
-        
-        // 5. Configurar la escena
-        Scene scene = new Scene(root);
-        signUpStage.setScene(scene);
-        
-        // 6. Inicializar el controlador de Sign-Up
-        // NOTA: Pasamos signUpStage como "parentStage" porque en init()
-        // el controlador creará OTRO Stage interno (ver GestionUsuariosControllerSignUp)
-        // Pero como ya tenemos signUpStage listo, modificaremos init() para usarlo
-        
-        // CORRECCIÓN: Llamar a un método init mejorado (ver siguiente paso)
-        controller.initFromLogin(signUpStage, root);
-        
-        // 7. Mostrar la ventana Sign-Up y esperar a que se cierre
-        LOGGER.info("Ventana Sign-Up abierta correctamente.");
-        signUpStage.showAndWait(); // Bloquea hasta que se cierre Sign-Up
-        
-        LOGGER.info("Ventana Sign-Up cerrada. Control devuelto a Login.");
-        
-        // Si el registro fue exitoso, mostrar un mensaje
-        // o pre-cargar el email en el campo de login
-        // (GestionUsuariosControllerSignUp debe devolver un resultado)
-        
-    } catch (java.io.IOException e) {
-        LOGGER.log(Level.SEVERE, "Error de I/O al abrir Sign-Up", e);
-        showInlineError("", "Error loading the registration window.");
-    } catch (Exception e) {
-        LOGGER.log(Level.SEVERE, "Error inesperado al abrir Sign-Up", e);
-        showInlineError("", "Error: The registration window could not be opened.");
     }
-}
 
     // ======================== MÉTODOS AUXILIARES ========================
 
@@ -601,15 +579,13 @@ private void handleSignUp() {
      * @param message Mensaje de error a mostrar
      */
     private void showErrorAlert(String message) {
-        Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.initModality(Modality.APPLICATION_MODAL);
-            alert.initOwner(stage);
-            alert.setTitle("Error");
-            alert.setHeaderText(null);
-            alert.setContentText(message);
-            alert.showAndWait();
-        });
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.initModality(Modality.APPLICATION_MODAL);
+        alert.initOwner(stage);
+        alert.setTitle("Error");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 
     /**
@@ -618,17 +594,47 @@ private void handleSignUp() {
      * @param message Mensaje informativo a mostrar
      */
     private void showInfoAlert(String message) {
-        Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.initModality(Modality.APPLICATION_MODAL);
-            alert.initOwner(stage);
-            alert.setTitle("Information");
-            alert.setHeaderText(null);
-            alert.setContentText(message);
-            alert.showAndWait();
-        });
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.initModality(Modality.APPLICATION_MODAL);
+        alert.initOwner(stage);
+        alert.setTitle("Information");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
+    
+    private void TextFieldLengthLimits() {
+            try {
+                // Limitar email a 50 caracteres
+                TextFormatter<String> emailFormatter = new TextFormatter<>(change -> {
+                    // Si el nuevo texto excede el límite, rechazar el cambio
+                    if (change.getControlNewText().length() > MAX_EMAIL_LENGTH) {
+                        LOGGER.fine("Email input rejected: exceeds " + MAX_EMAIL_LENGTH + " characters");
+                        return null; // Rechaza el cambio
+                    }
+                return change; // Acepta el cambio
+                });
+                EmailTextField.setTextFormatter(emailFormatter);
 
+                // Limitar email a 50 caracteres
+                TextFormatter<String> passwordFormatter = new TextFormatter<>(change -> {
+                // Si el nuevo texto excede el límite, rechazar el cambio
+                    if (change.getControlNewText().length() > MAX_PASSWORD_LENGTH) {
+                        LOGGER.fine("Password input rejected: exceeds " + MAX_PASSWORD_LENGTH + " characters");
+                        return null; // Rechaza el cambio
+                    }
+                    return change; // Acepta el cambio
+                });
+                PasswordField.setTextFormatter(passwordFormatter);
+
+                LOGGER.info("Length limits applied successfully: Email=" + MAX_EMAIL_LENGTH + ", Password=" + MAX_PASSWORD_LENGTH);
+
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, "Error applying text field length limits", e);
+                // No lanzar excepción: el formulario puede funcionar sin límites
+            }
+        }
+    
     // ======================== GETTERS Y SETTERS ========================
 
     /**
@@ -649,35 +655,5 @@ private void handleSignUp() {
         this.stage = stage;
     }
 
-    private void TextFieldLengthLimits() {
-        try {
-        // Limitar email a 50 caracteres
-        TextFormatter<String> emailFormatter = new TextFormatter<>(change -> {
-            // Si el nuevo texto excede el límite, rechazar el cambio
-            if (change.getControlNewText().length() > MAX_EMAIL_LENGTH) {
-                LOGGER.fine("Email input rejected: exceeds " + MAX_EMAIL_LENGTH + " characters");
-                return null; // Rechaza el cambio
-            }
-            return change; // Acepta el cambio
-        });
-        EmailTextField.setTextFormatter(emailFormatter);
-        
-        // Limitar email a 50 caracteres
-        TextFormatter<String> passwordFormatter = new TextFormatter<>(change -> {
-            // Si el nuevo texto excede el límite, rechazar el cambio
-            if (change.getControlNewText().length() > MAX_PASSWORD_LENGTH) {
-                LOGGER.fine("Password input rejected: exceeds " + MAX_PASSWORD_LENGTH + " characters");
-                return null; // Rechaza el cambio
-            }
-            return change; // Acepta el cambio
-        });
-        PasswordField.setTextFormatter(passwordFormatter);
-        
-        LOGGER.info("Length limits applied successfully: Email=" + MAX_EMAIL_LENGTH + ", Password=" + MAX_PASSWORD_LENGTH);
-        
-    } catch (Exception e) {
-        LOGGER.log(Level.WARNING, "Error applying text field length limits", e);
-        // No lanzar excepción: el formulario puede funcionar sin límites
+    
     }
-    }
-}
