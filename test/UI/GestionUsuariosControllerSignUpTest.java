@@ -49,7 +49,7 @@ public class GestionUsuariosControllerSignUpTest extends ApplicationTest {
         write("Linares");
         
         clickOn("#tfAddress");
-        write("Calle contubernio 45"); 
+        write("Calle Ave del Paraiso 45"); 
         
         clickOn("#tfCity");
         write("Istanbul"); 
@@ -64,7 +64,7 @@ public class GestionUsuariosControllerSignUpTest extends ApplicationTest {
         write("905551234567");
         
         clickOn("#tfEmail");
-        String uniqueEmail = "jorge.gonzalez." + System.currentTimeMillis() + "@gmail.com";
+        String uniqueEmail = "jorge.gonzalez@gmail.com";
         write(uniqueEmail);
         
         clickOn("#tfPass");
@@ -146,7 +146,7 @@ public class GestionUsuariosControllerSignUpTest extends ApplicationTest {
         clickOn("#btBack");
         sleep(500);
         
-        verifyThat(".dialog-pane", isVisible());
+        verifyThat("¿Deseas volver al Login?", isVisible());
         
         clickOn("Aceptar");
         sleep(500);

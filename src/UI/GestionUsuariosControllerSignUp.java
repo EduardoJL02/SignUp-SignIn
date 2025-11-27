@@ -306,15 +306,6 @@ public class GestionUsuariosControllerSignUp {
             // Guardar referencia al Stage
             this.stage = stage;
 
-            // Configurar el Stage (ya debería tener modality y owner desde Login)
-            stage.setTitle("CREATE ACCOUNT");
-            stage.setResizable(false);
-
-            // Configurar la escena (ya debería estar asignada desde Login, pero por seguridad)
-            if (stage.getScene() == null) {
-                stage.setScene(new Scene(root));
-            }
-
             // Estado inicial de los botones
             btBack.setDisable(false);
             btCreate.setDisable(true);
@@ -333,59 +324,6 @@ public class GestionUsuariosControllerSignUp {
 
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error fatal al inicializar Sign-Up desde Login", e);
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Error de Aplicación");
-            alert.setHeaderText("No se pudo cargar la ventana de registro.");
-            alert.setContentText("Ocurrió un error inesperado: " + e.getMessage());
-            alert.showAndWait();
-        }
-    }
-
-    /**
-     * Inicializa el controlador creando un <strong>nuevo</strong> {@link Stage} modal.
-     * <p>
-     * Este método es el método de inicialización original, útil si la ventana
-     * de Sign-Up se lanza de forma independiente. Crea su propia ventana modal
-     * que es propiedad del {@code parentStage}.
-     * </p>
-     *
-     * @param parentStage El {@link Stage} padre (propietario) de esta nueva ventana.
-     * @param root        El nodo {@link Parent} (raíz) de la escena FXML.
-     */
-    public void init(Stage parentStage, Parent root) {
-        try {
-            LOGGER.log(Level.INFO, "Initializing SignUp (CREATE ACCOUNT) - Standalone mode");
-
-            Scene scene = new Scene(root);
-
-            // Crear un nuevo Stage modal
-            Stage dialogStage = new Stage();
-            this.stage = dialogStage;
-
-            dialogStage.initOwner(parentStage);
-            dialogStage.initModality(Modality.APPLICATION_MODAL);
-            dialogStage.setScene(scene);
-            dialogStage.setTitle("CREATE ACCOUNT");
-            dialogStage.setResizable(false);
-
-            // Estado inicial
-            btBack.setDisable(false);
-            btCreate.setDisable(true);
-
-            // Foco inicial
-            tfFName.requestFocus();
-
-            // Configurar manejadores
-            setupEventHandlers();
-
-            // Aplicar listener de longitud máxima
-            applyTextLengthLimiters();
-
-            // Mostrar la ventana
-            dialogStage.show();
-
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error fatal al inicializar Sign-Up", e);
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Error de Aplicación");
             alert.setHeaderText("No se pudo cargar la ventana de registro.");
