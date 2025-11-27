@@ -320,7 +320,7 @@ public class GestionUsuariosControllerSignUp {
             btCreate.setDisable(true);
 
             // Foco inicial en el campo Nombre
-            Platform.runLater(() -> tfFName.requestFocus());
+            tfFName.requestFocus();
 
             // Configurar manejadores de eventos
             setupEventHandlers();

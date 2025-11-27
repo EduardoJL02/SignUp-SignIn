@@ -98,16 +98,16 @@
         <Label layoutX="883.0" layoutY="445.0" text="?">
             <tooltip><Tooltip text="Must match the password above." /></tooltip>
         </Label>
-
-        <Button fx:id="btBack" layoutX="204.0" layoutY="708.0" mnemonicParsing="false" prefHeight="37.0" prefWidth="220.0" style="-fx-background-color: black;" text="BACK" textFill="WHITE">
+        <Button fx:id="btCreate" defaultButton="true" layoutX="204.0" layoutY="708.0" mnemonicParsing="false" prefHeight="37.0" prefWidth="220.0" style="-fx-background-color: green;" text="Create Account" textAlignment="CENTER" textFill="WHITE">
+            <effect>
+                <Glow />
+            </effect>
             <font>
                 <Font size="15.0" />
             </font>
         </Button>
-        <Button fx:id="btCreate" layoutX="575.0" layoutY="708.0" mnemonicParsing="false" prefHeight="37.0" prefWidth="220.0" style="-fx-background-color: green;" text="CREATE ACCOUNT" textAlignment="CENTER" textFill="WHITE">
-            <effect>
-                <Glow />
-            </effect>
+
+        <Button fx:id="btBack" cancelButton="true" layoutX="575.0" layoutY="708.0" mnemonicParsing="false" prefHeight="37.0" prefWidth="220.0" style="-fx-background-color: black;" text="Back" textFill="WHITE">
             <font>
                 <Font size="15.0" />
             </font>
