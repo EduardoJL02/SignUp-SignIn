@@ -64,7 +64,7 @@ public class GestionUsuariosControllerSignUpTest extends ApplicationTest {
         write("905551234567");
         
         clickOn("#tfEmail");
-        String uniqueEmail = "jorge.gonzalez." + System.currentTimeMillis() + "@gmail.com";
+        String uniqueEmail = "jorge.gonzalez@gmail.com";
         write(uniqueEmail);
         
         clickOn("#tfPass");
