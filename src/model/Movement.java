@@ -5,6 +5,7 @@
  */
 package model;
 
+
 import java.io.Serializable;
 import java.util.Date;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -33,6 +34,7 @@ public class Movement implements Serializable {
     /**
      * Timestamp for the movement.
      */
+    
     private Date timestamp;
     /**
      * Amount of the movement.

@@ -32,7 +32,7 @@ public class Account implements Serializable {
     /**
      * Type of the account.
      */
-    
+   
     private AccountType type;
     /**
      * Description of the account.
