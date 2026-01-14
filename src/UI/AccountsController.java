@@ -95,10 +95,10 @@ public class AccountsController {
         try {
             LOGGER.info("Inicializando AccountsController...");
 
-            // 1. Guardar el usuario recibido
+            // Guardar usuario recibido
             this.user = customer;
 
-            // 2. Configurar la Escena y el Stage
+            // Configurar Escena y Stage
             Scene scene = new Scene(root);
             stage = new Stage();
             stage.setScene(scene);
@@ -108,12 +108,12 @@ public class AccountsController {
             stage.setResizable(false);
             stage.initModality(Modality.APPLICATION_MODAL); // Bloquea ventanas anteriores
 
-            // 3. Inicializar Cliente REST y Lista de Datos
+            // Inicializar Cliente REST y Lista de Datos
             client = new AccountRESTClient();
             accountsData = FXCollections.observableArrayList();
             tbAccounts.setItems(accountsData);
 
-            // 4. Definir el comportamiento al mostrar la ventana (Eventos)
+            // Definir el comportamiento al mostrar la ventana (Eventos)
             stage.setOnShowing(new EventHandler<WindowEvent>() {
                 @Override
                 public void handle(WindowEvent event) {
@@ -121,8 +121,7 @@ public class AccountsController {
                 }
             });
 
-            // 5. Configurar las columnas de la tabla (PropertyValueFactory)
-            // Nota: Los nombres de strings deben coincidir EXACTAMENTE con los atributos del modelo Account
+            // Configurar las columnas de la tabla (PropertyValueFactory)
             tcId.setCellValueFactory(new PropertyValueFactory<>("id"));
             tcDescription.setCellValueFactory(new PropertyValueFactory<>("description"));
             tcType.setCellValueFactory(new PropertyValueFactory<>("type"));
@@ -131,11 +130,11 @@ public class AccountsController {
             tcBeginBalance.setCellValueFactory(new PropertyValueFactory<>("beginBalance"));
             tcDate.setCellValueFactory(new PropertyValueFactory<>("creationDate"));
 
-            // 6. Cargar el ChoiceBox con los tipos de cuenta
-            // Usamos FXCollections para convertir un array a lista observable
+            // Cargar el ChoiceBox con los tipos de cuenta
+            // FXCollections para convertir un array a lista observable
             cbType.setItems(FXCollections.observableArrayList(AccountType.values()));
 
-            // 7. Mostrar la ventana
+            // Mostrar la ventana
             stage.show();
 
         } catch (Exception e) {
@@ -145,20 +144,19 @@ public class AccountsController {
     }
 
     /**
-     * Lógica que se ejecuta cuando la ventana se está mostrando.
-     * Configura el estado inicial y carga los datos.
+     * Configuracion del estado inicial y carga los datos.
      */
     private void handleWindowShowing() {
         LOGGER.info("Ventana mostrándose. Configurando estado inicial.");
 
-        // 1. Estado inicial de los botones
-        btnCreate.setDisable(false);  // Se puede crear
-        btnModify.setDisable(true);   // Deshabilitado hasta seleccionar fila
-        btnDelete.setDisable(true);   // Deshabilitado hasta seleccionar fila
+        // Estado inicial de los botones
+        btnCreate.setDisable(false);  
+        btnModify.setDisable(true);   // Temporal
+        btnDelete.setDisable(true);   //temporal
         btnSearch.setDisable(false);
         btnReport.setDisable(false);
 
-        // 2. Estado inicial de los campos (No editables o limpios)
+        // Estado inicial de los campos (No editables o limpios)
         tfDescription.setText("");
         tfCreditLine.setText("");
         tfBalance.setText("");
@@ -167,82 +165,46 @@ public class AccountsController {
         
         lblMessage.setText("");
 
-        // 3. Cargar datos del servidor
+        // Cargar datos del servidor
         loadData();
     }
 
     /**
-     * Conecta con el servidor y obtiene las cuentas DEL USUARIO.
+     * Carga de datos filtrando directamente en el servidor por el ID del cliente.
      */
     private void loadData() {
         try {
             LOGGER.info("Cargando cuentas para el cliente ID: " + user.getId());
             
-            // Limpiar la tabla antes de cargar
+            // Limpiar la colección local para evitar duplicados visuales
             accountsData.clear();
 
-            // Usamos GenericType para recuperar una Lista de Cuentas
+            // Definir el tipo genérico para que Jersey entienda que es una List<Account>
             GenericType<List<Account>> genericType = new GenericType<List<Account>>() {};
             
-            // LLAMADA CORREGIDA:
-            // 1. Usamos findAccountsByCustomerId_XML (no findAll)
-            // 2. Pasamos 'genericType' (ahora soportado por el cliente REST)
-            // 3. Pasamos el ID del usuario logueado convertido a String
-            List<Account> customerAccounts = client.findAccountsByCustomerId_XML(genericType, user.getId().toString());
+            // Llamada al servidor
+            List<Account> myAccounts = client.findAccountsByCustomerId_XML(genericType, String.valueOf(user.getId()));
 
-            // Añadimos los datos a la lista observable de la tabla
-            if (customerAccounts != null) {
-                accountsData.addAll(customerAccounts);
+            // Añadir a la tabla solo si hay datos
+            if (myAccounts != null) {
+                accountsData.addAll(myAccounts);
+                LOGGER.info("Se han cargado " + myAccounts.size() + " cuentas.");
+            }else{
+                LOGGER.log(Level.SEVERE, "No existen cuentas asociadas a este cliente");
+                showErrorAlert("No existe ninguna cuenta");
             }
             
-            tbAccounts.setItems(accountsData); // Refrescar tabla
-            LOGGER.info("Cuentas cargadas: " + accountsData.size());
+            // Refrescar la tabla (ObservableList automático?)
+            tbAccounts.setItems(accountsData);
 
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error al cargar datos del servidor", e);
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Error de Conexión");
-            alert.setHeaderText("No se pudieron cargar las cuentas");
-            alert.setContentText("Detalle: " + e.getMessage());
-            alert.showAndWait();
+            showErrorAlert("Error loading your accounts. Please, try again later.\n" + e.getMessage());
         }
     }
 
     /**
-     * Método auxiliar para verificar si una cuenta pertenece a un cliente.
-     * Itera sobre la colección de clientes de la cuenta.
-     */
-    private boolean isAccountOwner(Account account, Customer customer) {
-        // Validación de nulos
-        if (account == null || customer == null) return false;
-        
-        // Asumiendo que Account tiene una lista de customers
-        // Ajustar 'getCustomers()' según el nombre real en tu modelo Account.java
-        // Podría ser getCustomer() si es OneToMany
-        /* Si Account.java tiene: private List<Customer> customers;
-        */
-        /*
-        for (Customer c : account.getCustomers()) {
-            if (c.getId().equals(customer.getId())) {
-                return true;
-            }
-        }
-        */
-        
-        // OPCIÓN B: Si la lógica es "Customer tiene lista de Accounts" y no al revés,
-        // la lógica en loadData debería haber sido diferente.
-        // Pero basándonos en "consultar accounts_id", asumimos que la cuenta sabe su dueño.
-        
-        // OPCIÓN C (Común en estos proyectos): Comprobar IDs simples si la entidad no está llena
-        // return account.getCustomer().getId().equals(customer.getId());
-        
-        // POR AHORA: Devolvemos true a todo para probar la carga visual si no tienes la relación clara,
-        // pero aquí es donde debes poner tu condición real.
-        return true;
-    }
-
-    /**
-     * Muestra una alerta de error simple.
+     * Alerta de error simple.
      */
     private void showErrorAlert(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
