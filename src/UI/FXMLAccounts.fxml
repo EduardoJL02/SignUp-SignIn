@@ -5,15 +5,60 @@
 <?import javafx.scene.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 
+<AnchorPane id="AnchorPane" prefHeight="600.0" prefWidth="900.0" style="-fx-background-color: #EEEEEE;" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="UI.AccountsController">
+    <children>
+        <Label layoutX="32.0" layoutY="24.0" text="Accounts Management" textFill="#2b2b2b">
+            <font>
+                <Font name="System Bold" size="24.0" />
+            </font>
+        </Label>
 
-<AnchorPane id="AnchorPane" prefHeight="400.0" prefWidth="600.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/8" fx:controller="UI.AccountsController">
-   <children>
-      <TableView layoutX="91.0" layoutY="100.0" prefHeight="278.0" prefWidth="483.0">
-        <columns>
-          <TableColumn prefWidth="75.0" text="C1" />
-          <TableColumn prefWidth="75.0" text="C2" />
-        </columns>
-      </TableView>
-   </children>
+        <Pane layoutX="32.0" layoutY="70.0" prefHeight="100.0" prefWidth="836.0" style="-fx-border-color: #CCCCCC; -fx-background-color: #FFFFFF;">
+            <children>
+                <Label layoutX="14.0" layoutY="23.0" text="Description:" />
+                <TextField fx:id="tfDescription" layoutX="90.0" layoutY="19.0" prefHeight="25.0" prefWidth="240.0" promptText="Account description" />
+
+                <Label layoutX="350.0" layoutY="23.0" text="Type:" />
+                <ChoiceBox fx:id="cbType" layoutX="390.0" layoutY="19.0" prefHeight="25.0" prefWidth="120.0" />
+
+                <Label layoutX="14.0" layoutY="62.0" text="Credit Line:" />
+                <TextField fx:id="tfCreditLine" layoutX="90.0" layoutY="58.0" prefHeight="25.0" prefWidth="150.0" promptText="Only for CREDIT" />
+
+                <Label layoutX="350.0" layoutY="62.0" text="Balance:" />
+                <TextField fx:id="tfBalance" editable="false" layoutX="390.0" layoutY="58.0" prefHeight="25.0" prefWidth="120.0" promptText="0.0" style="-fx-background-color: #F0F0F0;" />
+
+                <Label layoutX="530.0" layoutY="62.0" text="Creation Date:" />
+                <TextField fx:id="tfDate" editable="false" layoutX="620.0" layoutY="58.0" prefHeight="25.0" prefWidth="150.0" promptText="dd/mm/yyyy" style="-fx-background-color: #F0F0F0;" />
+            </children>
+        </Pane>
+
+        <TableView fx:id="tbAccounts" layoutX="32.0" layoutY="185.0" prefHeight="350.0" prefWidth="700.0">
+            <columns>
+                <TableColumn fx:id="tcId" prefWidth="50.0" text="ID" />
+                <TableColumn fx:id="tcDescription" prefWidth="200.0" text="Description" />
+                <TableColumn fx:id="tcType" prefWidth="100.0" text="Type" />
+                <TableColumn fx:id="tcBalance" prefWidth="100.0" text="Balance" />
+                <TableColumn fx:id="tcCreditLine" prefWidth="100.0" text="Credit Line" />
+                <TableColumn fx:id="tcBeginBalance" prefWidth="100.0" text="Begin Bal." />
+                <TableColumn fx:id="tcDate" prefWidth="120.0" text="Date" />
+            </columns>
+        </TableView>
+
+        <VBox layoutX="750.0" layoutY="185.0" prefHeight="200.0" prefWidth="120.0" spacing="10.0">
+            <children>
+                <Button fx:id="btnCreate" mnemonicParsing="false" prefHeight="30.0" prefWidth="120.0" text="Create" />
+                <Button fx:id="btnModify" mnemonicParsing="false" prefHeight="30.0" prefWidth="120.0" text="Modify" />
+                <Button fx:id="btnDelete" mnemonicParsing="false" prefHeight="30.0" prefWidth="120.0" text="Delete" />
+                <Separator prefWidth="200.0" />
+                <Button fx:id="btnReport" mnemonicParsing="false" prefHeight="30.0" prefWidth="120.0" text="Report" />
+                <Button fx:id="btnSearch" mnemonicParsing="false" prefHeight="30.0" prefWidth="120.0" text="Search" />
+            </children>
+        </VBox>
+        
+        <Button fx:id="btnHelp" layoutX="32.0" layoutY="550.0" mnemonicParsing="false" text="Help" />
+        <Label fx:id="lblMessage" layoutX="100.0" layoutY="554.0" textFill="#e40e0e" />
+
+    </children>
 </AnchorPane>

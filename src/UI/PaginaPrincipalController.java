@@ -16,7 +16,7 @@ import javafx.scene.control.Label;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.Customer;
-
+import java.io.IOException;
 /**
  * Clase controladora para la página principal (PaginaPrincipal.fxml) de la aplicación.
  * Gestiona la interfaz de usuario y las interacciones después de un inicio de sesión exitoso.
@@ -46,6 +46,7 @@ public class PaginaPrincipalController {
     @FXML private Label EmailLabel;
     @FXML private Label CustomerIdLabel;
     @FXML private Button LogoutButton;
+    @FXML private Button btnAccounts;
 
     // ======================== CONSTANTES ========================
     private static final Logger LOGGER = Logger.getLogger("SignUpSignIn.PaginaPrincipal");
@@ -83,6 +84,8 @@ public class PaginaPrincipalController {
             
             // Asociar eventos a manejadores
             LogoutButton.setOnAction(this::handleLogoutButtonAction);
+            
+            btnAccounts.setOnAction(this::handleAccountsNavigation);
             
             stage.show();
             LOGGER.info("Main window initialized successfully.");
@@ -144,7 +147,32 @@ public class PaginaPrincipalController {
     }
 
     // ======================== MANEJADORES DE EVENTOS ========================
+    
+    // --- LÓGICA DEL BOTÓN ACCOUNTS ---
+        
+           
+            public void handleAccountsNavigation(ActionEvent event) {
+                try {
+                    LOGGER.info("Navegando a la gestión de cuentas...");
 
+                    // 1. Cargar el FXML de Accounts
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("FXMLAccounts.fxml"));
+                    Parent root = (Parent) loader.load();
+
+                    // 2. Obtener el controlador
+                    AccountsController controller = (AccountsController) loader.getController();
+
+                    // 3. Pasar el CLIENTE actual y abrir la ventana
+                    // NOTA: Es vital pasar 'customer' para que cargue SUS datos
+                    controller.setStage(root, customer);
+
+                } catch (IOException e) {
+                    LOGGER.log(Level.SEVERE, "Error al abrir la ventana de Cuentas", e);
+                    showInfoAlert("Error", "No se pudo abrir la ventana de cuentas.");
+                }
+            }
+        
+        
     /**
      * Maneja el evento de clic en el botón "Cerrar Sesión".
      * Solicita confirmación y regresa a la ventana de login.
