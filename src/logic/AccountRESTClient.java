@@ -5,9 +5,12 @@
  */
 package logic;
 
+import java.util.List;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.GenericType;
+import model.Account;
 
 /**
  * Jersey REST client generated for REST resource:AccountFacadeREST
@@ -35,7 +38,9 @@ public class AccountRESTClient {
 
     public <T> T findAccountsByCustomerId_XML(Class<T> responseType, String id) throws ClientErrorException {
         WebTarget resource = webTarget;
+        // Esta línea construye la URL: .../webresources/account/customer/{id}
         resource = resource.path(java.text.MessageFormat.format("customer/{0}", new Object[]{id}));
+        // Esta línea hace la petición GET y devuelve el resultado (XML)
         return resource.request(javax.ws.rs.core.MediaType.APPLICATION_XML).get(responseType);
     }
 

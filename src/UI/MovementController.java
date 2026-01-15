@@ -5,11 +5,6 @@
  */
 package UI;
 
-/**
- *
- * @author pablo
- */
-
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -22,16 +17,35 @@ import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.util.StringConverter;
 import javafx.util.converter.DoubleStringConverter;
+import logic.AccountRESTClient;
+import logic.MovementRESTClient;
+import model.Account;
+import model.Customer;
+import model.Movement;
 
 import java.net.URL;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+/**
+ * Controlador final para la gestión de Movimientos Bancarios.
+ * Integra: CRUD REST, Recálculo visual de saldos y manejo de Arrays para JAX-RS.
+ */
 public class MovementController implements Initializable {
+
+    private static final Logger LOGGER = Logger.getLogger(MovementController.class.getName());
 
     // --- ELEMENTOS FXML ---
     @FXML private Label lblCustomerName;
+    @FXML private Label lblUserId;
+    @FXML private Label lblAccountId;
     @FXML private ComboBox<Account> cbAccountSelector;
     @FXML private DatePicker dpFrom;
     @FXML private DatePicker dpTo;
@@ -44,302 +58,354 @@ public class MovementController implements Initializable {
     // Tabla y Columnas
     @FXML private TableView<Movement> tvMovements;
     @FXML private TableColumn<Movement, LocalDate> colDate;
-    @FXML private TableColumn<Movement, String> colType;
-    @FXML private TableColumn<Movement, String> colDesc;
+    @FXML private TableColumn<Movement, String> colType;   // Mapeado a description
     @FXML private TableColumn<Movement, Double> colAmount;
+    @FXML private TableColumn<Movement, Double> colBalance; // Nueva columna
 
     // --- DATOS ---
     private ObservableList<Movement> masterData = FXCollections.observableArrayList();
     private FilteredList<Movement> filteredData;
-    private User currentUser;
+    private Customer currentCustomer;
+    
+    // Clientes REST
+    private AccountRESTClient accountClient;
+    private MovementRESTClient movementClient;
 
-    // Formato de fecha solicitado
+    // Formato visual
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        // 1. Configurar Selector de Cuentas para que muestre ID y Saldo
+        accountClient = new AccountRESTClient();
+        movementClient = new MovementRESTClient();
+
+        // 1. Configurar Selector de Cuentas (Muestra ID y Saldo)
         cbAccountSelector.setConverter(new StringConverter<Account>() {
             @Override
             public String toString(Account account) {
                 if (account == null) return null;
-                return account.getId() + " - " + account.getType() + " (" + account.getBalance() + "€)";
+                return account.getId() + " (" + String.format("%.2f", account.getBalance()) + "€)";
             }
             @Override
-            public Account fromString(String string) {
-                return cbAccountSelector.getItems().stream()
-                        .filter(ap -> ap.getId().equals(string)).findFirst().orElse(null);
-            }
+            public Account fromString(String string) { return null; }
         });
 
-        // Listener: Cuando cambia la cuenta, cargar movimientos
+        // Listener: Al cambiar de cuenta, cargar movimientos
         cbAccountSelector.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
+                lblAccountId.setText(String.valueOf(newVal.getId()));
                 loadMovementsForAccount(newVal);
+                // El saldo visual se actualizará tras cargar los movimientos
             }
         });
 
-        // 2. CONFIGURACIÓN DE COLUMNAS (EDICIÓN EN LÍNEA)
+        // 2. Configurar Columnas (Edición y Formato)
+        setupColumns();
 
-        // A) Columna FECHA: Usa un CellFactory personalizado para mostrar un DatePicker
-        colDate.setCellValueFactory(cellData -> cellData.getValue().dateProperty());
-        colDate.setCellFactory(column -> new DateEditingCell()); 
-        colDate.setOnEditCommit(e -> e.getRowValue().setDate(e.getNewValue()));
-
-        // B) Columna TIPO: ChoiceBox/ComboBox con "Deposit" y "Payment"
-        colType.setCellValueFactory(cellData -> cellData.getValue().typeProperty());
-        colType.setCellFactory(ComboBoxTableCell.forTableColumn("Deposit", "Payment"));
-        colType.setOnEditCommit(e -> {
-            e.getRowValue().setType(e.getNewValue());
-            recalculateBalance(); // Recalcular si el tipo afecta al signo (opcional)
-        });
-
-        // C) Columna DESCRIPCIÓN: Texto simple
-        colDesc.setCellValueFactory(cellData -> cellData.getValue().descriptionProperty());
-        colDesc.setCellFactory(TextFieldTableCell.forTableColumn());
-        colDesc.setOnEditCommit(e -> e.getRowValue().setDescription(e.getNewValue()));
-
-        // D) Columna AMOUNT: Solo números y actualiza saldo
-        colAmount.setCellValueFactory(cellData -> cellData.getValue().amountProperty().asObject());
-        colAmount.setCellFactory(TextFieldTableCell.forTableColumn(new DoubleStringConverter()));
-        colAmount.setOnEditCommit(e -> {
-            if (e.getNewValue() != null) {
-                e.getRowValue().setAmount(e.getNewValue());
-                recalculateBalance(); // ACTUALIZA EL BALANCE AL EDITAR
-                lblStatus.setText("Amount updated. Balance recalculated.");
-            }
-        });
-
-        // Inicializar lista filtrada
+        // 3. Inicializar Filtros
         filteredData = new FilteredList<>(masterData, p -> true);
         tvMovements.setItems(filteredData);
     }
 
-    /**
-     * MÉTODO CLAVE: Llamado desde el Login para pasar el usuario.
-     */
-    public void setClientData(User user) {
-        this.currentUser = user;
-        lblCustomerName.setText("CUSTOMER#: " + user.getId() + " " + user.getName());
+    private void setupColumns() {
+        // A) FECHA (Solo lectura - dd/MM/yyyy)
+        colDate.setCellValueFactory(cellData -> {
+            if(cellData.getValue().getTimestamp() != null){
+                return new SimpleObjectProperty<>(cellData.getValue().getTimestamp().toInstant()
+                                  .atZone(ZoneId.systemDefault()).toLocalDate());
+            }
+            return null;
+        });
+        colDate.setCellFactory(column -> new TableCell<Movement, LocalDate>() {
+            @Override
+            protected void updateItem(LocalDate item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) setText(null);
+                else setText(dateFormatter.format(item));
+            }
+        });
+        colDate.setEditable(false); // No editable por usuario
 
-        // MOCK: Cargar cuentas simuladas (Aquí harías la llamada a la API GET /customers/{id}/accounts)
-        ObservableList<Account> mockAccounts = FXCollections.observableArrayList(
-            new Account("IBAN-ES99-0001", "STANDARD", 1500.00),
-            new Account("IBAN-ES99-0002", "CREDIT", -200.50)
-        );
-        cbAccountSelector.setItems(mockAccounts);
+        // B) TIPO (Editable - ComboBox)
+        colType.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getDescription()));
+        colType.setCellFactory(ComboBoxTableCell.forTableColumn("Deposit", "Payment"));
         
-        if (!mockAccounts.isEmpty()) {
-            cbAccountSelector.getSelectionModel().selectFirst();
+        colType.setOnEditCommit(e -> {
+            Movement m = e.getRowValue();
+            if (isNewRow(m)) {
+                m.setDescription(e.getNewValue());
+                // Salta a la siguiente columna para facilitar el flujo
+                tvMovements.getSelectionModel().select(e.getTablePosition().getRow(), colAmount);
+            } else {
+                tvMovements.refresh();
+                showAlert("Acción no permitida", "No puedes editar el tipo de movimientos antiguos.");
+            }
+        });
+
+        // C) AMOUNT (Editable - Trigger de Guardado)
+        colAmount.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getAmount()));
+        colAmount.setCellFactory(TextFieldTableCell.forTableColumn(new DoubleStringConverter()));
+        
+        colAmount.setOnEditCommit(e -> {
+            Movement m = e.getRowValue();
+            if (isNewRow(m)) {
+                Double val = e.getNewValue();
+                
+                // Lógica: Si es "Payment", lo convertimos a negativo
+                if ("Payment".equalsIgnoreCase(m.getDescription()) && val > 0) {
+                    val = val * -1;
+                }
+                
+                m.setAmount(val);
+                createMovementOnServer(m); // GUARDAR EN BBDD
+            } else {
+                tvMovements.refresh();
+                showAlert("Acción no permitida", "No puedes editar importes antiguos.");
+            }
+        });
+
+        // D) BALANCE (Solo Lectura - Formato Moneda)
+        colBalance.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getBalance()));
+        colBalance.setCellFactory(column -> new TableCell<Movement, Double>() {
+            @Override
+            protected void updateItem(Double item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) setText(null);
+                else setText(String.format("%.2f €", item));
+            }
+        });
+    }
+
+    // --- MÉTODOS DE CARGA DE DATOS ---
+
+    public void setClientData(Customer customer) {
+        this.currentCustomer = customer;
+        
+        // Evitamos textos "null" en la interfaz
+        String name = (customer.getFirstName() != null) ? customer.getFirstName() : "Cliente";
+        String last = (customer.getLastName() != null) ? customer.getLastName() : "";
+        
+        lblCustomerName.setText(name + " " + last);
+        lblUserId.setText(String.valueOf(customer.getId()));
+        
+        loadUserAccounts(true); // Cargar cuentas y seleccionar la primera
+    }
+
+    private void loadUserAccounts(boolean selectFirst) {
+        try {
+            // USAMOS ARRAYS PARA EVITAR ERROR GENERIC TYPE
+            Account[] accountsArray = accountClient.findAccountsByCustomerId_XML(
+                    Account[].class, 
+                    String.valueOf(currentCustomer.getId())
+            );
+            List<Account> accounts = Arrays.asList(accountsArray);
+            
+            // Intentar mantener la selección actual al recargar
+            Account currentSelection = cbAccountSelector.getValue();
+            
+            cbAccountSelector.setItems(FXCollections.observableArrayList(accounts));
+            
+            if (selectFirst && !accounts.isEmpty() && currentSelection == null) {
+                cbAccountSelector.getSelectionModel().selectFirst();
+            }
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error cargando cuentas", e);
+            lblStatus.setText("Error cargando cuentas.");
         }
     }
 
-    // --- MÉTODOS DE ACCIÓN FXML ---
+    private void loadMovementsForAccount(Account account) {
+        try {
+            // USAMOS ARRAYS PARA EVITAR ERROR GENERIC TYPE
+            Movement[] movementsArray = movementClient.findMovementByAccount_XML(
+                    Movement[].class, 
+                    String.valueOf(account.getId())
+            );
+            
+            masterData.clear();
+            masterData.addAll(Arrays.asList(movementsArray));
+            
+            // IMPORTANTE: Recalcular saldos visualmente para corregir incoherencias de BBDD
+            recalculateLocalBalances(account);
+            
+            lblStatus.setText("Datos actualizados.");
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error cargando movimientos", e);
+            lblStatus.setText("Error de conexión con el servidor.");
+        }
+    }
+
+    /**
+     * Recalcula el saldo acumulado fila a fila basándose en los importes.
+     * Esto corrige visualmente si la BBDD tiene un saldo total desfasado.
+     */
+    private void recalculateLocalBalances(Account account) {
+        double runningBalance = 0.0;
+        
+        // Si usamos saldo inicial de la cuenta
+        if (account.getBeginBalance() != null) {
+            runningBalance = account.getBeginBalance();
+        }
+
+        // Ordenar cronológicamente
+        masterData.sort((m1, m2) -> {
+            if (m1.getTimestamp() == null || m2.getTimestamp() == null) return 0;
+            return m1.getTimestamp().compareTo(m2.getTimestamp());
+        });
+
+        // Calcular acumulado
+        for (Movement m : masterData) {
+            runningBalance += m.getAmount();
+            m.setBalance(runningBalance); 
+        }
+
+        // Actualizar etiqueta inferior y tabla
+        updateBalanceDisplay(runningBalance);
+        tvMovements.refresh();
+    }
+
+    // --- ACCIONES CRUD ---
 
     @FXML
     void handleNewRow(ActionEvent event) {
         if (cbAccountSelector.getValue() == null) {
-            showAlert("Error", "Please select an account first.");
+            showAlert("Info", "Selecciona una cuenta primero.");
             return;
         }
 
-        // CREAR MOVIMIENTO: Fecha sistema, Tipo vacío (o default), Monto 0
-        Movement newMov = new Movement(
-                LocalDate.now(), 
-                "Deposit", 
-                "New Transaction (Edit me)", 
-                0.0
-        );
+        // Crear fila vacía para edición
+        Movement newMov = new Movement();
+        newMov.setTimestamp(new Date()); // Fecha de hoy automática
+        newMov.setDescription("Deposit"); // Valor por defecto
+        newMov.setAmount(0.0);
+        // Balance temporal visual
+        newMov.setBalance(cbAccountSelector.getValue().getBalance());
 
-        // Añadir a la lista maestra (al final)
         masterData.add(newMov);
         
-        // Seleccionar la nueva fila y hacer scroll hacia ella
-        tvMovements.getSelectionModel().select(newMov);
+        // Seleccionar y hacer scroll
+        int index = masterData.size() - 1;
+        tvMovements.getSelectionModel().select(index);
         tvMovements.scrollTo(newMov);
         
-        lblStatus.setText("New row added. Double click cells to edit.");
+        // Poner foco en la columna Tipo
+        tvMovements.edit(index, colType);
+        
+        lblStatus.setText("Nueva fila: Selecciona Tipo -> Cantidad -> Enter.");
+    }
+
+    private void createMovementOnServer(Movement mov) {
+        try {
+            Account selectedAccount = cbAccountSelector.getValue();
+            
+            // Calculamos el nuevo saldo total que tendrá la cuenta
+            Double newBalance = selectedAccount.getBalance() + mov.getAmount();
+            
+            mov.setBalance(newBalance);
+            mov.setAccount(selectedAccount);
+
+            // POST al servidor
+            movementClient.create_XML(mov, String.valueOf(selectedAccount.getId()));
+            
+            // Recargar todo para refrescar la interfaz
+            reloadCurrentAccountData(); 
+            
+            lblStatus.setText("Movimiento guardado correctamente.");
+            
+        } catch (Exception e) {
+            LOGGER.severe("Error creando movimiento: " + e.getMessage());
+            masterData.remove(mov); // Si falla, quitamos la línea
+            showAlert("Error", "No se pudo conectar con el servidor.");
+        }
     }
 
     @FXML
     void handleUndoLastMovement(ActionEvent event) {
         if (masterData.isEmpty()) {
-            showAlert("Info", "No movements to undo.");
+            showAlert("Info", "No hay movimientos para deshacer.");
             return;
         }
-
-        // LÓGICA: Eliminar el ÚLTIMO creado (el último de la lista), no por fecha.
-        int lastIndex = masterData.size() - 1;
-        Movement removed = masterData.remove(lastIndex);
         
-        recalculateBalance();
-        lblStatus.setText("Undo successful. Removed movement: " + removed.getDescription());
+        // Obtener último (cronológico)
+        Movement last = masterData.get(masterData.size() - 1);
         
-        // NOTA: Aquí llamarías a DELETE /api/movements/{id} si tuviera ID real
+        try {
+            // 1. Borrar movimiento
+            movementClient.remove(String.valueOf(last.getId()));
+            
+            // 2. Actualizar saldo de la cuenta manualmente
+            Account acc = cbAccountSelector.getValue();
+            Double restoredBalance = acc.getBalance() - last.getAmount();
+            acc.setBalance(restoredBalance);
+            
+            accountClient.updateAccount_XML(acc);
+            
+            // 3. Recargar interfaz
+            reloadCurrentAccountData();
+            
+            lblStatus.setText("Undo completado. Saldo restaurado.");
+            
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error undo", e);
+            showAlert("Error", "Falló la operación Undo.");
+        }
     }
+
+    /**
+     * Método CRÍTICO: Fuerza la recarga completa de datos desde el servidor
+     * y actualiza la visualización.
+     */
+    private void reloadCurrentAccountData() {
+        Account currentSelection = cbAccountSelector.getValue();
+        if (currentSelection == null) return;
+        
+        String currentId = String.valueOf(currentSelection.getId());
+
+        // 1. Descargar cuentas de nuevo (para tener el saldo oficial actualizado)
+        loadUserAccounts(false);
+
+        // 2. Buscar y re-seleccionar la cuenta actual
+        for (Account a : cbAccountSelector.getItems()) {
+            if (String.valueOf(a.getId()).equals(currentId)) {
+                cbAccountSelector.setValue(a);
+                
+                // 3. Forzar descarga de movimientos y recálculo
+                loadMovementsForAccount(a);
+                break;
+            }
+        }
+    }
+
+    // --- FILTROS Y UTILS ---
 
     @FXML
     void handleSearchByDates(ActionEvent event) {
         LocalDate from = dpFrom.getValue();
         LocalDate to = dpTo.getValue();
 
-        filteredData.setPredicate(movement -> {
-            // Caso 1: Sin filtros -> Mostrar todo
-            if (from == null && to == null) return true;
-
-            // Caso 2: Solo Desde
-            if (from != null && to == null) return !movement.getDate().isBefore(from);
-
-            // Caso 3: Solo Hasta
-            if (from == null && to != null) return !movement.getDate().isAfter(to);
-
-            // Caso 4: Rango
-            return !movement.getDate().isBefore(from) && !movement.getDate().isAfter(to);
+        filteredData.setPredicate(m -> {
+            if (m.getTimestamp() == null) return false;
+            LocalDate date = m.getTimestamp().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            
+            if (from != null && date.isBefore(from)) return false;
+            if (to != null && date.isAfter(to)) return false;
+            return true;
         });
-        
-        lblStatus.setText("Filter applied.");
+        lblStatus.setText("Filtro aplicado.");
     }
 
-    @FXML
-    void handleExit(ActionEvent event) {
-        System.exit(0);
+    @FXML void handleExit(ActionEvent event) { System.exit(0); }
+
+    private void updateBalanceDisplay(Double bal) { 
+        tfBalance.setText(String.format("%.2f €", bal)); 
     }
-
-    // --- MÉTODOS AUXILIARES ---
-
-    private void loadMovementsForAccount(Account account) {
-        // MOCK: Aquí llamarías a GET /api/accounts/{id}/movements
-        masterData.clear();
-        
-        // Simulamos datos iniciales
-        masterData.add(new Movement(LocalDate.of(2023, 1, 15), "Deposit", "Initial Deposit", account.getBalance()));
-        
-        recalculateBalance();
-        lblStatus.setText("Loaded movements for account: " + account.getId());
+    
+    private boolean isNewRow(Movement m) { 
+        return m.getId() == null || m.getId() == 0; 
     }
-
-    private void recalculateBalance() {
-        double total = 0.0;
-        for (Movement m : masterData) {
-            // Asumimos lógica simple: Deposit suma, Payment resta
-            if ("Payment".equalsIgnoreCase(m.getType())) {
-                total -= m.getAmount();
-            } else {
-                total += m.getAmount();
-            }
-        }
-        tfBalance.setText(String.format("%.2f €", total));
-    }
-
-    private void showAlert(String title, String content) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(content);
-        alert.showAndWait();
-    }
-
-    // --- CLASES INTERNAS (MODELOS) PARA QUE EL CÓDIGO FUNCIONE ---
-    // En tu proyecto real, estas clases deben ir en paquetes separados (com.tubanco.model)
-
-    // Clase auxiliar para celda DatePicker personalizada
-    class DateEditingCell extends TableCell<Movement, LocalDate> {
-        private DatePicker datePicker;
-
-        private void createDatePicker() {
-            datePicker = new DatePicker(getItem());
-            datePicker.setMinWidth(this.getWidth() - this.getGraphicTextGap() * 2);
-            datePicker.setOnAction((e) -> {
-                commitEdit(datePicker.getValue());
-            });
-        }
-
-        @Override
-        public void startEdit() {
-            super.startEdit();
-            if (datePicker == null) createDatePicker();
-            datePicker.setValue(getItem());
-            setGraphic(datePicker);
-            setText(null);
-        }
-
-        @Override
-        public void cancelEdit() {
-            super.cancelEdit();
-            setText(getItem().format(dateFormatter));
-            setGraphic(null);
-        }
-
-        @Override
-        public void updateItem(LocalDate item, boolean empty) {
-            super.updateItem(item, empty);
-            if (empty) {
-                setText(null);
-                setGraphic(null);
-            } else {
-                if (isEditing()) {
-                    if (datePicker != null) datePicker.setValue(item);
-                    setGraphic(datePicker);
-                    setText(null);
-                } else {
-                    setText(item.format(dateFormatter));
-                    setGraphic(null);
-                }
-            }
-        }
-    }
-
-    // Modelo Usuario simple
-    public static class User {
-        private String id;
-        private String name;
-        public User(String id, String name) { this.id = id; this.name = name; }
-        public String getId() { return id; }
-        public String getName() { return name; }
-    }
-
-    // Modelo Cuenta simple
-    public static class Account {
-        private String id;
-        private String type;
-        private double balance;
-        public Account(String id, String type, double balance) {
-            this.id = id; this.type = type; this.balance = balance;
-        }
-        public String getId() { return id; }
-        public String getType() { return type; }
-        public double getBalance() { return balance; }
-        @Override public String toString() { return id; }
-    }
-
-    // Modelo Movimiento (con Properties para JavaFX)
-    public static class Movement {
-        private final ObjectProperty<LocalDate> date;
-        private final StringProperty type;
-        private final StringProperty description;
-        private final DoubleProperty amount;
-
-        public Movement(LocalDate date, String type, String description, double amount) {
-            this.date = new SimpleObjectProperty<>(date);
-            this.type = new SimpleStringProperty(type);
-            this.description = new SimpleStringProperty(description);
-            this.amount = new SimpleDoubleProperty(amount);
-        }
-
-        public ObjectProperty<LocalDate> dateProperty() { return date; }
-        public LocalDate getDate() { return date.get(); }
-        public void setDate(LocalDate date) { this.date.set(date); }
-
-        public StringProperty typeProperty() { return type; }
-        public String getType() { return type.get(); }
-        public void setType(String type) { this.type.set(type); }
-
-        public StringProperty descriptionProperty() { return description; }
-        public String getDescription() { return description.get(); }
-        public void setDescription(String description) { this.description.set(description); }
-
-        public DoubleProperty amountProperty() { return amount; }
-        public double getAmount() { return amount.get(); }
-        public void setAmount(double amount) { this.amount.set(amount); }
+    
+    private void showAlert(String t, String c) { 
+        Alert a = new Alert(Alert.AlertType.INFORMATION); 
+        a.setTitle(t); a.setHeaderText(null); a.setContentText(c); a.showAndWait(); 
     }
 }

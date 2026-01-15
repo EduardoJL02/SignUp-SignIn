@@ -6,12 +6,12 @@
 <?import javafx.scene.text.*?>
 <?import javafx.scene.shape.*?>
 
-<Pane fx:id="mainPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="700.0" prefWidth="950.0" style="-fx-background-color: #f4f4f4;" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.tubanco.controller.BankController">
+<Pane fx:id="mainPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="700.0" prefWidth="950.0" style="-fx-background-color: #f4f4f4;" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="UI.MovementController">
    <children>
 
       <MenuBar layoutY="0.0" prefHeight="25.0" prefWidth="950.0">
         <menus>
-          <Menu mnemonicParsing="false" text="File">
+          <Menu mnemonicParsing="false" text="App">
             <items>
               <MenuItem mnemonicParsing="false" onAction="#handleExit" text="Exit" />
             </items>
@@ -19,66 +19,96 @@
           <Menu mnemonicParsing="false" text="Edit">
             <items>
               <MenuItem mnemonicParsing="false" onAction="#handleNewRow" text="Insert New Row" />
-              <MenuItem mnemonicParsing="false" onAction="#handleUndoLastMovement" text="Undo Last Movement" />
+              <MenuItem mnemonicParsing="false" onAction="#handleUndoLastMovement" text="Undo Last Entry" />
             </items>
           </Menu>
         </menus>
       </MenuBar>
 
-      <Label layoutX="30.0" layoutY="40.0" text="CUSTOMER DETAILS" textFill="#666666">
+      <Label layoutX="30.0" layoutY="45.0" text="CUSTOMER DETAILS" textFill="#666666">
          <font>
             <Font size="10.0" />
          </font>
       </Label>
       
-      <Label fx:id="lblCustomerName" layoutX="30.0" layoutY="55.0" text="Loading client..." textFill="#2c3e50">
+      <Label fx:id="lblCustomerName" layoutX="30.0" layoutY="60.0" text="Loading client..." textFill="#2c3e50">
          <font>
             <Font name="System Bold" size="16.0" />
          </font>
       </Label>
 
-      <Label layoutX="500.0" layoutY="40.0" text="SELECT ACCOUNT" textFill="#666666">
+      <Label layoutX="30.0" layoutY="86.0" text="User ID:" textFill="#7f8c8d">
+         <font>
+            <Font size="11.0" />
+         </font>
+      </Label>
+      <Label fx:id="lblUserId" layoutX="75.0" layoutY="86.0" text="..." textFill="#333333">
+         <font>
+            <Font name="System Bold" size="11.0" />
+         </font>
+      </Label>
+
+      <Label layoutX="160.0" layoutY="86.0" text="Account ID:" textFill="#7f8c8d">
+         <font>
+            <Font size="11.0" />
+         </font>
+      </Label>
+      <Label fx:id="lblAccountId" layoutX="225.0" layoutY="86.0" text="..." textFill="#333333">
+         <font>
+            <Font name="System Bold" size="11.0" />
+         </font>
+      </Label>
+
+      <Label layoutX="500.0" layoutY="45.0" text="SELECT ACCOUNT" textFill="#666666">
          <font>
             <Font size="10.0" />
          </font>
       </Label>
+      <ComboBox fx:id="cbAccountSelector" layoutX="500.0" layoutY="60.0" prefHeight="30.0" prefWidth="350.0" promptText="Choose account..." style="-fx-background-color: white; -fx-border-color: #dcdcdc;" />
+
+      <Line endX="920.0" layoutX="15.0" layoutY="105.0" startX="15.0" stroke="#dcdcdc" />
+
+      <Label layoutX="30.0" layoutY="125.0" text="From:" />
+      <DatePicker fx:id="dpFrom" layoutX="70.0" layoutY="120.0" prefHeight="25.0" prefWidth="110.0" promptText="dd/mm/yyyy" />
       
-      <ComboBox fx:id="cbAccountSelector" layoutX="500.0" layoutY="55.0" prefHeight="30.0" prefWidth="350.0" promptText="Choose an account..." style="-fx-font-size: 14px; -fx-background-color: white; -fx-border-color: #dcdcdc;" />
-
-      <Line endX="920.0" layoutX="15.0" layoutY="100.0" startX="15.0" stroke="#dcdcdc" />
-
-
-      <Label layoutX="30.0" layoutY="120.0" text="From:" />
-      <DatePicker fx:id="dpFrom" layoutX="70.0" layoutY="115.0" prefHeight="25.0" prefWidth="110.0" promptText="dd/mm/yyyy" />
+      <Label layoutX="195.0" layoutY="125.0" text="To:" />
+      <DatePicker fx:id="dpTo" layoutX="220.0" layoutY="120.0" prefHeight="25.0" prefWidth="110.0" promptText="dd/mm/yyyy" />
       
-      <Label layoutX="195.0" layoutY="120.0" text="To:" />
-      <DatePicker fx:id="dpTo" layoutX="220.0" layoutY="115.0" prefHeight="25.0" prefWidth="110.0" promptText="dd/mm/yyyy" />
-      
-      <Button fx:id="btSearch" layoutX="345.0" layoutY="115.0" mnemonicParsing="false" onAction="#handleSearchByDates" text="Filter Dates" />
+      <Button fx:id="btSearch" layoutX="345.0" layoutY="120.0" mnemonicParsing="false" onAction="#handleSearchByDates" text="Filter Dates" />
 
-      <Button fx:id="btNewRow" layoutX="616.0" layoutY="115.0" mnemonicParsing="false" onAction="#handleNewRow" prefHeight="25.0" prefWidth="154.0" style="-fx-background-color: #27ae60;" text="+ New Transaction" textFill="WHITE">
+      <Button fx:id="btNewRow" layoutX="630.0" layoutY="120.0" mnemonicParsing="false" onAction="#handleNewRow" prefHeight="25.0" prefWidth="140.0" style="-fx-background-color: #27ae60;" text="+ New Transaction" textFill="WHITE">
          <font>
             <Font name="System Bold" size="12.0" />
          </font>
+         <tooltip><Tooltip text="Add a new empty row to edit inline" /></tooltip>
       </Button>
 
-      <Button fx:id="btUndoLast" layoutX="780.0" layoutY="115.0" mnemonicParsing="false" onAction="#handleUndoLastMovement" prefHeight="25.0" prefWidth="140.0" style="-fx-background-color: #c0392b;" text="Undo Last" textFill="WHITE">
+      <Button fx:id="btUndoLast" layoutX="780.0" layoutY="120.0" mnemonicParsing="false" onAction="#handleUndoLastMovement" prefHeight="25.0" prefWidth="140.0" style="-fx-background-color: #c0392b;" text="Undo Last" textFill="WHITE">
          <font>
             <Font name="System Bold" size="12.0" />
          </font>
+         <tooltip><Tooltip text="Delete the last entered transaction" /></tooltip>
       </Button>
 
-
-      <TableView fx:id="tvMovements" editable="true" layoutX="30.0" layoutY="155.0" prefHeight="475.0" prefWidth="890.0">
+      <TableView fx:id="tvMovements" editable="true" layoutX="30.0" layoutY="160.0" prefHeight="470.0" prefWidth="890.0">
         <columns>
-          <TableColumn fx:id="colDate" prefWidth="120.0" text="Date" />
-          <TableColumn fx:id="colType" prefWidth="206.0" text="Type (Edit)" />
-          <TableColumn fx:id="colDesc" prefWidth="260.0" text="Amount (€)" />
-          <TableColumn fx:id="colAmount" prefWidth="303.0" style="-fx-alignment: CENTER-RIGHT;" text="Balance (€)" />
+          <TableColumn fx:id="colDate" prefWidth="140.0" text="Date (Auto)" />
+          <TableColumn fx:id="colType" prefWidth="300.0" text="Type (Select)" />
+          <TableColumn fx:id="colAmount" prefWidth="220.0" style="-fx-alignment: CENTER-RIGHT;" text="Amount (€)" />
+          <TableColumn fx:id="colBalance" prefWidth="210.0" style="-fx-alignment: CENTER-RIGHT;" text="Balance (€)" />
         </columns>
+         <contextMenu>
+            <ContextMenu>
+              <items>
+                <MenuItem mnemonicParsing="false" onAction="#handleUndoLastMovement" text="Delete Last Entry" />
+              </items>
+            </ContextMenu>
+         </contextMenu>
       </TableView>
 
-      <Label layoutX="653.0" layoutY="656.0" text="Current Balance:" textFill="#333333">
+      <Label layoutX="30.0" layoutY="640.0" text="* Steps: 1. New Transaction -&gt; 2. Select Type -&gt; 3. Enter Amount -&gt; 4. Press ENTER." textFill="#7f8c8d" />
+
+      <Label layoutX="654.0" layoutY="656.0" text="Current Balance:" textFill="#333333">
          <font>
             <Font name="System Bold" size="14.0" />
          </font>
@@ -90,7 +120,7 @@
          </font>
       </TextField>
 
-      <Label fx:id="lblStatus" layoutX="10.0" layoutY="680.0" text="Select an account to view movements." textFill="#999999" />
+      <Label fx:id="lblStatus" layoutX="10.0" layoutY="680.0" text="Ready. Waiting for user..." textFill="#999999" />
 
    </children>
 </Pane>
