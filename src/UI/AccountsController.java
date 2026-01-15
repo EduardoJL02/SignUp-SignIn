@@ -128,12 +128,11 @@ public class AccountsController {
             tcBalance.setCellValueFactory(new PropertyValueFactory<>("balance"));
             tcCreditLine.setCellValueFactory(new PropertyValueFactory<>("creditLine"));
             tcBeginBalance.setCellValueFactory(new PropertyValueFactory<>("beginBalance"));
-            tcDate.setCellValueFactory(new PropertyValueFactory<>("creationDate"));
-
+            tcDate.setCellValueFactory(new PropertyValueFactory<>("beginBalanceTimestamp"));
             // Cargar el ChoiceBox con los tipos de cuenta
             // FXCollections para convertir un array a lista observable
             cbType.setItems(FXCollections.observableArrayList(AccountType.values()));
-
+            
             // Mostrar la ventana
             stage.show();
 
