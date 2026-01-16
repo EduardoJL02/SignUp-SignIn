@@ -239,5 +239,5 @@ public class Account implements Serializable {
     public String toString() {
         return "serverside.entity.Account[ id=" + id + " ]";
     }
-    
-}
+
+    }

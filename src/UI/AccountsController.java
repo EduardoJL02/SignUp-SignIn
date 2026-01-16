@@ -1,6 +1,7 @@
 package UI;
 
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.collections.FXCollections;
@@ -120,6 +121,39 @@ public class AccountsController {
                     handleWindowShowing();
                 }
             });
+            
+            // --- ACCIÓN BOTÓN CREATE ---
+            btnCreate.setOnAction(new EventHandler<ActionEvent>() {
+                @Override
+                public void handle(ActionEvent event) {
+                    // Lógica de "Toggle" basada en el texto del botón
+                    if (btnCreate.getText().equalsIgnoreCase("Create")) {
+                        // PASO 1: Habilitar modo creación
+                        LOGGER.info("Iniciando modo creación de cuenta...");
+                        
+                        // Habilitar campos y limpiar
+                        clearForm();
+                        setFormVisible(true);
+                        
+                        // Pre-rellenar datos por defecto si quieres
+                        tfBalance.setText("0.0");
+                        
+                        // Cambiar botón a modo "Guardar"
+                        btnCreate.setText("Save");
+                        
+                        // Deshabilitar otros botones para evitar errores
+                        btnModify.setDisable(true);
+                        btnDelete.setDisable(true);
+                        
+                        // Foco a la descripción
+                        tfDescription.requestFocus();
+                        
+                    } else {
+                        // PASO 2: Guardar la cuenta (POST)
+                        createAccount();
+                    }
+                }
+            });
 
             // Configurar las columnas de la tabla (PropertyValueFactory)
             tcId.setCellValueFactory(new PropertyValueFactory<>("id"));
@@ -147,24 +181,16 @@ public class AccountsController {
      */
     private void handleWindowShowing() {
         LOGGER.info("Ventana mostrándose. Configurando estado inicial.");
-
-        // Estado inicial de los botones
-        btnCreate.setDisable(false);  
-        btnModify.setDisable(true);   // Temporal
-        btnDelete.setDisable(true);   //temporal
-        btnSearch.setDisable(false);
-        btnReport.setDisable(false);
-
-        // Estado inicial de los campos (No editables o limpios)
-        tfDescription.setText("");
-        tfCreditLine.setText("");
-        tfBalance.setText("");
-        tfDate.setText("");
-        cbType.getSelectionModel().clearSelection();
         
-        lblMessage.setText("");
+        // Cargar tipos de cuenta en el combo si está vacío
+        if (cbType.getItems().isEmpty()) {
+            cbType.setItems(FXCollections.observableArrayList(AccountType.values()));
+        }
 
-        // Cargar datos del servidor
+        // Estado inicial: Todo reseteado
+        resetUI();
+
+        // Cargar datos
         loadData();
     }
 
@@ -211,5 +237,127 @@ public class AccountsController {
         alert.setHeaderText("Operation Failed");
         alert.setContentText(message);
         alert.showAndWait();
+    }
+    
+    /**
+     * Habilita o deshabilita los campos del formulario.
+     */
+    private void setFormVisible(boolean visible) {
+        // Campos de texto
+        tfDescription.setDisable(!visible);
+        tfCreditLine.setDisable(!visible);
+        cbType.setDisable(!visible);
+        
+        // El balance y fecha los bloqueamos ya que suelen ser automáticos al crear
+        tfBalance.setDisable(true); 
+        tfDate.setDisable(true);
+        
+        // Si estamos editando, la tabla debe estar bloqueada para no cambiar de fila
+        tbAccounts.setDisable(visible);
+    }
+
+    /**
+     * Limpia los campos del formulario para una nueva entrada.
+     */
+    private void clearForm() {
+        tfDescription.setText("");
+        tfCreditLine.setText("");
+        tfBalance.setText("0.0");
+        tfDate.setText("");
+        cbType.getSelectionModel().clearSelection();
+        // Limpiar selección de tabla
+        tbAccounts.getSelectionModel().clearSelection();
+    }
+
+    /**
+     * Restaura la pantalla a su estado inicial (Solo lectura).
+     */
+    private void resetUI() {
+        setFormVisible(false);
+        clearForm();
+        
+        btnCreate.setText("Create");
+        btnCreate.setDisable(false);
+        
+        // Modify y Delete desactivados hasta que se seleccione algo
+        btnModify.setDisable(true);
+        btnDelete.setDisable(true);
+        
+        lblMessage.setText("");
+    }
+    
+    /**
+     * Valida datos, crea el objeto y lo envía al servidor.
+     */
+    private void createAccount() {
+        LOGGER.info("Intentando crear cuenta...");
+        
+        try {
+            // --- 1. VALIDACIONES ---
+            if (tfDescription.getText().trim().isEmpty()) {
+                showErrorAlert("Description is required.");
+                tfDescription.requestFocus();
+                return;
+            }
+            
+            if (cbType.getSelectionModel().getSelectedItem() == null) {
+                showErrorAlert("Please select an Account Type.");
+                cbType.requestFocus();
+                return;
+            }
+
+            // Validar Credit Line si es necesario
+            Double creditLine = 0.0;
+            if (cbType.getSelectionModel().getSelectedItem() == AccountType.CREDIT) {
+                if (tfCreditLine.getText().trim().isEmpty()) {
+                    showErrorAlert("Credit Line is required for CREDIT accounts.");
+                    return;
+                }
+                try {
+                    creditLine = Double.parseDouble(tfCreditLine.getText());
+                    if (creditLine < 0) {
+                        showErrorAlert("Credit Line cannot be negative.");
+                        return;
+                    }
+                } catch (NumberFormatException e) {
+                    showErrorAlert("Credit Line must be a valid number.");
+                    return;
+                }
+            }
+            
+            // --- 2. CREAR OBJETO MODELO ---
+            Account newAccount = new Account();
+            newAccount.setDescription(tfDescription.getText().trim());
+            newAccount.setType(cbType.getSelectionModel().getSelectedItem());
+            newAccount.setCreditLine(creditLine);
+            newAccount.setBalance(0.0);
+            newAccount.setBeginBalance(0.0);
+            // La fecha la ponemos nosotros o el servidor. 
+            // Para Java 8 Legacy usamos java.util.Date
+            
+            newAccount.setBeginBalanceTimestamp(new java.util.Date());
+            
+            // IMPORTANTE: Relación con el Cliente
+            // Dependiendo de cómo lo espere el servidor XML. 
+            // A veces basta con enviar el objeto Account limpio y el servidor lo asocia por la URL,
+            // pero normalmente debemos setear el usuario si la relación es bidireccional.
+            // newAccount.setCustomer(this.user); // Descomenta si tu modelo tiene setCustomer
+            
+            // --- 3. ENVÍO AL SERVIDOR ---
+            // Usamos create_XML. Ojo: create_XML suele ser void.
+            client.createAccount_XML(newAccount);
+            
+            // --- 4. ÉXITO ---
+            Alert alert = new Alert(Alert.AlertType.INFORMATION, "Account created successfully.");
+            alert.showAndWait();
+            
+            // Recargar datos y resetear interfaz
+            loadData();
+            resetUI();
+            
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error creating account", e);
+            showErrorAlert("Error connecting to server: " + e.getMessage());
+        }
     }
 }
