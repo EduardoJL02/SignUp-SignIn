@@ -23,6 +23,8 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javax.ws.rs.core.GenericType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
 import logic.AccountRESTClient;
 import model.Account;
 import model.AccountType;
@@ -122,13 +124,27 @@ public class AccountsController {
                 }
             });
             
+            // --- 1. Lógica del ChoiceBox (Standard vs Credit) ---
+        cbType.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+        if (newValue != null) {
+            if (newValue == AccountType.STANDARD) {
+                // Si es STANDARD: Bloquear, poner fondo gris y valor 0.0
+                tfCreditLine.setDisable(true);
+                tfCreditLine.setText("0.0");
+            } else {
+                // Si es CREDIT: Habilitar y limpiar o dejar editar
+                tfCreditLine.setDisable(false);
+                // Opcional: tfCreditLine.setText(""); 
+            }
+        }
+    });
+            
             // --- ACCIÓN BOTÓN CREATE ---
             btnCreate.setOnAction(new EventHandler<ActionEvent>() {
                 @Override
                 public void handle(ActionEvent event) {
-                    // Lógica de "Toggle" basada en el texto del botón
                     if (btnCreate.getText().equalsIgnoreCase("Create")) {
-                        // PASO 1: Habilitar modo creación
+                        // Habilitar modo creación
                         LOGGER.info("Iniciando modo creación de cuenta...");
                         
                         // Habilitar campos y limpiar
@@ -138,8 +154,9 @@ public class AccountsController {
                         // Pre-rellenar datos por defecto si quieres
                         tfBalance.setText("0.0");
                         
-                        // Cambiar botón a modo "Guardar"
+                        // Cambiar botón a modo "Guardar" y efecto de pulsado cambiando el color
                         btnCreate.setText("Save");
+                        btnCreate.setStyle("-fx-background-color: #2ecc71; -fx-text-fill: white;");
                         
                         // Deshabilitar otros botones para evitar errores
                         btnModify.setDisable(true);
@@ -149,7 +166,7 @@ public class AccountsController {
                         tfDescription.requestFocus();
                         
                     } else {
-                        // PASO 2: Guardar la cuenta (POST)
+                        // Guardar la cuenta (POST)
                         createAccount();
                     }
                 }
@@ -278,6 +295,7 @@ public class AccountsController {
         
         btnCreate.setText("Create");
         btnCreate.setDisable(false);
+        btnCreate.setStyle(""); // Resetear color
         
         // Modify y Delete desactivados hasta que se seleccione algo
         btnModify.setDisable(true);
@@ -305,8 +323,11 @@ public class AccountsController {
                 cbType.requestFocus();
                 return;
             }
+            
+            // --- 2. CREACIÓN DEL OBJETO ---
+            AccountForCreation newAccount = new AccountForCreation();
 
-            // Validar Credit Line si es necesario
+            // Lógica del Credit Line
             Double creditLine = 0.0;
             if (cbType.getSelectionModel().getSelectedItem() == AccountType.CREDIT) {
                 if (tfCreditLine.getText().trim().isEmpty()) {
@@ -325,26 +346,28 @@ public class AccountsController {
                 }
             }
             
-            // --- 2. CREAR OBJETO MODELO ---
-            Account newAccount = new Account();
+            // --- CORRECCIÓN APLICADA AQUÍ: GENERACIÓN DE ID LOCAL ---
+            // Usamos milisegundos para asegurar un Long único en este contexto
+            Long generatedId = System.currentTimeMillis();
+            newAccount.setId(generatedId);
+            
             newAccount.setDescription(tfDescription.getText().trim());
             newAccount.setType(cbType.getSelectionModel().getSelectedItem());
-            newAccount.setCreditLine(creditLine);
+            newAccount.setCreditLine(creditLine); // Usamos la variable local ya parseada
             newAccount.setBalance(0.0);
             newAccount.setBeginBalance(0.0);
-            // La fecha la ponemos nosotros o el servidor. 
-            // Para Java 8 Legacy usamos java.util.Date
-            
             newAccount.setBeginBalanceTimestamp(new java.util.Date());
             
-            // IMPORTANTE: Relación con el Cliente
-            // Dependiendo de cómo lo espere el servidor XML. 
-            // A veces basta con enviar el objeto Account limpio y el servidor lo asocia por la URL,
-            // pero normalmente debemos setear el usuario si la relación es bidireccional.
-            // newAccount.setCustomer(this.user); // Descomenta si tu modelo tiene setCustomer
+            // Gestión de la relación con el Customer
+            if (newAccount.getCustomers() == null) {
+                newAccount.setCustomers(new java.util.HashSet<>()); 
+            }
+            
+            Customer customer = new Customer();
+            customer.setId(this.user.getId());
+            newAccount.getCustomers().add(customer);
             
             // --- 3. ENVÍO AL SERVIDOR ---
-            // Usamos create_XML. Ojo: create_XML suele ser void.
             client.createAccount_XML(newAccount);
             
             // --- 4. ÉXITO ---
@@ -358,6 +381,17 @@ public class AccountsController {
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error creating account", e);
             showErrorAlert("Error connecting to server: " + e.getMessage());
+        }
+    }
+    
+    @XmlRootElement(name = "account") 
+    public static class AccountForCreation extends Account {
+        
+        // Sobrescribimos el método para quitar el efecto de @XmlTransient
+        @Override
+        @XmlElement(name = "customers") 
+        public java.util.Set<Customer> getCustomers() {
+            return super.getCustomers();
         }
     }
 }
