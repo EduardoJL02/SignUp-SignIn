@@ -1,14 +1,14 @@
 package UI;
 
+import java.net.URL;
 import java.util.List;
-import java.util.Set;
+import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -23,21 +23,33 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javax.ws.rs.core.GenericType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
 import logic.AccountRESTClient;
 import model.Account;
 import model.AccountType;
 import model.Customer;
 
-//Controlador de Gestión de Cuentas.
+/**
+ * Controlador para la gestión de cuentas (Accounts).
+ *
+ * @author Desarrollo proyecto CRUD
+ */
+public class AccountsController implements Initializable {
 
-public class AccountsController {
-
-    // Logger
+    // Logger para trazas
     private static final Logger LOGGER = Logger.getLogger("UI.AccountsController");
 
-    // Elementos FXML
+    // Referencias a la UI (FXML)
+    @FXML
+    private TextField tfDescription;
+    @FXML
+    private ChoiceBox<AccountType> cbType;
+    @FXML
+    private TextField tfCreditLine;
+    @FXML
+    private TextField tfBalance;
+    @FXML
+    private TextField tfDate; // Creation Date (BeginBalanceTimestamp)
+
     @FXML
     private TableView<Account> tbAccounts;
     @FXML
@@ -55,17 +67,7 @@ public class AccountsController {
     @FXML
     private TableColumn<Account, java.util.Date> tcDate;
 
-    @FXML
-    private TextField tfDescription;
-    @FXML
-    private ChoiceBox<AccountType> cbType;
-    @FXML
-    private TextField tfCreditLine;
-    @FXML
-    private TextField tfBalance;
-    @FXML
-    private TextField tfDate;
-
+    // Botonera
     @FXML
     private Button btnCreate;
     @FXML
@@ -82,97 +84,52 @@ public class AccountsController {
     @FXML
     private Label lblMessage;
 
-    // Atributos Locales
+    // Campos lógicos
     private Stage stage;
-    private Customer user; // usuario logueado
-    private AccountRESTClient client;
+    private Customer user; // El usuario logueado
+    private AccountRESTClient accountClient;
     private ObservableList<Account> accountsData;
 
     /**
-     * Método principal para configurar y mostrar la ventana.
-     * Recibe el 'root' cargado desde el FXML y el 'customer' que hizo login.
-     * @param root El nodo raíz de la vista (cargado por el FXMLLoader).
-     * @param customer El usuario que ha iniciado sesión.
+     * Inicialización por defecto de JavaFX.
+     */
+    @Override
+    public void initialize(URL location, ResourceBundle resources) {
+        // No implementamos nada aquí porque preferimos hacerlo en setStage
+        // para tener control total de cuándo inicia la ventana.
+    }
+
+    /**
+     * Método principal para inicializar la ventana y recibir datos.
+     *
+     * @param root El nodo raíz cargado desde el FXML.
+     * @param customer El cliente logueado que viene de la ventana anterior.
      */
     public void setStage(Parent root, Customer customer) {
         try {
-            LOGGER.info("Inicializando AccountsController...");
+            LOGGER.info("Inicializando ventana de Cuentas...");
 
-            // Guardar usuario recibido
-            this.user = customer;
-
-            // Configurar Escena y Stage
+            // 1. Crear la escena y el escenario (Stage)
             Scene scene = new Scene(root);
             stage = new Stage();
             stage.setScene(scene);
-            
-            // Propiedades de la ventana
+
+            // 2. Configurar propiedades de la ventana
             stage.setTitle("Accounts Management");
             stage.setResizable(false);
             stage.initModality(Modality.APPLICATION_MODAL); // Bloquea ventanas anteriores
 
-            // Inicializar Cliente REST y Lista de Datos
-            client = new AccountRESTClient();
-            accountsData = FXCollections.observableArrayList();
-            tbAccounts.setItems(accountsData);
+            // 3. Guardar el usuario recibido
+            this.user = customer;
 
-            // Definir el comportamiento al mostrar la ventana (Eventos)
-            stage.setOnShowing(new EventHandler<WindowEvent>() {
-                @Override
-                public void handle(WindowEvent event) {
-                    handleWindowShowing();
-                }
-            });
+            // 4. Inicializar componentes de UI
+            // Cargar el Enum en el ChoiceBox
+            cbType.setItems(FXCollections.observableArrayList(AccountType.values()));
             
-            // --- 1. Lógica del ChoiceBox (Standard vs Credit) ---
-        cbType.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-        if (newValue != null) {
-            if (newValue == AccountType.STANDARD) {
-                // Si es STANDARD: Bloquear, poner fondo gris y valor 0.0
-                tfCreditLine.setDisable(true);
-                tfCreditLine.setText("0.0");
-            } else {
-                // Si es CREDIT: Habilitar y limpiar o dejar editar
-                tfCreditLine.setDisable(false);
-                // Opcional: tfCreditLine.setText(""); 
-            }
-        }
-    });
-            
-            // --- ACCIÓN BOTÓN CREATE ---
-            btnCreate.setOnAction(new EventHandler<ActionEvent>() {
-                @Override
-                public void handle(ActionEvent event) {
-                    if (btnCreate.getText().equalsIgnoreCase("Create")) {
-                        // Habilitar modo creación
-                        LOGGER.info("Iniciando modo creación de cuenta...");
-                        
-                        // Habilitar campos y limpiar
-                        clearForm();
-                        setFormVisible(true);
-                        
-                        // Pre-rellenar datos por defecto si quieres
-                        tfBalance.setText("0.0");
-                        
-                        // Cambiar botón a modo "Guardar" y efecto de pulsado cambiando el color
-                        btnCreate.setText("Save");
-                        btnCreate.setStyle("-fx-background-color: #2ecc71; -fx-text-fill: white;");
-                        
-                        // Deshabilitar otros botones para evitar errores
-                        btnModify.setDisable(true);
-                        btnDelete.setDisable(true);
-                        
-                        // Foco a la descripción
-                        tfDescription.requestFocus();
-                        
-                    } else {
-                        // Guardar la cuenta (POST)
-                        createAccount();
-                    }
-                }
-            });
+            // La tabla NO debe ser editable
+            tbAccounts.setEditable(false);
 
-            // Configurar las columnas de la tabla (PropertyValueFactory)
+            // Configurar las columnas con los nombres de los atributos de Account
             tcId.setCellValueFactory(new PropertyValueFactory<>("id"));
             tcDescription.setCellValueFactory(new PropertyValueFactory<>("description"));
             tcType.setCellValueFactory(new PropertyValueFactory<>("type"));
@@ -180,218 +137,60 @@ public class AccountsController {
             tcCreditLine.setCellValueFactory(new PropertyValueFactory<>("creditLine"));
             tcBeginBalance.setCellValueFactory(new PropertyValueFactory<>("beginBalance"));
             tcDate.setCellValueFactory(new PropertyValueFactory<>("beginBalanceTimestamp"));
-            // Cargar el ChoiceBox con los tipos de cuenta
-            // FXCollections para convertir un array a lista observable
-            cbType.setItems(FXCollections.observableArrayList(AccountType.values()));
-            
-            // Mostrar la ventana
+
+            // 5. Instanciar el cliente REST
+            accountClient = new AccountRESTClient();
+
+            // 6. Cargar los datos del servidor
+            loadAccountData();
+
+            // 7. Mostrar la ventana
             stage.show();
+            
+            LOGGER.info("Ventana de Cuentas iniciada correctamente.");
 
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error al inicializar el stage", e);
+            LOGGER.log(Level.SEVERE, "Error al inicializar la ventana de cuentas", e);
             showErrorAlert("Error initializing window: " + e.getMessage());
         }
     }
 
     /**
-     * Configuracion del estado inicial y carga los datos.
+     * Carga los datos de las cuentas usando el cliente REST de forma síncrona.
      */
-    private void handleWindowShowing() {
-        LOGGER.info("Ventana mostrándose. Configurando estado inicial.");
-        
-        // Cargar tipos de cuenta en el combo si está vacío
-        if (cbType.getItems().isEmpty()) {
-            cbType.setItems(FXCollections.observableArrayList(AccountType.values()));
-        }
-
-        // Estado inicial: Todo reseteado
-        resetUI();
-
-        // Cargar datos
-        loadData();
-    }
-
-    /**
-     * Carga de datos filtrando directamente en el servidor por el ID del cliente.
-     */
-    private void loadData() {
+    private void loadAccountData() {
         try {
             LOGGER.info("Cargando cuentas para el cliente ID: " + user.getId());
-            
-            // Limpiar la colección local para evitar duplicados visuales
-            accountsData.clear();
 
-            // Definir el tipo genérico para que Jersey entienda que es una List<Account>
-            GenericType<List<Account>> genericType = new GenericType<List<Account>>() {};
-            
-            // Llamada al servidor
-            List<Account> myAccounts = client.findAccountsByCustomerId_XML(genericType, String.valueOf(user.getId()));
+            // PREPARAR GenericType para recibir List<Account>
+            // Esto es necesario porque Java borra los tipos genéricos en tiempo de ejecución.
+            GenericType<List<Account>> listType = new GenericType<List<Account>>() {};
 
-            // Añadir a la tabla solo si hay datos
-            if (myAccounts != null) {
-                accountsData.addAll(myAccounts);
-                LOGGER.info("Se han cargado " + myAccounts.size() + " cuentas.");
-            }else{
-                LOGGER.log(Level.SEVERE, "No existen cuentas asociadas a este cliente");
-                showErrorAlert("No existe ninguna cuenta");
-            }
-            
-            // Refrescar la tabla (ObservableList automático?)
+            // LLAMADA AL SERVIDOR (Síncrona)
+            // Usamos findAccountsByCustomerId_XML pasando el GenericType y el ID del usuario
+            List<Account> accounts = accountClient.findAccountsByCustomerId_XML(listType, String.valueOf(user.getId()));
+
+            // Convertir a ObservableList y setear en la tabla
+            accountsData = FXCollections.observableArrayList(accounts);
             tbAccounts.setItems(accountsData);
+            
+            LOGGER.info("Se han cargado " + accountsData.size() + " cuentas.");
 
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error al cargar datos del servidor", e);
-            showErrorAlert("Error loading your accounts. Please, try again later.\n" + e.getMessage());
+            showErrorAlert("No se pudieron cargar los datos: " + e.getMessage());
         }
     }
 
     /**
-     * Alerta de error simple.
+     * Muestra una alerta de error simple.
+     * @param msg Mensaje a mostrar
      */
-    private void showErrorAlert(String message) {
+    private void showErrorAlert(String msg) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Error");
-        alert.setHeaderText("Operation Failed");
-        alert.setContentText(message);
+        alert.setHeaderText("Error en la aplicación");
+        alert.setContentText(msg);
         alert.showAndWait();
-    }
-    
-    /**
-     * Habilita o deshabilita los campos del formulario.
-     */
-    private void setFormVisible(boolean visible) {
-        // Campos de texto
-        tfDescription.setDisable(!visible);
-        tfCreditLine.setDisable(!visible);
-        cbType.setDisable(!visible);
-        
-        // El balance y fecha los bloqueamos ya que suelen ser automáticos al crear
-        tfBalance.setDisable(true); 
-        tfDate.setDisable(true);
-        
-        // Si estamos editando, la tabla debe estar bloqueada para no cambiar de fila
-        tbAccounts.setDisable(visible);
-    }
-
-    /**
-     * Limpia los campos del formulario para una nueva entrada.
-     */
-    private void clearForm() {
-        tfDescription.setText("");
-        tfCreditLine.setText("");
-        tfBalance.setText("0.0");
-        tfDate.setText("");
-        cbType.getSelectionModel().clearSelection();
-        // Limpiar selección de tabla
-        tbAccounts.getSelectionModel().clearSelection();
-    }
-
-    /**
-     * Restaura la pantalla a su estado inicial (Solo lectura).
-     */
-    private void resetUI() {
-        setFormVisible(false);
-        clearForm();
-        
-        btnCreate.setText("Create");
-        btnCreate.setDisable(false);
-        btnCreate.setStyle(""); // Resetear color
-        
-        // Modify y Delete desactivados hasta que se seleccione algo
-        btnModify.setDisable(true);
-        btnDelete.setDisable(true);
-        
-        lblMessage.setText("");
-    }
-    
-    /**
-     * Valida datos, crea el objeto y lo envía al servidor.
-     */
-    private void createAccount() {
-        LOGGER.info("Intentando crear cuenta...");
-        
-        try {
-            // --- 1. VALIDACIONES ---
-            if (tfDescription.getText().trim().isEmpty()) {
-                showErrorAlert("Description is required.");
-                tfDescription.requestFocus();
-                return;
-            }
-            
-            if (cbType.getSelectionModel().getSelectedItem() == null) {
-                showErrorAlert("Please select an Account Type.");
-                cbType.requestFocus();
-                return;
-            }
-            
-            // --- 2. CREACIÓN DEL OBJETO ---
-            AccountForCreation newAccount = new AccountForCreation();
-
-            // Lógica del Credit Line
-            Double creditLine = 0.0;
-            if (cbType.getSelectionModel().getSelectedItem() == AccountType.CREDIT) {
-                if (tfCreditLine.getText().trim().isEmpty()) {
-                    showErrorAlert("Credit Line is required for CREDIT accounts.");
-                    return;
-                }
-                try {
-                    creditLine = Double.parseDouble(tfCreditLine.getText());
-                    if (creditLine < 0) {
-                        showErrorAlert("Credit Line cannot be negative.");
-                        return;
-                    }
-                } catch (NumberFormatException e) {
-                    showErrorAlert("Credit Line must be a valid number.");
-                    return;
-                }
-            }
-            
-            // --- CORRECCIÓN APLICADA AQUÍ: GENERACIÓN DE ID LOCAL ---
-            // Usamos milisegundos para asegurar un Long único en este contexto
-            Long generatedId = System.currentTimeMillis();
-            newAccount.setId(generatedId);
-            
-            newAccount.setDescription(tfDescription.getText().trim());
-            newAccount.setType(cbType.getSelectionModel().getSelectedItem());
-            newAccount.setCreditLine(creditLine); // Usamos la variable local ya parseada
-            newAccount.setBalance(0.0);
-            newAccount.setBeginBalance(0.0);
-            newAccount.setBeginBalanceTimestamp(new java.util.Date());
-            
-            // Gestión de la relación con el Customer
-            if (newAccount.getCustomers() == null) {
-                newAccount.setCustomers(new java.util.HashSet<>()); 
-            }
-            
-            Customer customer = new Customer();
-            customer.setId(this.user.getId());
-            newAccount.getCustomers().add(customer);
-            
-            // --- 3. ENVÍO AL SERVIDOR ---
-            client.createAccount_XML(newAccount);
-            
-            // --- 4. ÉXITO ---
-            Alert alert = new Alert(Alert.AlertType.INFORMATION, "Account created successfully.");
-            alert.showAndWait();
-            
-            // Recargar datos y resetear interfaz
-            loadData();
-            resetUI();
-            
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error creating account", e);
-            showErrorAlert("Error connecting to server: " + e.getMessage());
-        }
-    }
-    
-    @XmlRootElement(name = "account") 
-    public static class AccountForCreation extends Account {
-        
-        // Sobrescribimos el método para quitar el efecto de @XmlTransient
-        @Override
-        @XmlElement(name = "customers") 
-        public java.util.Set<Customer> getCustomers() {
-            return super.getCustomers();
-        }
     }
 }
