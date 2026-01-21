@@ -76,7 +76,7 @@
       
       <Button fx:id="btSearch" layoutX="345.0" layoutY="120.0" mnemonicParsing="false" onAction="#handleSearchByDates" text="Filter Dates" />
 
-      <Button fx:id="btNewRow" layoutX="630.0" layoutY="120.0" mnemonicParsing="false" onAction="#handleNewRow" prefHeight="25.0" prefWidth="140.0" style="-fx-background-color: #27ae60;" text="+ New Transaction" textFill="WHITE">
+      <Button fx:id="btNewRow" layoutX="618.0" layoutY="120.0" mnemonicParsing="false" onAction="#handleNewRow" prefHeight="25.0" prefWidth="152.0" style="-fx-background-color: #27ae60;" text="+ New Transaction" textFill="WHITE">
          <font>
             <Font name="System Bold" size="12.0" />
          </font>
