@@ -48,23 +48,23 @@
          </font>
       </Label>
 
-      <Label layoutX="158.0" layoutY="126.0" text="Account ID:" textFill="#7f8c8d">
+      <Label layoutX="268.0" layoutY="126.0" text="Account ID:" textFill="#7f8c8d">
          <font>
             <Font size="11.0" />
          </font>
       </Label>
-      <Label fx:id="lblAccountId" layoutX="223.0" layoutY="126.0" text="..." textFill="#333333">
+      <Label fx:id="lblAccountId" layoutX="333.0" layoutY="126.0" text="..." textFill="#333333">
          <font>
             <Font name="System Bold" size="11.0" />
          </font>
       </Label>
 
-      <Label layoutX="330.0" layoutY="126.0" text="Credit Limit:" textFill="#7f8c8d">
+      <Label layoutX="429.0" layoutY="126.0" text="Credit Limit:" textFill="#7f8c8d">
          <font>
             <Font size="11.0" />
          </font>
       </Label>
-      <Label fx:id="lblCreditLimit" layoutX="400.0" layoutY="126.0" text="N/A" textFill="#c0392b">
+      <Label fx:id="lblCreditLimit" layoutX="499.0" layoutY="126.0" text="N/A" textFill="#c0392b">
          <font>
             <Font name="System Bold" size="11.0" />
          </font>

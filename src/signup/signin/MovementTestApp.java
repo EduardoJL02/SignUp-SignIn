@@ -16,7 +16,7 @@ public class MovementTestApp extends Application {
     @Override
     public void start(Stage stage) {
         try {
-            Long customerId = 102263301L; 
+            Long customerId = 382338230169473172L; 
 
             // 1. OBTENER DATOS REALES DEL CLIENTE DESDE LA BBDD
             CustomerRESTClient customerClient = new CustomerRESTClient();
