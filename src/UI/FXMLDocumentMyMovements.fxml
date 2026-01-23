@@ -8,23 +8,7 @@
 
 <Pane fx:id="mainPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="700.0" prefWidth="950.0" style="-fx-background-color: #f4f4f4;" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="UI.MovementController">
    <children>
-
-      <MenuBar layoutY="0.0" prefHeight="25.0" prefWidth="950.0">
-        <menus>
-          <Menu mnemonicParsing="false" text="App">
-            <items>
-              <MenuItem mnemonicParsing="false" onAction="#handleExit" text="Exit" />
-            </items>
-          </Menu>
-          <Menu mnemonicParsing="false" text="Edit">
-            <items>
-              <MenuItem mnemonicParsing="false" onAction="#handleNewRow" text="Insert New Row" />
-              <MenuItem mnemonicParsing="false" onAction="#handleUndoLastMovement" text="Undo Last Entry" />
-            </items>
-          </Menu>
-        </menus>
-      </MenuBar>
-
+      <fx:include fx:id="hBoxMenu" source="FXMLDocumentMenu.fxml" />
       <Label layoutX="30.0" layoutY="45.0" text="CUSTOMER DETAILS" textFill="#666666">
          <font>
             <Font size="10.0" />
@@ -79,6 +63,13 @@
 
       <Line endX="920.0" layoutX="15.0" layoutY="105.0" startX="15.0" stroke="#dcdcdc" />
 
+      <Button fx:id="btBack" layoutX="14.0" layoutY="662.0" mnemonicParsing="false" onAction="#handleBack" prefHeight="25.0" prefWidth="100.0" style="-fx-background-color: #95a5a6;" text="⬅ Volver" textFill="WHITE">
+         <font>
+            <Font name="System Bold" size="12.0" />
+         </font>
+         <tooltip><Tooltip text="Volver a la selección de cuentas" /></tooltip>
+      </Button>
+
       <Button fx:id="btNewRow" layoutX="618.0" layoutY="120.0" mnemonicParsing="false" onAction="#handleNewRow" prefHeight="25.0" prefWidth="152.0" style="-fx-background-color: #27ae60;" text="+ New Transaction" textFill="WHITE">
          <font>
             <Font name="System Bold" size="12.0" />
@@ -103,7 +94,7 @@
          <contextMenu>
             <ContextMenu>
               <items>
-                <MenuItem mnemonicParsing="false" onAction="#handleUndoLastMovement" text="Delete Last Entry" />
+                 <MenuItem mnemonicParsing="false" onAction="#handleUndoLastMovement" text="Delete Last Entry" />
               </items>
             </ContextMenu>
          </contextMenu>
@@ -123,7 +114,7 @@
          </font>
       </TextField>
 
-      <Label fx:id="lblStatus" layoutX="10.0" layoutY="680.0" text="Ready. Waiting for user..." textFill="#999999" />
+      <Label fx:id="lblStatus" layoutX="141.0" layoutY="667.0" text="Ready. Waiting for user..." textFill="#999999" />
 
    </children>
 </Pane>
