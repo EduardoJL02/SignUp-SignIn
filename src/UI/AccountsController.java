@@ -2,57 +2,66 @@ package UI;
 
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.Label;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import javafx.util.Callback;
 import javax.ws.rs.core.GenericType;
 import logic.AccountRESTClient;
 import model.Account;
 import model.AccountType;
 import model.Customer;
+import javafx.scene.control.cell.ComboBoxTableCell;
+import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.util.converter.DoubleStringConverter;
+import javafx.util.converter.DefaultStringConverter;
+import javafx.util.Callback;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.scene.control.TableColumn.CellEditEvent;
+import model.AccountType;
 
 /**
- * Controlador para la gestión de cuentas (Accounts).
- *
- * @author Eduardo
+ * Controlador de Gestión de Cuentas.
+ * Recibe un Customer desde la ventana principal y muestra sus cuentas.
  */
 public class AccountsController implements Initializable {
 
-    // Logger para trazas
     private static final Logger LOGGER = Logger.getLogger("UI.AccountsController");
 
-    // Referencias a la UI (FXML)
-    @FXML
-    private TextField tfDescription;
-    @FXML
-    private ChoiceBox<AccountType> cbType;
-    @FXML
-    private TextField tfCreditLine;
-    @FXML
-    private TextField tfBalance;
-    @FXML
-    private TextField tfDate; // Creation Date (BeginBalanceTimestamp)
+    private Stage stage;
+    private AccountRESTClient accountClient;
+    private ObservableList<Account> accountsData;
+    
+    // Cliente conectado (recibido desde la ventana anterior)
+    private Customer userCustomer;
+    
+    // Variable para controlar el estado del botón Create
+    private boolean creationMode = false;
 
+    @FXML
+    private MenuBar menuBar;
     @FXML
     private TableView<Account> tbAccounts;
     @FXML
@@ -60,202 +69,131 @@ public class AccountsController implements Initializable {
     @FXML
     private TableColumn<Account, String> tcDescription;
     @FXML
-    private TableColumn<Account, AccountType> tcType;
-    @FXML
     private TableColumn<Account, Double> tcBalance;
     @FXML
     private TableColumn<Account, Double> tcCreditLine;
     @FXML
-    private TableColumn<Account, Double> tcBeginBalance;
+    private TableColumn<Account, AccountType> tcType;
     @FXML
-    private TableColumn<Account, java.util.Date> tcDate;
-
-    // Botonera
+    private TableColumn<Account, Date> tcBalanceDate;
     @FXML
     private Button btnCreate;
     @FXML
     private Button btnModify;
     @FXML
     private Button btnDelete;
-    @FXML
-    private Button btnReport;
-    @FXML
-    private Button btnSearch;
-    @FXML
-    private Button btnHelp;
-    
-    @FXML
-    private Label lblMessage;
-
-    // Campos lógicos
-    private Stage stage;
-    private Customer user; // El usuario logueado
-    private AccountRESTClient accountClient;
-    private ObservableList<Account> accountsData;
-
-    //Variable de estado
-    private boolean isCreatingNewAccount = false;
     
     /**
-     * Inicialización por defecto de JavaFX.
+     * Busca el ID más alto en la lista y le suma 1.
+     * @return Nuevo ID local.
      */
-    @Override
-    public void initialize(URL location, ResourceBundle resources) {
-        // No implementamos nada aquí porque preferimos hacerlo en setStage
-        // para tener control total de cuándo inicia la ventana.
+    private Long generateLocalId() {
+        Long maxId = 0L;
+        if (accountsData != null) {
+            for (Account a : accountsData) {
+                if (a.getId() > maxId) {
+                    maxId = a.getId();
+                }
+            }
+        }
+        return maxId + 1;
     }
 
     /**
-     * Método principal para inicializar la ventana y recibir datos.
-     *
-     * @param root El nodo raíz cargado desde el FXML.
-     * @param customer El cliente logueado que viene de la ventana anterior.
+     * Inicializa el escenario con el cliente específico.
+     * @param root Nodo raíz FXML.
+     * @param customer Cliente dueño de la sesión.
      */
     public void setStage(Parent root, Customer customer) {
-        try {
-            LOGGER.info("Inicializando ventana de Cuentas...");
+        this.userCustomer = customer;
+        LOGGER.info("Iniciando AccountsController para el cliente: " + customer.getId());
 
-            // 1. Crear la escena y el escenario (Stage)
-            Scene scene = new Scene(root);
-            stage = new Stage();
-            stage.setScene(scene);
+        Scene scene = new Scene(root);
+        stage = new Stage();
+        stage.setScene(scene);
+        stage.setTitle("Mis Cuentas - " + customer.getFirstName() + " " + customer.getLastName());
+        stage.setResizable(false);
+        stage.initModality(Modality.APPLICATION_MODAL);
 
-            // 2. Configurar propiedades de la ventana
-            stage.setTitle("Accounts Management");
-            stage.setResizable(false);
-            stage.initModality(Modality.APPLICATION_MODAL); // Bloquea ventanas anteriores
-
-            // 3. Guardar el usuario recibido
-            this.user = customer;
-
-            // 4. Inicializar componentes de UI
-            // Cargar el Enum en el ChoiceBox
-            cbType.setItems(FXCollections.observableArrayList(AccountType.values()));
-            cbType.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<AccountType>() {
-                @Override
-                public void changed(ObservableValue<? extends AccountType> observable, AccountType oldValue, AccountType newValue) {
-                    if (newValue == AccountType.CREDIT) {
-                        tfCreditLine.setDisable(false);
-                    } else {
-                        tfCreditLine.setDisable(true);
-                        tfCreditLine.setText(""); // Limpiar si cambia a STANDARD
-                    }
-                }
-            });
-            
-            // La tabla NO debe ser editable
-            tbAccounts.setEditable(false);
-
-            // Configurar las columnas con los nombres de los atributos de Account
-            tcId.setCellValueFactory(new PropertyValueFactory<>("id"));
-            tcDescription.setCellValueFactory(new PropertyValueFactory<>("description"));
-            tcType.setCellValueFactory(new PropertyValueFactory<>("type"));
-            tcBalance.setCellValueFactory(new PropertyValueFactory<>("balance"));
-            tcCreditLine.setCellValueFactory(new PropertyValueFactory<>("creditLine"));
-            tcBeginBalance.setCellValueFactory(new PropertyValueFactory<>("beginBalance"));
-            tcDate.setCellValueFactory(new PropertyValueFactory<>("beginBalanceTimestamp"));
-
-            // 5. Instanciar el cliente REST
-            accountClient = new AccountRESTClient();
-
-            // 6. Cargar los datos del servidor
-            loadAccountData();
-            
-            setupTableSelectionListener();
-
-            // HANDLERS SELECCION DE LA TABLA
-            root.setOnMouseClicked(new javafx.event.EventHandler<javafx.scene.input.MouseEvent>() {
-                @Override
-                public void handle(javafx.scene.input.MouseEvent event) {
-                    // Solo si el clic no fue sobre la propia tabla (aunque la tabla suele consumir el evento)
-                    // y para asegurar una buena UX, limpiamos la selección.
-                    tbAccounts.getSelectionModel().clearSelection();
-                }
-            });
-
-            // 2. Deseleccionar al pulsar la tecla ESCAPE
-            scene.setOnKeyPressed(new javafx.event.EventHandler<javafx.scene.input.KeyEvent>() {
-                @Override
-                public void handle(javafx.scene.input.KeyEvent event) {
-                    if (event.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
-                        tbAccounts.getSelectionModel().clearSelection();
-                    }
-                }
-            });
-            
-            // HANDLERS MODO CREACION
-            root.setOnMouseClicked(new javafx.event.EventHandler<javafx.scene.input.MouseEvent>() {
-                @Override
-                public void handle(javafx.scene.input.MouseEvent event) {
-                    if (isCreatingNewAccount) {
-                        // Si estamos en modo creación, mostrar confirmación de cancelación
-                        handleCancelCreation();
-                    } else {
-                        // Comportamiento normal: deseleccionar tabla
-                        tbAccounts.getSelectionModel().clearSelection();
-                    }
-                }
-            });
-
-            scene.setOnKeyPressed(new javafx.event.EventHandler<javafx.scene.input.KeyEvent>() {
-                @Override
-                public void handle(javafx.scene.input.KeyEvent event) {
-                    if (event.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
-                        if (isCreatingNewAccount) {
-                            // Si estamos en modo creación, mostrar confirmación de cancelación
-                            handleCancelCreation();
-                        } else {
-                            // Comportamiento normal: deseleccionar tabla
-                            tbAccounts.getSelectionModel().clearSelection();
-                        }
-                    }
-                }
-            });
-            
-            // Acción del botón Modificar
-            btnModify.setOnAction(new javafx.event.EventHandler<javafx.event.ActionEvent>() {
-                @Override
-                public void handle(javafx.event.ActionEvent event) {
-                    handleModifyAction();
-                }
-            });
-            
-            //Accion del botón Create
-            btnCreate.setOnAction(new javafx.event.EventHandler<javafx.event.ActionEvent>() {
-                @Override
-                public void handle(javafx.event.ActionEvent event) {
-                    handleCreateSaveAction();
-                }
-            });
-        
-            btnCreate.setDisable(false);
-            btnModify.setDisable(true);
-            btnDelete.setDisable(true);
-            
-            // 7. Mostrar la ventana
-            stage.show();
-            
-            LOGGER.info("Ventana de Cuentas iniciada correctamente.");
-        
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error al inicializar la ventana de cuentas", e);
-            showErrorAlert("Error initializing window: " + e.getMessage());
-        }
-        
-        stage.setOnCloseRequest(new javafx.event.EventHandler<WindowEvent>() {
+        // Evento al mostrar ventana
+        stage.setOnShowing(new EventHandler<WindowEvent>() {
             @Override
             public void handle(WindowEvent event) {
-                cleanup();
+                // Estado inicial de botones
+                btnModify.setDisable(true);
+                btnDelete.setDisable(true);
+                btnCreate.setDisable(false);
+                tbAccounts.setEditable(true);
             }
         });
+
+        // Instanciar cliente REST
+        accountClient = new AccountRESTClient();
+
+        // Configuración de columnas (Visualización básica)
+        tcId.setCellValueFactory(new PropertyValueFactory<>("id"));
+        tcDescription.setCellValueFactory(new PropertyValueFactory<>("description"));
+        tcBalance.setCellValueFactory(new PropertyValueFactory<>("balance"));
+        tcCreditLine.setCellValueFactory(new PropertyValueFactory<>("creditLine"));
+        tcType.setCellValueFactory(new PropertyValueFactory<>("type"));
+        tcBalanceDate.setCellValueFactory(new PropertyValueFactory<>("beginBalanceTimestamp"));
+
+        // Formatear la fecha para que se vea bonita (dd/MM/yyyy)
+        tcBalanceDate.setCellFactory(new Callback<TableColumn<Account, Date>, TableCell<Account, Date>>() {
+            @Override
+            public TableCell<Account, Date> call(TableColumn<Account, Date> param) {
+                return new TableCell<Account, Date>() {
+                    private SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy");
+                    @Override
+                    protected void updateItem(Date item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (empty || item == null) {
+                            setText(null);
+                        } else {
+                            setText(format.format(item));
+                        }
+                    }
+                };
+            }
+        });
+
+        setupColumnFactories();
+        
+        // Listener para la selección de la tabla
+        tbAccounts.getSelectionModel().selectedItemProperty().addListener(
+            // Usamos clase anónima (Standard Java 8)
+            new javafx.beans.value.ChangeListener<Account>() {
+                @Override
+                public void changed(javafx.beans.value.ObservableValue<? extends Account> observable, 
+                                    Account oldValue, Account newValue) {
+                    
+                    // Si hay una fila seleccionada, habilitamos Delete
+                    if (newValue != null) {
+                        btnDelete.setDisable(false);
+                        // Nota: Modify se mantiene deshabilitado hasta que se edita una celda
+                        // (lógica que ya pusimos en setupColumnFactories)
+                        btnModify.setDisable(true); 
+                    } else {
+                        // Si no hay selección, deshabilitamos todo
+                        btnDelete.setDisable(true);
+                        btnModify.setDisable(true);
+                    }
+                }
+            }
+        );
+        
+        
+        // Cargar datos del servidor filtrando por este cliente
+        loadAccountsData();
+
+        stage.showAndWait();
     }
 
-    /**
-    * Carga los datos de las cuentas usando el cliente REST de forma síncrona.
-    */
-    private void loadAccountData() {
+   
+    
+    private void loadAccountsData() {
         try {
-            LOGGER.info("Cargando cuentas para el cliente ID: " + user.getId());
+            LOGGER.info("Cargando cuentas para el cliente ID: " + userCustomer.getId());
 
             // PREPARAR GenericType para recibir List<Account>
             // Esto es necesario porque Java borra los tipos genéricos en tiempo de ejecución.
@@ -263,7 +201,7 @@ public class AccountsController implements Initializable {
 
             // LLAMADA AL SERVIDOR (Síncrona)
             // Usamos findAccountsByCustomerId_XML pasando el GenericType y el ID del usuario
-            List<Account> accounts = accountClient.findAccountsByCustomerId_XML(listType, String.valueOf(user.getId()));
+            List<Account> accounts = accountClient.findAccountsByCustomerId_XML(listType, String.valueOf(userCustomer.getId()));
 
             // Convertir a ObservableList y setear en la tabla
             accountsData = FXCollections.observableArrayList(accounts);
@@ -273,488 +211,265 @@ public class AccountsController implements Initializable {
             
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error al cargar datos del servidor", e);
-            showErrorAlert("No se pudieron cargar los datos: " + e.getMessage());
         }
+    }
+
+    @Override
+    public void initialize(URL location, ResourceBundle resources) {
+        
     }
     
     /**
-     * Configura el listener de selección de la tabla.
-     * Colocar este código dentro de setStage(...), después de cargar los datos.
+     * Configura las celdas para que sean editables y define sus validaciones.
      */
-    private void setupTableSelectionListener() {
-        tbAccounts.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<Account>() {
+    private void setupColumnFactories() {
+        // --- 1. Columna DESCRIPTION (Texto simple) ---
+        tcDescription.setCellFactory(TextFieldTableCell.forTableColumn());
+        
+        tcDescription.setOnEditCommit(new EventHandler<CellEditEvent<Account, String>>() {
             @Override
-            public void changed(ObservableValue<? extends Account> observable, Account oldValue, Account newValue) {
-                // CRÍTICO: No permitir selección si estamos creando
-                if (isCreatingNewAccount) {
-                    tbAccounts.getSelectionModel().clearSelection();
-                    return;
-                }
+            public void handle(CellEditEvent<Account, String> t) {
+                Account account = t.getRowValue();
+                account.setDescription(t.getNewValue());
+                // Habilitamos el botón Modify al haber cambios pendientes
+                btnModify.setDisable(false);
+            }
+        });
 
-                if (newValue != null) {
-                    // Si se selecciona una fila, rellenamos los campos
-                    fillForm(newValue);
+        // --- 2. Columna TYPE (ComboBox) ---
+        tcType.setCellFactory(ComboBoxTableCell.forTableColumn(AccountType.values()));
+        
+        tcType.setOnEditCommit(new EventHandler<CellEditEvent<Account, AccountType>>() {
+            @Override
+            public void handle(CellEditEvent<Account, AccountType> t) {
+                Account account = t.getRowValue();
+                AccountType newType = t.getNewValue();
+                account.setType(newType);
+                
+                // Regla de Negocio: Si cambia a STANDARD, el CreditLine debería ser 0 o null?
+                // Por ahora solo permitimos el cambio.
+                
+                // Si cambiamos el tipo, forzamos a la tabla a repintar para que la columna
+                // CreditLine actualice su estado de "editable/no editable" visualmente si fuera necesario.
+                tbAccounts.refresh();
+                
+                btnModify.setDisable(false);
+            }
+        });
 
-                    // Habilitar botones de edición/borrado
-                    btnModify.setDisable(false);
-                    btnDelete.setDisable(false);
-
-                    // Deshabilitar botón de crear
-                    btnCreate.setDisable(true);
+        // --- 3. Columna CREDIT LINE (Numérico, condicional) ---
+        // Definimos una celda personalizada que solo permite editar si es CREDIT
+        Callback<TableColumn<Account, Double>, TableCell<Account, Double>> creditLineCellFactory
+                = new Callback<TableColumn<Account, Double>, TableCell<Account, Double>>() {
+            @Override
+            public TableCell<Account, Double> call(TableColumn<Account, Double> param) {
+                // Usamos DoubleStringConverter para convertir de Texto a Double automáticamente
+                return new TextFieldTableCell<Account, Double>(new DoubleStringConverter()) {
+                    @Override
+                    public void startEdit() {
+                        // OBTENER LA CUENTA DE LA FILA ACTUAL
+                        Account row = (Account) getTableRow().getItem();
+                        
+                        // VALIDACIÓN: Solo permitir editar si es tipo CREDIT
+                        if (row != null && row.getType() == AccountType.CREDIT) {
+                            super.startEdit();
+                        }
+                        // Si no es CREDIT, simplemente no hace nada (no entra en modo edición)
+                    }
+                };
+            }
+        };
+        
+        tcCreditLine.setCellFactory(creditLineCellFactory);
+        
+        tcCreditLine.setOnEditCommit(new EventHandler<CellEditEvent<Account, Double>>() {
+            @Override
+            public void handle(CellEditEvent<Account, Double> t) {
+                Account account = t.getRowValue();
+                Double newValue = t.getNewValue();
+                
+                // Validación extra: No permitir negativos (Opcional según reglas)
+                if (newValue != null && newValue < 0) {
+                    Alert alert = new Alert(Alert.AlertType.WARNING);
+                    alert.setTitle("Valor inválido");
+                    alert.setContentText("La línea de crédito no puede ser negativa.");
+                    alert.showAndWait();
+                    // Revertimos al valor antiguo refrescando la tabla
+                    tbAccounts.refresh();
                 } else {
-                    // Si se deselecciona, limpiamos el formulario
-                    clearForm();
-
-                    // Estado inicial de botones
-                    btnModify.setDisable(true);
-                    btnDelete.setDisable(true);
-                    btnCreate.setDisable(false);
+                    account.setCreditLine(newValue);
+                    btnModify.setDisable(false);
                 }
             }
         });
     }
-
-    /**
-     * Rellena el formulario con los datos de la cuenta seleccionada
-     * y gestiona la propiedad 'disable' de los campos según las reglas de negocio.
-     * @param account La cuenta seleccionada.
-     */
-    private void fillForm(Account account) {
-        // 1. Descripción: Siempre editable
-        tfDescription.setText(account.getDescription());
-        tfDescription.setDisable(false);
-
-        // 2. Tipo: Seteamos el valor pero lo deshabilitamos (no se puede cambiar el tipo al editar)
-        cbType.setValue(account.getType());
-        cbType.setDisable(true); 
-
-        // 3. Línea de Crédito: Depende del tipo
-        if (account.getCreditLine() != null) {
-            tfCreditLine.setText(String.valueOf(account.getCreditLine()));
-        } else {
-            tfCreditLine.setText("");
-        }
-
-        // REGLA DE NEGOCIO: Solo editable si es CREDIT
-        if (account.getType() == AccountType.CREDIT) {
-            tfCreditLine.setDisable(false);
-        } else {
-            tfCreditLine.setDisable(true);
-        }
-
-        // 4. Saldo: Solo lectura
-        tfBalance.setText(String.valueOf(account.getBalance()));
-        tfBalance.setDisable(true);
-        
-        // 5. Fecha: Formatear a String
-        if (account.getBeginBalanceTimestamp() != null) {
-            // Usamos SimpleDateFormat para formatear la fecha
-            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
-            tfDate.setText(formatter.format(account.getBeginBalanceTimestamp()));
-        } else {
-            tfDate.setText("");
-        }
-        tfDate.setDisable(true);
-    }
-
-    /**
-     * Limpia los campos del formulario y restablece su estado base.
-     */
-    private void clearForm() {
-        tfDescription.setText("");
-        tfDescription.setDisable(false); // Vuelve a ser editable para crear
-
-        cbType.setValue(null);
-        cbType.setDisable(false); // Vuelve a ser seleccionable para crear
-
-        tfCreditLine.setText("");
-        tfCreditLine.setDisable(true); // Se habilitará o no según lo que seleccione en el combo al crear
-
-        tfBalance.setText("");
-        tfBalance.setDisable(true);
-        
-        tfDate.setText("");
-         tfDate.setDisable(true);
-    }
     
     /**
-     * Lógica para validar y actualizar la cuenta seleccionada.
+     * Acción del botón Modify.
+     * Envía los cambios de la cuenta seleccionada al servidor.
+     * @param event El evento del botón.
      */
-    private void handleModifyAction() {
-        try {
-            // 1. Obtener la cuenta seleccionada
-            Account selectedAccount = tbAccounts.getSelectionModel().getSelectedItem();
-            if (selectedAccount == null) {
-                showErrorAlert("No account selected.");
-                return;
-            }
+    @FXML
+    private void handleModifyAction(ActionEvent event) {
+        // 1. Obtener la cuenta seleccionada
+        Account selectedAccount = tbAccounts.getSelectionModel().getSelectedItem();
 
-            // 2. VALIDACIÓN DE DATOS
-            String newDescription = tfDescription.getText().trim();
-            String creditLineStr = tfCreditLine.getText().trim();
-
-            // Validación: Descripción no vacía
-            if (newDescription.isEmpty()) {
-                showErrorAlert("Error: The description cannot be empty.");
-                tfDescription.requestFocus();
-                return;
-            }
-            
-            if (newDescription.length() > 255) {
-                showErrorAlert("Error: Description is too long (max 255 characters).");
-                tfDescription.requestFocus();
-                return;
-            }
-
-            // Validación: Credit Line (Solo si es CREDIT)
-            Double newCreditLine = selectedAccount.getCreditLine(); // Valor actual por defecto
-            
-            if (selectedAccount.getType() == AccountType.CREDIT) {
-                if (creditLineStr.isEmpty()) {
-                    showErrorAlert("Error: Credit Line cannot be empty for CREDIT accounts.");
-                    tfCreditLine.requestFocus();
-                    return;
-                }
-                try {
-                    newCreditLine = Double.parseDouble(creditLineStr);
-                    if (newCreditLine <= 0) {
-                        showErrorAlert("Error: Credit Line must be greater than 0.");
-                        tfCreditLine.requestFocus();
-                        return;
-                    }
-                } catch (NumberFormatException e) {
-                    showErrorAlert("Error: Credit Line must be a valid number.");
-                    tfCreditLine.requestFocus();
-                    return;
-                }
-            }
-
-            // 3. CONFIRMACIÓN DEL USUARIO
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Modify Account");
-            alert.setHeaderText("Updating Account ID: " + selectedAccount.getId());
-            alert.setContentText("Are you sure you want to update this account?");
-
-            java.util.Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
-            if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
-
-                // 4. ACTUALIZAR OBJETO
-                Account fullAccount = accountClient.find_XML(Account.class, String.valueOf(selectedAccount.getId()));
-            
-                fullAccount.setDescription(newDescription);
-                if (fullAccount.getType() == AccountType.CREDIT) {
-                    fullAccount.setCreditLine(newCreditLine);
-                }
-
-                accountClient.updateAccount_XML(fullAccount);
-
-                // 6. FEEDBACK Y REFRESCO
-                // Mostramos un mensaje de información breve (opcional)
-                Alert info = new Alert(Alert.AlertType.INFORMATION);
-                info.setTitle("Success");
-                info.setHeaderText(null);
-                info.setContentText("Account updated successfully.");
-                info.showAndWait();
-
-                // Recargar datos para asegurar que la tabla refleja el servidor
-                loadAccountData();
-                
-                // Limpiar selección y formulario
-                tbAccounts.getSelectionModel().clearSelection();
-                clearForm();
-            }
-            
-        }catch (javax.ws.rs.ClientErrorException e) {
-        // Errores 4xx (Bad Request, Not Found, etc.)
-        LOGGER.log(Level.WARNING, "Error del cliente al actualizar cuenta", e);
-        showErrorAlert("Invalid data or account not found.\nPlease check and try again.");
-        
-        } catch (javax.ws.rs.InternalServerErrorException e) {
-            // Error 500 del servidor
-            LOGGER.log(Level.SEVERE, "Error del servidor al actualizar cuenta", e);
-            showErrorAlert("Server error. Please try again later.");
-        
-        }catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error updating account", e);
-            showErrorAlert("Error updating account: " + e.getMessage());
+        // Verificación de seguridad (aunque el botón debería estar deshabilitado si no hay selección/cambios)
+        if (selectedAccount == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Ninguna selección");
+            alert.setHeaderText("No hay cuenta seleccionada");
+            alert.setContentText("Por favor, selecciona una cuenta para modificar.");
+            alert.showAndWait();
+            return;
         }
-    }
-    
-    /**
-    * Activa el "Modo Creación": limpia el formulario, deshabilita controles
-    * y cambia el botón Create a Save (verde).
-    */
-    private void activateCreationMode() {
-       LOGGER.info("Activando modo creación de cuenta...");
 
-       // 1. Cambiar estado
-       isCreatingNewAccount = true;
+        // 2. Ventana de Confirmación
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Confirmar modificación");
+        alert.setHeaderText("Actualizar cuenta");
+        alert.setContentText("¿Estás seguro de que quieres actualizar los datos de la cuenta seleccionada?\n\n"
+                + "Descripción: " + selectedAccount.getDescription() + "\n"
+                + "Línea de Crédito: " + selectedAccount.getCreditLine());
 
-       // 2. Deseleccionar tabla (si había algo seleccionado)
-       tbAccounts.getSelectionModel().clearSelection();
+        // Capturar la respuesta del usuario (Sin lambdas)
+        java.util.Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
 
-       // 3. Limpiar y habilitar formulario
-       clearForm();
-       tfDescription.setDisable(false);
-       cbType.setDisable(false);
-       // tfCreditLine se habilitará automáticamente si seleccionan CREDIT (gracias al listener)
-       tfBalance.setDisable(true); // Siempre deshabilitado (valor automático 0.0)
-       tfDate.setDisable(true);    // Siempre deshabilitado (fecha automática)
-
-       // 4. Deshabilitar tabla y otros botones
-       tbAccounts.setDisable(true);
-       btnModify.setDisable(true);
-       btnDelete.setDisable(true);
-       btnReport.setDisable(true);
-       btnSearch.setDisable(true);
-       btnHelp.setDisable(true);
-
-       // 5. Cambiar el botón Create a Save (color verde)
-       btnCreate.setText("SAVE");
-       btnCreate.setStyle("-fx-background-color: #28a745; -fx-text-fill: white; -fx-font-weight: bold;");
-
-       // 6. Dar foco al primer campo
-       tfDescription.requestFocus();
-
-       LOGGER.info("Modo creación activado. Formulario listo para crear cuenta.");
-    }
-    
-    /**
-     * Maneja el evento del botón Create/Save.
-     * - Si NO estamos creando: activa el "Modo Creación"
-     * - Si YA estamos creando: valida y guarda la nueva cuenta
-     */
-    private void handleCreateSaveAction() {
-        if (!isCreatingNewAccount) {
-            // MODO 1: Activar "Modo Creación"
-            activateCreationMode();
-        } else {
-            // MODO 2: Guardar la nueva cuenta
-            saveNewAccount();
-        }
-    }
-    
-    //Metodo para cerrar el Cliente REST Después de Usarlo
-    public void cleanup() {
-        if (accountClient != null) {
+        if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
             try {
-                accountClient.close();
-                LOGGER.info("Cliente REST cerrado correctamente.");
+                // 3. Llamada al Servidor (REST PUT)
+                // Enviamos el objeto Account modificado y su ID como String
+                accountClient.updateAccount_XML(selectedAccount);
+
+                // 4. Feedback de éxito
+                Alert successAlert = new Alert(Alert.AlertType.INFORMATION);
+                successAlert.setTitle("Éxito");
+                successAlert.setHeaderText(null);
+                successAlert.setContentText("La cuenta se ha actualizado correctamente.");
+                successAlert.showAndWait();
+
+                // 5. Resetear estado de la interfaz
+                btnModify.setDisable(true); // Deshabilitamos el botón hasta el próximo cambio
+                tbAccounts.refresh();       // Refrescamos la tabla para asegurar consistencia visual
+
             } catch (Exception e) {
-                LOGGER.log(Level.WARNING, "Error al cerrar cliente REST", e);
-            }
-        }
-    }
+                // Manejo de Errores
+                LOGGER.severe("Error al modificar la cuenta: " + e.getMessage());
+                
+                Alert errorAlert = new Alert(Alert.AlertType.ERROR);
+                errorAlert.setTitle("Error de Servidor");
+                errorAlert.setHeaderText("No se pudo actualizar la cuenta");
+                errorAlert.setContentText("Ha ocurrido un error al intentar guardar los cambios.\n" 
+                        + "Los datos se recargarán para restaurar los valores originales.");
+                errorAlert.showAndWait();
 
-    /**
-     * Valida y guarda la nueva cuenta en el servidor.
-     */
-    private void saveNewAccount() {
-        try {
-            LOGGER.info("Intentando guardar nueva cuenta...");
-
-            // ===============================================
-            // 1. VALIDACIÓN DE DATOS
-            // ===============================================
-            String description = tfDescription.getText().trim();
-            AccountType type = cbType.getValue();
-            String creditLineStr = tfCreditLine.getText().trim();
-
-            // Validación: Descripción no vacía
-            if (description.isEmpty()) {
-                showErrorAlert("Error: The description cannot be empty.");
-                tfDescription.requestFocus();
-                return;
-            }
-
-            // Validación: Longitud máxima de descripción
-            if (description.length() > 255) {
-                showErrorAlert("Error: Description is too long (max 255 characters).");
-                tfDescription.requestFocus();
-                return;
-            }
-
-            // Validación: Tipo seleccionado
-            if (type == null) {
-                showErrorAlert("Error: You must select an account type.");
-                cbType.requestFocus();
-                return;
-            }
-
-            // Validación: Credit Line (solo si es CREDIT)
-            Double creditLine = null;
-            if (type == AccountType.CREDIT) {
-                if (creditLineStr.isEmpty()) {
-                    showErrorAlert("Error: Credit Line cannot be empty for CREDIT accounts.");
-                    tfCreditLine.requestFocus();
-                    return;
-                }
-                try {
-                    creditLine = Double.parseDouble(creditLineStr);
-                    if (creditLine <= 0) {
-                        showErrorAlert("Error: Credit Line must be greater than 0.");
-                        tfCreditLine.requestFocus();
-                        return;
-                    }
-                } catch (NumberFormatException e) {
-                    showErrorAlert("Error: Credit Line must be a valid number.");
-                    tfCreditLine.requestFocus();
-                    return;
-                }
-            }
-
-            // ===============================================
-            // 2. CONFIRMACIÓN DEL USUARIO
-            // ===============================================
-            Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
-            confirmAlert.setTitle("Create Account");
-            confirmAlert.setHeaderText("Creating New Account");
-            confirmAlert.setContentText("Are you sure you want to create this account?");
-
-            java.util.Optional<javafx.scene.control.ButtonType> result = confirmAlert.showAndWait();
-            if (!result.isPresent() || result.get() != javafx.scene.control.ButtonType.OK) {
-                LOGGER.info("Creación de cuenta cancelada por el usuario.");
-                return; // El usuario canceló
-            }
-
-            // ===============================================
-            // 3. CREAR EL OBJETO ACCOUNT
-            // ===============================================
-            Account newAccount = new Account();
-            newAccount.setDescription(description);
-            newAccount.setType(type);
-
-            // Balance inicial: 0.0
-            newAccount.setBalance(0.0);
-            newAccount.setBeginBalance(0.0);
-
-            // Fecha actual
-            newAccount.setBeginBalanceTimestamp(new java.util.Date());
-
-            // Credit Line (solo para CREDIT)
-            if (type == AccountType.CREDIT) {
-                newAccount.setCreditLine(creditLine);
-            } else {
-                newAccount.setCreditLine(null); // Asegurar que sea null para STANDARD
-            }
-
-            // ===============================================
-            // 4. ASOCIAR AL CLIENTE ACTUAL (CRÍTICO)
-            // ===============================================
-            java.util.Set<model.Customer> customers = new java.util.HashSet<>();
-            customers.add(this.user); // El cliente logueado
-            newAccount.setCustomers(customers);
-
-            LOGGER.info("Cuenta configurada. Asociada al cliente ID: " + user.getId());
-
-            // ===============================================
-            // 5. ENVIAR AL SERVIDOR
-            // ===============================================
-            accountClient.createAccount_XML(newAccount);
-
-            LOGGER.info("Cuenta creada exitosamente en el servidor.");
-
-            // ===============================================
-            // 6. FEEDBACK Y ACTUALIZACIÓN UI
-            // ===============================================
-            Alert successAlert = new Alert(Alert.AlertType.INFORMATION);
-            successAlert.setTitle("Success");
-            successAlert.setHeaderText(null);
-            successAlert.setContentText("Account created successfully.");
-            successAlert.showAndWait();
-
-            // Recargar datos desde el servidor
-            loadAccountData();
-
-            // Desactivar modo creación
-            deactivateCreationMode();
-
-            LOGGER.info("Modo creación desactivado. UI restaurada.");
-
-        } catch (javax.ws.rs.ClientErrorException e) {
-            LOGGER.log(Level.WARNING, "Error del cliente al crear cuenta", e);
-            showErrorAlert("Invalid data. Please check and try again.");
-
-        } catch (javax.ws.rs.InternalServerErrorException e) {
-            LOGGER.log(Level.SEVERE, "Error del servidor al crear cuenta", e);
-            showErrorAlert("Server error. Please try again later.");
-
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error inesperado al crear cuenta", e);
-            showErrorAlert("Error creating account: " + e.getMessage());
-        }
-    }    
-
-    /**
-     * Desactiva el "Modo Creación": restaura el estado normal de la UI.
-     */
-    private void deactivateCreationMode() {
-        LOGGER.info("Desactivando modo creación...");
-
-        // 1. Cambiar estado
-        isCreatingNewAccount = false;
-
-        // 2. Limpiar formulario
-        clearForm();
-
-        // 3. Habilitar tabla y botones
-        tbAccounts.setDisable(false);
-        btnModify.setDisable(true);  // Se habilitará si seleccionan una fila
-        btnDelete.setDisable(true);  // Se habilitará si seleccionan una fila
-        btnReport.setDisable(false);
-        btnSearch.setDisable(false);
-        btnHelp.setDisable(false);
-
-        // 4. Restaurar botón Create a su estado original
-        btnCreate.setText("Create");
-        btnCreate.setStyle(""); // Limpiar estilo inline (vuelve al CSS por defecto)
-        btnCreate.setDisable(false);
-
-        LOGGER.info("Modo creación desactivado correctamente.");
-    }
-
-        /**
-     * Maneja la cancelación del modo creación (ESC o clic en fondo gris).
-     * Muestra confirmación al usuario si hay datos en el formulario.
-     */
-    private void handleCancelCreation() {
-        LOGGER.info("Intento de cancelar creación detectado.");
-
-        // Verificar si hay datos en el formulario
-        boolean hasData = !tfDescription.getText().trim().isEmpty() || cbType.getValue() != null || !tfCreditLine.getText().trim().isEmpty();
-
-        if (hasData) {
-            // Mostrar confirmación
-            Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
-            confirmAlert.setTitle("Cancel Creation");
-            confirmAlert.setHeaderText("Do you want to cancel without saving?");
-            confirmAlert.setContentText("All data entered will be lost.");
-
-            // Personalizar botones
-            confirmAlert.getButtonTypes().setAll(
-                javafx.scene.control.ButtonType.OK,     // Aceptar (cancelar y limpiar)
-                javafx.scene.control.ButtonType.CANCEL  // Cancelar (seguir creando)
-            );
-
-            java.util.Optional<javafx.scene.control.ButtonType> result = confirmAlert.showAndWait();
-
-            if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
-                // Usuario confirmó: cancelar y limpiar
-                LOGGER.info("Usuario confirmó cancelación. Limpiando formulario.");
-                deactivateCreationMode();
-            } else {
-                // Usuario canceló la cancelación: seguir en modo creación
-                LOGGER.info("Usuario decidió continuar con la creación.");
-                tfDescription.requestFocus(); // Devolver foco al formulario
+                // IMPORTANTE: Si falla, recargamos los datos del servidor para deshacer 
+                // los cambios que el usuario hizo en la tabla pero que no se guardaron.
+                loadAccountsData();
+                btnModify.setDisable(true);
             }
         } else {
-            // No hay datos: cancelar directamente sin confirmación
-            LOGGER.info("No hay datos en el formulario. Cancelando sin confirmación.");
-            deactivateCreationMode();
+            // Si el usuario cancela, podríamos optar por revertir cambios o dejarlos ahí.
+            // Por simplicidad, los dejamos pendientes por si quiere darle a Modify de nuevo.
         }
     }
+    
+    @FXML
+    private void handleCreateAction(ActionEvent event) {
+        try {
+            if (!creationMode) {
+                // --- PASO 1: AÑADIR FILA VACÍA (MODO CREACIÓN) ---
+                
+                // 1. Crear instancia con datos por defecto
+                Account newAccount = new Account();
+                newAccount.setId(generateLocalId()); // Requisito PDF: ID local
+                newAccount.setBalance(0.0);
+                newAccount.setBeginBalance(0.0);
+                newAccount.setCreditLine(0.0);
+                newAccount.setBeginBalanceTimestamp(new Date());
+                newAccount.setType(AccountType.STANDARD);
+                newAccount.setDescription("Nueva Cuenta"); // Texto inicial para que no sea null
+                
+                // 2. Añadir a la lista observable (se muestra en tabla automáticamente)
+                accountsData.add(newAccount);
+                
+                // 3. Seleccionar la nueva fila y hacer scroll hacia ella
+                tbAccounts.getSelectionModel().select(newAccount);
+                tbAccounts.scrollTo(newAccount);
+                
+                // 4. Poner el foco en la celda de Descripción para editar directamente
+                // (Requiere que la columna tcDescription sea editable)
+                tbAccounts.edit(accountsData.size() - 1, tcDescription);
+                
+                // 5. Cambiar estado del botón y bloquear otros controles
+                creationMode = true;
+                btnCreate.setText("Guardar"); // Cambiamos texto visualmente
+                btnModify.setDisable(true);
+                btnDelete.setDisable(true);
+                
+                // Nota: La tabla ya tiene el foco para escribir.
+                
+            } else {
+                // --- PASO 2: GUARDAR EN SERVIDOR (CONFIRMAR) ---
+                
+                // 1. Obtener la cuenta que estamos creando (la seleccionada)
+                Account newAccount = tbAccounts.getSelectionModel().getSelectedItem();
+                
+                // Aseguramos que la cuenta tenga al cliente actual asociado antes de enviarla
+                if (newAccount.getCustomers() == null) {
+                    newAccount.setCustomers(new HashSet<>());
+                }
+                
+                // Añadimos el usuario actual a la lista de dueños de la cuenta
+                newAccount.getCustomers().add(userCustomer);
+                
+                LOGGER.info("Enviando nueva cuenta al servidor con cliente asociado: " + userCustomer.getId());
+                accountClient.createAccount_XML(newAccount);
 
-    /**
+                // 2. Validaciones básicas antes de enviar
+                if (newAccount.getDescription().trim().isEmpty()) {
+                    showErrorAlert("La descripción no puede estar vacía.");
+                    return;
+                }
+                
+                // 3. Enviar al servidor
+                LOGGER.info("Enviando nueva cuenta al servidor: " + newAccount.getId());
+                accountClient.createAccount_XML(newAccount);
+                
+                // 4. Feedback al usuario
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Cuenta Creada");
+                alert.setHeaderText(null);
+                alert.setContentText("La cuenta se ha creado correctamente.");
+                alert.showAndWait();
+                
+                // 5. Resetear estado
+                creationMode = false;
+                btnCreate.setText("Create");
+                
+                // Recargamos datos para asegurar que tenemos lo que hay en BBDD
+                // y limpiamos cualquier estado "sucio" de la tabla.
+                loadAccountsData();
+                
+                // Restaurar botones según selección (el listener de la tabla lo hará, 
+                // pero forzamos el estado inicial correcto)
+                btnModify.setDisable(true);
+                btnDelete.setDisable(true);
+            }
+            
+        } catch (Exception e) {
+            LOGGER.severe("Error en proceso de creación: " + e.getMessage());
+            showErrorAlert("Error al crear la cuenta: " + e.getMessage());
+            
+            // Si falla al guardar, ¿queremos borrar la fila o dejarla para que reintente?
+            // Por simplicidad, recargamos datos (borrando la fila local no guardada)
+            creationMode = false;
+            btnCreate.setText("Create");
+            loadAccountsData();
+        }
+    }
+    
+     /**
      * Muestra una alerta de error simple.
      * @param msg Mensaje a mostrar
      */
@@ -765,4 +480,5 @@ public class AccountsController implements Initializable {
         alert.setContentText(msg);
         alert.showAndWait();
     }
+    
 }
