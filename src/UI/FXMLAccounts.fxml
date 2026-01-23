@@ -16,41 +16,21 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<AnchorPane id="AnchorPane" prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="UI.AccountsController">
+<AnchorPane id="AnchorPane" prefHeight="768.0" prefWidth="1024.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="UI.AccountsController">
    <children>
       <BorderPane prefHeight="600.0" prefWidth="800.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-         <top>
-            <MenuBar fx:id="menuBar" BorderPane.alignment="CENTER">
-              <menus>
-                <Menu mnemonicParsing="false" text="File">
-                  <items>
-                    <MenuItem mnemonicParsing="false" text="Close" />
-                  </items>
-                </Menu>
-                <Menu mnemonicParsing="false" text="Edit">
-                  <items>
-                    <MenuItem mnemonicParsing="false" text="Delete" />
-                  </items>
-                </Menu>
-                <Menu mnemonicParsing="false" text="Help">
-                  <items>
-                    <MenuItem mnemonicParsing="false" text="About" />
-                  </items>
-                </Menu>
-              </menus>
-            </MenuBar>
-         </top>
          <center>
             <VBox prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER">
                <children>
-                  <TableView fx:id="tbAccounts" prefHeight="500.0" prefWidth="800.0" VBox.vgrow="ALWAYS">
+                  <TableView fx:id="tbAccounts" prefHeight="690.0" prefWidth="1006.0" VBox.vgrow="ALWAYS">
                     <columns>
-                      <TableColumn fx:id="tcId" prefWidth="50.0" text="ID" />
-                      <TableColumn fx:id="tcDescription" prefWidth="250.0" text="Description" />
-                        <TableColumn fx:id="tcBalance" prefWidth="100.0" text="Balance" />
-                        <TableColumn fx:id="tcCreditLine" prefWidth="100.0" text="Credit Line" />
-                        <TableColumn fx:id="tcType" prefWidth="100.0" text="Type" />
-                        <TableColumn fx:id="tcBalanceDate" prefWidth="150.0" text="Balance Date" />
+                      <TableColumn fx:id="tcId" prefWidth="58.0" text="ID" />
+                      <TableColumn fx:id="tcDescription" prefWidth="242.0" text="Description" />
+                      <TableColumn fx:id="tcBeginBalance" prefWidth="142.0" text="Begin balance" />
+                      <TableColumn fx:id="tcBalance" prefWidth="142.0" text="Balance" />
+                      <TableColumn fx:id="tcCreditLine" prefWidth="134.0" text="Credit Line" />
+                      <TableColumn fx:id="tcType" prefWidth="144.0" text="Type" />
+                      <TableColumn fx:id="tcBalanceDate" prefWidth="156.0" text="Balance Date" />
                     </columns>
                   </TableView>
                </children>
@@ -62,9 +42,9 @@
          <bottom>
             <HBox alignment="CENTER" prefHeight="60.0" prefWidth="800.0" spacing="30.0" BorderPane.alignment="CENTER">
                <children>
-                  <Button fx:id="btnCreate" mnemonicParsing="false" onAction="#handleCreateAction" prefWidth="100.0" text="Create" />
-                  <Button fx:id="btnModify" mnemonicParsing="false" onAction="#handleModifyAction" prefWidth="100.0" text="Modify" />
-                  <Button fx:id="btnDelete" mnemonicParsing="false" prefWidth="100.0" text="Delete" />
+                  <Button fx:id="btnCreate" mnemonicParsing="false" onAction="#handleCreateAction" prefHeight="42.0" prefWidth="133.0" text="Create" />
+                  <Button fx:id="btnModify" mnemonicParsing="false" onAction="#handleModifyAction" prefHeight="42.0" prefWidth="133.0" text="Modify" />
+                  <Button fx:id="btnDelete" mnemonicParsing="false" onAction="#handleDeleteAction" prefHeight="42.0" prefWidth="133.0" text="Delete" />
                </children>
                <padding>
                   <Insets bottom="10.0" top="10.0" />

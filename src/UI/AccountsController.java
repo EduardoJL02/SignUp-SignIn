@@ -40,6 +40,7 @@ import javafx.util.converter.DefaultStringConverter;
 import javafx.util.Callback;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.control.TableColumn.CellEditEvent;
+import javafx.scene.control.Alert;
 import model.AccountType;
 
 /**
@@ -68,6 +69,8 @@ public class AccountsController implements Initializable {
     private TableColumn<Account, Long> tcId;
     @FXML
     private TableColumn<Account, String> tcDescription;
+    @FXML
+    private TableColumn<Account, Double> tcBeginBalance;
     @FXML
     private TableColumn<Account, Double> tcBalance;
     @FXML
@@ -133,6 +136,7 @@ public class AccountsController implements Initializable {
         // Configuración de columnas (Visualización básica)
         tcId.setCellValueFactory(new PropertyValueFactory<>("id"));
         tcDescription.setCellValueFactory(new PropertyValueFactory<>("description"));
+        tcBeginBalance.setCellValueFactory(new PropertyValueFactory<>("Begin balance"));
         tcBalance.setCellValueFactory(new PropertyValueFactory<>("balance"));
         tcCreditLine.setCellValueFactory(new PropertyValueFactory<>("creditLine"));
         tcType.setCellValueFactory(new PropertyValueFactory<>("type"));
@@ -233,6 +237,45 @@ public class AccountsController implements Initializable {
                 account.setDescription(t.getNewValue());
                 // Habilitamos el botón Modify al haber cambios pendientes
                 btnModify.setDisable(false);
+            }
+        });
+        
+        // --- 4. Columna BEGIN BALANCE (Solo editable al crear) ---
+        Callback<TableColumn<Account, Double>, TableCell<Account, Double>> beginBalanceCellFactory
+                = new Callback<TableColumn<Account, Double>, TableCell<Account, Double>>() {
+            @Override
+            public TableCell<Account, Double> call(TableColumn<Account, Double> param) {
+                return new TextFieldTableCell<Account, Double>(new DoubleStringConverter()) {
+                    @Override
+                    public void startEdit() {
+                        // REGLA DE NEGOCIO: Solo editable si estamos en modo creación
+                        if (creationMode) {
+                            super.startEdit();
+                        }
+                        // Si creationMode es false, no hace nada (no entra en edición)
+                    }
+                };
+            }
+        };
+        tcBeginBalance.setCellFactory(beginBalanceCellFactory);
+
+        tcBeginBalance.setOnEditCommit(new EventHandler<CellEditEvent<Account, Double>>() {
+            @Override
+            public void handle(CellEditEvent<Account, Double> t) {
+                Account account = t.getRowValue();
+                Double newValue = t.getNewValue();
+                
+                // Actualizamos el BeginBalance
+                account.setBeginBalance(newValue);
+                
+                // Opcional: Al crear una cuenta, normalmente el balance inicial 
+                // es igual al balance actual.
+                if (creationMode) {
+                    account.setBalance(newValue);
+                    // Forzamos el refresco para que la columna "Balance" (no editable) 
+                    // muestre también este valor visualmente.
+                    tbAccounts.refresh();
+                }
             }
         });
 
@@ -466,6 +509,83 @@ public class AccountsController implements Initializable {
             creationMode = false;
             btnCreate.setText("Create");
             loadAccountsData();
+        }
+    }
+    
+    /**
+     * Acción del botón Delete.
+     * Borra la cuenta seleccionada si no tiene movimientos y el usuario confirma.
+     * @param event Evento del botón.
+     */
+    @FXML
+    private void handleDeleteAction(ActionEvent event) {
+        // 1. Obtener la cuenta seleccionada
+        Account selectedAccount = tbAccounts.getSelectionModel().getSelectedItem();
+
+        // Validación de seguridad (por si el botón no se deshabilitó correctamente)
+        if (selectedAccount == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Ninguna selección");
+            alert.setContentText("Por favor, selecciona una cuenta para borrar.");
+            alert.showAndWait();
+            return;
+        }
+
+        // 2. REGLA DE NEGOCIO: No borrar cuentas con movimientos
+        // Verificamos si la lista de movimientos tiene datos
+        if (selectedAccount.getMovements() != null && !selectedAccount.getMovements().isEmpty()) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("No se puede borrar");
+            alert.setHeaderText("La cuenta tiene movimientos asociados");
+            alert.setContentText("Por seguridad, no se pueden eliminar cuentas que ya tienen historial de transacciones.\n\n"
+                    + "Debes borrar los movimientos primero (si está permitido).");
+            alert.showAndWait();
+            return;
+        }
+
+        // 3. Ventana de Confirmación
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Confirmar borrado");
+        alert.setHeaderText("Eliminar cuenta");
+        alert.setContentText("¿Estás seguro de que quieres eliminar la cuenta definitivamente?\n\n"
+                + "ID: " + selectedAccount.getId() + "\n"
+                + "Descripción: " + selectedAccount.getDescription() + "\n\n"
+                + "Esta acción no se puede deshacer.");
+
+        // Capturar respuesta
+        java.util.Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
+
+        if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
+            try {
+                // 4. Llamada al Servidor (REST DELETE)
+                // El método removeAccount espera un String con el ID
+                accountClient.removeAccount(String.valueOf(selectedAccount.getId()));
+
+                // 5. Actualizar la interfaz (UI)
+                // Opción A: Borrar directamente de la lista observable (Más rápido, evita recarga)
+                accountsData.remove(selectedAccount);
+                
+                // Limpiar selección y deshabilitar botones
+                tbAccounts.getSelectionModel().clearSelection();
+                btnDelete.setDisable(true);
+                btnModify.setDisable(true);
+
+                // Feedback
+                Alert successAlert = new Alert(Alert.AlertType.INFORMATION);
+                successAlert.setTitle("Borrado exitoso");
+                successAlert.setContentText("La cuenta ha sido eliminada.");
+                successAlert.showAndWait();
+
+            } catch (Exception e) {
+                LOGGER.severe("Error al borrar la cuenta: " + e.getMessage());
+                Alert errorAlert = new Alert(Alert.AlertType.ERROR);
+                errorAlert.setTitle("Error de Servidor");
+                errorAlert.setContentText("No se pudo borrar la cuenta. Posiblemente esté siendo usada por otro proceso.");
+                errorAlert.showAndWait();
+                
+                // Si falla, recargamos para asegurar que vemos lo que hay en el servidor
+                loadAccountsData();
+            }
         }
     }
     
