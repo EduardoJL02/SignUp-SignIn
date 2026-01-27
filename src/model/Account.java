@@ -8,7 +8,6 @@ package model;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Set;
-
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
@@ -56,7 +55,7 @@ public class Account implements Serializable {
     /**
      * Begin balance timestamp.
      */
-    
+   
     private Date beginBalanceTimestamp;
     /**
      * Relational field containing Customers owning the account. 
@@ -240,5 +239,5 @@ public class Account implements Serializable {
     public String toString() {
         return "serverside.entity.Account[ id=" + id + " ]";
     }
-    
-}
+
+    }

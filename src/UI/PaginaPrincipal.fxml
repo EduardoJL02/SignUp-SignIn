@@ -53,12 +53,17 @@
       <HBox alignment="CENTER" layoutX="112.0" layoutY="519.0" prefHeight="100.0" prefWidth="800.0" spacing="30.0">
          <children>
             
-            <!-- Botón para cerrar sesión -->
-            <Button fx:id="LogoutButton" mnemonicParsing="false" prefHeight="45.0" prefWidth="180.0" style="-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-size: 16px; -fx-cursor: hand;" text="Log out">
+            <Button fx:id="btnAccounts" mnemonicParsing="false" prefHeight="45.0" prefWidth="180.0" style="-fx-background-color: #3498db; -fx-text-fill: white; -fx-font-size: 16px; -fx-cursor: hand;" text="My Accounts">
                <font>
                   <Font name="System Bold" size="16.0" />
                </font>
             </Button>
+
+            <Button fx:id="LogoutButton" mnemonicParsing="false" prefHeight="45.0" prefWidth="180.0" style="-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-size: 16px; -fx-cursor: hand;" text="Log out">
+               <font>
+                  <Font name="System Bold" size="16.0" />
+               </font>
+            </Button>     
          </children>
       </HBox>
       

@@ -75,18 +75,25 @@ public class SignUpSignIn extends Application {
      * Muestra una confirmación antes de cerrar la aplicación.
      */
     private void handleExit(Stage stage) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.initModality(Modality.APPLICATION_MODAL);
-        alert.initOwner(stage);
-        alert.setTitle("Confirm exit");
-        alert.setHeaderText("Do you want to exit the application?");
-        alert.setContentText("All windows will be closed.");
+        try{
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.initModality(Modality.APPLICATION_MODAL);
+            alert.initOwner(stage);
+            alert.setTitle("Confirm exit");
+            alert.setHeaderText("Do you want to exit the application?");
+            alert.setContentText("All windows will be closed.");
 
-        Optional<ButtonType> result = alert.showAndWait();
-        if (result.isPresent() && result.get() == ButtonType.OK) {
-            LOGGER.info("Aplicación finalizada por el usuario.");
-            stage.close();
+            Optional<ButtonType> result = alert.showAndWait();
+            if (result.isPresent() && result.get() == ButtonType.OK) {
+                LOGGER.info("Aplicación finalizada por el usuario.");
+                stage.close();
+            }
+        }catch(Exception e){
+        String errorMsg="Error exiting application: "+e.getMessage();
+        this.showError(errorMsg);
+        LOGGER.log(Level.SEVERE, errorMsg);
         }
+        
     }
 
     /**
