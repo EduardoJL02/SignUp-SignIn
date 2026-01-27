@@ -29,7 +29,7 @@ public class MenuController {
     @FXML
     private void handleLogout(ActionEvent event) {
         // Siempre permitimos ir al login
-        navigate(event, "SignIn.fxml", TITLE_SIGNIN);
+        navigate(event, "FXMLDocument.fxml", TITLE_SIGNIN);
     }
 
     // --- ACTIONS ---
@@ -43,7 +43,7 @@ public class MenuController {
             return; 
         }
 
-        navigate(event, "FXMLDocumentAccounts.fxml", TITLE_ACCOUNTS);
+        navigate(event, "FXMLAccounts.fxml", TITLE_ACCOUNTS);
     }
 
     @FXML
