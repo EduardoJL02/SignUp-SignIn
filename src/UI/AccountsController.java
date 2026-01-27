@@ -42,6 +42,9 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.control.TableColumn.CellEditEvent;
 import javafx.scene.control.Alert;
 import model.AccountType;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.Node;
+import javafx.scene.control.TableRow;
 
 /**
  * Controlador de Gestión de Cuentas.
@@ -60,6 +63,9 @@ public class AccountsController implements Initializable {
     
     // Variable para controlar el estado del botón Create
     private boolean creationMode = false;
+    
+    // Variable para localizar la cuenta que se está creando
+    private Account creatingAccount = null;
 
     @FXML
     private MenuBar menuBar;
@@ -130,6 +136,35 @@ public class AccountsController implements Initializable {
             }
         });
 
+        tbAccounts.addEventFilter(MouseEvent.MOUSE_PRESSED, new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent event) {
+                if (creationMode) {
+                    // Busamos qué fila se ha clicado
+                    Node node = event.getPickResult().getIntersectedNode();
+                    
+                    // Navegar hacia arriba en la jerarquía visual hasta encontrar la TableRow
+                    while (node != null && node != tbAccounts && !(node instanceof TableRow)) {
+                        node = node.getParent();
+                    }
+                    
+                    // Si hemos encontrado una fila...
+                    if (node instanceof TableRow) {
+                        TableRow row = (TableRow) node;
+                        Account rowAccount = (Account) row.getItem();
+                        
+                        // Si la fila clicada NO es la que estamos creando, BLOQUEAMOS el evento
+                        if (rowAccount == null || !rowAccount.equals(creatingAccount)) {
+                            event.consume(); // El clic no hace nada
+                        }
+                    } else {
+                        // Si clicamos en espacio vacío de la tabla, también bloqueamos para no perder foco
+                        event.consume();
+                    }
+                }
+            }
+        });
+        
         // Instanciar cliente REST
         accountClient = new AccountRESTClient();
 
@@ -249,7 +284,9 @@ public class AccountsController implements Initializable {
                     @Override
                     public void startEdit() {
                         // REGLA DE NEGOCIO: Solo editable si estamos en modo creación
-                        if (creationMode) {
+                        Account rowItem = (Account) getTableRow().getItem();
+                        
+                        if (creationMode && rowItem != null && rowItem.equals(creatingAccount)) {
                             super.startEdit();
                         }
                         // Si creationMode es false, no hace nada (no entra en edición)
@@ -422,7 +459,7 @@ public class AccountsController implements Initializable {
         try {
             if (!creationMode) {
                 // --- PASO 1: AÑADIR FILA VACÍA (MODO CREACIÓN) ---
-                
+                creationMode = true;
                 // 1. Crear instancia con datos por defecto
                 Account newAccount = new Account();
                 newAccount.setId(generateLocalId()); // Requisito PDF: ID local
@@ -432,6 +469,10 @@ public class AccountsController implements Initializable {
                 newAccount.setBeginBalanceTimestamp(new Date());
                 newAccount.setType(AccountType.STANDARD);
                 newAccount.setDescription("Nueva Cuenta"); // Texto inicial para que no sea null
+                newAccount.setCustomers(new HashSet<>()); // Inicializar relación
+                
+                // GUARDAMOS LA REFERENCIA A LA CUENTA NUEVA
+                creatingAccount = newAccount;
                 
                 // 2. Añadir a la lista observable (se muestra en tabla automáticamente)
                 accountsData.add(newAccount);
@@ -488,6 +529,7 @@ public class AccountsController implements Initializable {
                 
                 // 5. Resetear estado
                 creationMode = false;
+                creatingAccount = null;
                 btnCreate.setText("Create");
                 
                 // Recargamos datos para asegurar que tenemos lo que hay en BBDD
@@ -507,6 +549,7 @@ public class AccountsController implements Initializable {
             // Si falla al guardar, ¿queremos borrar la fila o dejarla para que reintente?
             // Por simplicidad, recargamos datos (borrando la fila local no guardada)
             creationMode = false;
+            creatingAccount = null;
             btnCreate.setText("Create");
             loadAccountsData();
         }
