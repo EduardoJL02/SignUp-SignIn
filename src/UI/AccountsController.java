@@ -236,11 +236,11 @@ public class AccountsController implements Initializable {
 
             // PREPARAR GenericType para recibir List<Account>
             // Esto es necesario porque Java borra los tipos genéricos en tiempo de ejecución.
-            GenericType<List<Account>> listType = new GenericType<List<Account>>() {};
+            //GenericType<List<Account>> listType = new GenericType<List<Account>>() {};
 
             // LLAMADA AL SERVIDOR (Síncrona)
             // Usamos findAccountsByCustomerId_XML pasando el GenericType y el ID del usuario
-            List<Account> accounts = accountClient.findAccountsByCustomerId_XML(listType, String.valueOf(userCustomer.getId()));
+            Account[] accounts = accountClient.findAccountsByCustomerId_XML(Account[].class, String.valueOf(userCustomer.getId()));
 
             // Convertir a ObservableList y setear en la tabla
             accountsData = FXCollections.observableArrayList(accounts);
