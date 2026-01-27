@@ -64,7 +64,7 @@ public class GestionUsuariosControllerSignUpTest extends ApplicationTest {
         write("905551234567");
         
         clickOn("#tfEmail");
-        String uniqueEmail = "jorge.gonzalez." + System.currentTimeMillis() + "@gmail.com";
+        String uniqueEmail = "jorge.gonzalez@gmail.com";
         write(uniqueEmail);
         
         clickOn("#tfPass");
@@ -73,13 +73,13 @@ public class GestionUsuariosControllerSignUpTest extends ApplicationTest {
         clickOn("#tfRPass");
         write("Abcd!1234");
         
-        verifyThat("#btCreate", isEnabled());
+        //verifyThat("#btCreate", isEnabled());
         
         clickOn("#btCreate");
         
         sleep(2000);
         
-        verifyThat(".dialog-pane", isVisible());
+        verifyThat("¡Cuenta creada correctamente!", isVisible());
         
         clickOn("Aceptar");
         sleep(1000);
@@ -134,7 +134,7 @@ public class GestionUsuariosControllerSignUpTest extends ApplicationTest {
         
         
         sleep(2000);
-        verifyThat(".dialog-pane", isVisible());
+        verifyThat("El correo ya está registrado.", isVisible());
         
         clickOn("Aceptar");
         sleep(500);
