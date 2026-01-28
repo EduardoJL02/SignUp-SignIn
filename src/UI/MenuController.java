@@ -10,6 +10,7 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.Node;
 import javafx.stage.Stage;
 import java.io.IOException;
+import javafx.application.Platform;
 
 public class MenuController {
 
@@ -23,7 +24,7 @@ public class MenuController {
     @FXML
     private void handleExit(ActionEvent event) {
         // Ejemplo: Si quieres que Exit cierre la app por completo
-        System.exit(0);
+        Platform.exit();
     }
 
     @FXML

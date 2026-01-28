@@ -39,6 +39,7 @@ import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.DefaultStringConverter;
 import javafx.util.Callback;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.control.TableColumn.CellEditEvent;
 import javafx.scene.control.Alert;
 import model.AccountType;
@@ -50,7 +51,7 @@ import javafx.scene.control.TableRow;
  * Controlador de Gestión de Cuentas.
  * Recibe un Customer desde la ventana principal y muestra sus cuentas.
  */
-public class AccountsController implements Initializable {
+public class AccountsController {
 
     private static final Logger LOGGER = Logger.getLogger("UI.AccountsController");
 
@@ -91,6 +92,8 @@ public class AccountsController implements Initializable {
     private Button btnModify;
     @FXML
     private Button btnDelete;
+    @FXML
+    private Button btnMovements;
     
     /**
      * Busca el ID más alto en la lista y le suma 1.
@@ -107,20 +110,38 @@ public class AccountsController implements Initializable {
         }
         return maxId + 1;
     }
+    
+    // Campo para guardar el usuario logueado
+    private Customer user;
 
+    /**
+     * Recibe el usuario autenticado desde la ventana de Login.
+     * @param user El cliente que ha iniciado sesión.
+     */
+    public void setCustomer(Customer user) {
+        this.user = user;
+    }
+    
+    public void setStage(Stage stage) {
+        this.stage = stage;
+    }
+
+    public void setUser(Customer user) {
+        this.user = user;
+    }
+    
     /**
      * Inicializa el escenario con el cliente específico.
      * @param root Nodo raíz FXML.
-     * @param customer Cliente dueño de la sesión.
      */
-    public void setStage(Parent root, Customer customer) {
-        this.userCustomer = customer;
-        LOGGER.info("Iniciando AccountsController para el cliente: " + customer.getId());
+    public void initStage(Parent root) {
+        this.userCustomer = user;
+        LOGGER.info("Iniciando AccountsController para el cliente: " + user.getId() );
 
         Scene scene = new Scene(root);
         stage = new Stage();
         stage.setScene(scene);
-        stage.setTitle("Mis Cuentas - " + customer.getFirstName() + " " + customer.getLastName());
+        stage.setTitle("Mis Cuentas - " + user.getFirstName() + " " + user.getLastName());
         stage.setResizable(false);
         stage.initModality(Modality.APPLICATION_MODAL);
 
@@ -253,10 +274,7 @@ public class AccountsController implements Initializable {
         }
     }
 
-    @Override
-    public void initialize(URL location, ResourceBundle resources) {
-        
-    }
+  
     
     /**
      * Configura las celdas para que sean editables y define sus validaciones.
@@ -632,7 +650,35 @@ public class AccountsController implements Initializable {
         }
     }
     
-     /**
+    @FXML
+    private void handleMovementsAction(ActionEvent event) {
+        try {
+            // Cargar el FXML de Movimientos
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/UI/FXMLDocumentMyMovements.fxml"));
+            Parent root = loader.load();
+
+            // Obtener la controladora
+            MovementController controller = loader.getController();
+
+            // Pasar los datos
+            controller.setClientData(this.user);
+
+            // 4. Mostrar la ventana (Stage)
+        Stage stage = new Stage();
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.setScene(new Scene(root));
+        stage.setTitle("Movimientos");
+        stage.show();
+
+        } catch (Exception e) {
+            LOGGER.severe("Error abriendo movimientos: " + e.getMessage());
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setContentText("Error al abrir la ventana de movimientos.");
+            alert.showAndWait();
+        }
+    }
+    
+    /**
      * Muestra una alerta de error simple.
      * @param msg Mensaje a mostrar
      */

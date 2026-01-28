@@ -48,6 +48,7 @@
                   <Button fx:id="btnCreate" mnemonicParsing="false" onAction="#handleCreateAction" prefHeight="42.0" prefWidth="133.0" text="Create" />
                   <Button fx:id="btnModify" mnemonicParsing="false" onAction="#handleModifyAction" prefHeight="42.0" prefWidth="133.0" text="Modify" />
                   <Button fx:id="btnDelete" mnemonicParsing="false" onAction="#handleDeleteAction" prefHeight="42.0" prefWidth="133.0" text="Delete" />
+                  <Button fx:id="btnMovements" mnemonicParsing="false" onAction="#handleMovementsAction" prefHeight="42.0" prefWidth="133.0" text="Go to movements" />
                </children>
                <padding>
                   <Insets bottom="10.0" top="10.0" />
