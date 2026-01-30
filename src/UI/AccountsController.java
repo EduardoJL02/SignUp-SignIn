@@ -94,6 +94,8 @@ public class AccountsController {
     private Button btnDelete;
     @FXML
     private Button btnMovements;
+    @FXML
+    private Button btnCancel;
     
     /**
      * Busca el ID más alto en la lista y le suma 1.
@@ -154,6 +156,8 @@ public class AccountsController {
                 btnDelete.setDisable(true);
                 btnCreate.setDisable(false);
                 tbAccounts.setEditable(true);
+                btnCancel.setDisable(true);
+                btnCancel.setOpacity(0.0);
             }
         });
 
@@ -509,6 +513,10 @@ public class AccountsController {
                 btnModify.setDisable(true);
                 btnDelete.setDisable(true);
                 
+                //Aparecer y enseñar boton cancelar
+                btnCancel.setDisable(false);
+                btnCancel.setOpacity(1.0);
+                
                 // Nota: La tabla ya tiene el foco para escribir.
                 
             } else {
@@ -570,6 +578,46 @@ public class AccountsController {
             creatingAccount = null;
             btnCreate.setText("Create");
             loadAccountsData();
+        }
+    }
+    
+    @FXML
+    private void handleCancelAction(ActionEvent event) {
+        // 1. Mostrar confirmación
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Cancel creation");
+        alert.setHeaderText("Do you want to exit from creation mode?");
+        alert.setContentText("The data from the new account you were creating will be lost.");
+
+        // Esperar respuesta 
+        java.util.Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
+        
+        if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
+            try {
+                // 2. "Cancelar" significa volver al estado original.
+                // La forma más segura es recargar los datos del servidor.
+                // Esto borra la fila vacía local que habíamos añadido.
+                loadAccountsData(); 
+                
+                 // 3. Resetear estado
+                creationMode = false;
+                creatingAccount = null;
+                btnCreate.setText("Create");
+                
+                // Restaurar estado de los botones
+                btnCancel.setDisable(true);
+                btnCancel.setOpacity(0.0); 
+                
+                btnCreate.setDisable(false); 
+                btnModify.setDisable(true);
+                btnDelete.setDisable(true);
+                
+                // 4. Limpiar selección de la tabla por seguridad
+                tbAccounts.getSelectionModel().clearSelection();
+                
+            } catch (Exception e) {
+                LOGGER.severe("Error al cancelar creación: " + e.getMessage());
+            }
         }
     }
     
