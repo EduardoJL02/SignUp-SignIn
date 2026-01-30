@@ -160,7 +160,7 @@ public class AccountsController {
                 btnCancel.setOpacity(0.0);
             }
         });
-
+        
         tbAccounts.addEventFilter(MouseEvent.MOUSE_PRESSED, new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent event) {
@@ -246,6 +246,18 @@ public class AccountsController {
             }
         );
         
+         // Manejador para el botón "X" de la ventana
+        stage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+            @Override
+            public void handle(WindowEvent event) {
+                // Consumimos el evento para evitar que la ventana se cierre inmediatamente
+                event.consume();
+                
+                // Llamamos a nuestro método de Log Out para pedir confirmación
+                handleLogOutAction(null);
+            }
+        });
+
         
         // Cargar datos del servidor filtrando por este cliente
         loadAccountsData();
@@ -723,6 +735,32 @@ public class AccountsController {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setContentText("Error al abrir la ventana de movimientos.");
             alert.showAndWait();
+        }
+    }
+    
+    /**
+     * Método para manejar el cierre de sesión o salida de la ventana.
+     * Pide confirmación al usuario antes de cerrar.
+     * @param event Evento de acción (puede ser null si se llama manualmente).
+     */
+    @FXML
+    private void handleLogOutAction(ActionEvent event) {
+        // 1. Mostrar ventana de confirmación
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Cerrar Sesión");
+        alert.setHeaderText("Salir de la aplicación");
+        alert.setContentText("¿Está seguro de que desea cerrar sesión y volver al login?");
+
+        // 2. Esperar respuesta del usuario
+        java.util.Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
+
+        if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
+            // 3. Cerrar la ventana actual (Stage)
+            // Esto disparará el evento setOnHidden configurado en el Login, 
+            // el cual se encargará de limpiar los campos y restaurar el estado inicial.
+            
+                stage.close();
+            
         }
     }
     

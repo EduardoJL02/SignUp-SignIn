@@ -391,31 +391,6 @@ public class GestionUsuariosController {
             }
             LOGGER.info("Controlador obtenido: " + controller.getClass().getName());
             
-            // Nuevo stage para cuentas
-            Stage stageCuentas = new Stage();
-            stageCuentas.initOwner(this.stage); // El login es el propietario
-            stageCuentas.initModality(Modality.APPLICATION_MODAL); // Bloquea el login
-            stageCuentas.setResizable(false);
-            
-            // Configurar el comportamiento al cerrar
-            stageCuentas.setOnHidden(new EventHandler<WindowEvent>() {
-                @Override
-                public void handle(WindowEvent event) {
-                    // Limpiar los campos del Login
-                    EmailTextField.setText("");
-                    PasswordField.setText(""); 
-            
-                    // Devolver el foco al email
-                    EmailTextField.requestFocus();
-                    
-                    LOGGER.info("Ventana de cuentas cerrada. Login reseteado.");
-                }
-            });
-
-            // 5. Configurar dependencias del controlador
-            // Pasamos el nuevo stage
-            controller.setStage(stageCuentas);
-            
             // 4. Pasar el usuario autenticado
             LOGGER.info("Paso 4: Pasando customer al controlador...");
             if (loggedCustomer == null) {
