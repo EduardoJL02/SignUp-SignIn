@@ -449,6 +449,30 @@ public class MovementController implements Initializable {
     
     private boolean isNewRow(Movement m) { return m.getId() == null || m.getId() == 0; }
     
+    /**
+     * Método para recibir una cuenta desde la ventana anterior.
+     * Busca la cuenta en el ComboBox y la selecciona si existe.
+     * @param account La cuenta seleccionada en la ventana anterior.
+     */
+    public void setPreselectedAccount(Account account) {
+        if (account == null) {
+            return;
+        }
+
+        // Recorremos los items del ComboBox para encontrar la coincidencia por ID
+        ObservableList<Account> items = cbAccountSelector.getItems();
+        
+        for (Account a : items) {
+            // Comparamos los IDs porque los objetos podrían ser instancias diferentes en memoria
+            if (a.getId().equals(account.getId())) {
+                // Seleccionamos la cuenta en el combo. 
+                // Esto debería disparar el Listener del ComboBox y cargar los movimientos automáticamente.
+                cbAccountSelector.getSelectionModel().select(a);
+                break; // Salimos del bucle una vez encontrada
+            }
+        }
+    }
+    
     private void showError(String msg) { 
         Alert a = new Alert(Alert.AlertType.ERROR); 
         a.setTitle("Error");

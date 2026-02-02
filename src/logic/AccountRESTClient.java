@@ -36,7 +36,7 @@ public class AccountRESTClient {
         webTarget = client.target(BASE_URI).path("account");
     }
 
-    public <T> T findAccountsByCustomerId_XML(GenericType<T> responseType, String id) throws ClientErrorException {
+    public <T> T findAccountsByCustomerId_XML(Class<T> responseType, String id) throws ClientErrorException {
         WebTarget resource = webTarget;
         resource = resource.path(java.text.MessageFormat.format("customer/{0}", new Object[]{id}));
         return resource.request(javax.ws.rs.core.MediaType.APPLICATION_XML).get(responseType);
@@ -80,7 +80,7 @@ public class AccountRESTClient {
         webTarget.request(javax.ws.rs.core.MediaType.APPLICATION_JSON).put(javax.ws.rs.client.Entity.entity(requestEntity, javax.ws.rs.core.MediaType.APPLICATION_JSON));
     }
 
-    public <T> T findAll_XML(GenericType<T> responseType) throws ClientErrorException {
+    public <T> T findAll_XML(Class<T> responseType) throws ClientErrorException {
         WebTarget resource = webTarget;
         return resource.request(javax.ws.rs.core.MediaType.APPLICATION_XML).get(responseType);
     }

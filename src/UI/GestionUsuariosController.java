@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -14,6 +15,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotAuthorizedException;
@@ -201,7 +203,10 @@ public class GestionUsuariosController {
                 loggedCustomer = customer; // Almacenar usuario autenticado
                 
                 // Navegar a la ventana principal
-                navigateToMain();
+                navigateToAccounts();
+                this.stage.show();
+                setControlsDisabled(false);
+                LoginButton.requestFocus();
                 
             } else {
                 LOGGER.warning("Evento: login_failed - Customer null o sin ID");
@@ -354,38 +359,37 @@ public class GestionUsuariosController {
      * 
      * Sustituir el Platform.runLater() del método navigateToMain() por código síncrono. 
      */
-    private void navigateToMain() {
-        LOGGER.info("=== INICIO NAVEGACIÓN A VENTANA PRINCIPAL ===");
+    private void navigateToAccounts() {
+        LOGGER.info("=== INICIO NAVEGACIÓN A VENTANA CUENTAS ===");
         LOGGER.info("Stage actual: " + (stage != null ? "OK" : "NULL"));
         LOGGER.info("Logged customer: " + (loggedCustomer != null ? loggedCustomer.getEmail() : "NULL"));
         
         try {
             // 1. Verificar recurso FXML
-            LOGGER.info("Paso 1: Buscando recurso /UI/PaginaPrincipal.fxml");
-            java.net.URL fxmlUrl = getClass().getResource("/UI/PaginaPrincipal.fxml");
+            LOGGER.info("Paso 1: Buscando recurso /UI/FXMLAccounts.fxml");
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("FXMLAccounts.fxml"));
             
-            if (fxmlUrl == null) {
-                LOGGER.severe("ERROR: No se encontró el archivo PaginaPrincipal.fxml en /UI/");
-                showErrorAlert("Error: PaginaPrincipal.fxml file not found\n\n" +
-                              "Verify the file is on path src/UI/PaginaPrincipal.fxml");
+            if (loader == null) {
+                LOGGER.severe("ERROR: No se encontró el archivo FXMLAccounts.fxml en /UI/");
+                showErrorAlert("Error: FXMLAccounts.fxml file not found\n\n" +
+                              "Verify the file is on path src/UI/FXMLAccounts.fxml");
                 return;
             }
-            LOGGER.info("Recurso encontrado: " + fxmlUrl);
+            LOGGER.info("Recurso encontrado: " + loader);
             
             // 2. Cargar el FXML
             LOGGER.info("Paso 2: Cargando FXML...");
-            FXMLLoader loader = new FXMLLoader(fxmlUrl);
-            Parent root = loader.load();
+            Parent root = (Parent) loader.load();
             LOGGER.info("FXML cargado exitosamente. Root: " + (root != null ? "OK" : "NULL"));
             
             // 3. Obtener el controlador
             LOGGER.info("Paso 3: Obteniendo controlador...");
-            PaginaPrincipalController controller = loader.getController();
+            AccountsController controller = (AccountsController) loader.getController();
             
             if (controller == null) {
-                LOGGER.severe("ERROR: Controller es NULL. Verifica fx:controller en PaginaPrincipal.fxml");
+                LOGGER.severe("ERROR: Controller es NULL. Verifica fx:controller en FXMLAccounts.fxml");
                 showErrorAlert("Error: Main window driver could not be loaded.\n\n" +
-                        "Verify file PaginaPrincipal.fxml has: fx:controller=\"UI.PaginaPrincipalController\"");
+                        "Verify file FXMLAccounts.fxml has: fx:controller=\"UI.AccountsController\"");
                 return;
             }
             LOGGER.info("Controlador obtenido: " + controller.getClass().getName());
@@ -397,7 +401,7 @@ public class GestionUsuariosController {
                 showErrorAlert("Error: No information available for the authenticated user.");
                 return;
             }
-            controller.setCustomer(loggedCustomer);
+            controller.setCustomer(this.loggedCustomer);
             LOGGER.info("Customer pasado correctamente");
             
             // 5. Verificar stage
@@ -410,8 +414,9 @@ public class GestionUsuariosController {
             LOGGER.info("Stage verificado: OK");
             
             // 6. Inicializar la ventana principal
-            LOGGER.info("Paso 6: Inicializando ventana principal...");
-            controller.init(stage, root);
+            LOGGER.info("Paso 6: Inicializando ventana de cuentas...");
+            controller.initStage(root);
+            
             
             LOGGER.info("=== NAVEGACIÓN EXITOSA ===");
             LOGGER.info("Usuario: " + loggedCustomer.getEmail());
@@ -419,7 +424,7 @@ public class GestionUsuariosController {
         } catch (java.io.IOException e) {
             LOGGER.log(Level.SEVERE, "Error de I/O al cargar FXML", e);
             showErrorAlert("Error loading interface:\n" + e.getMessage() + "\n\n" +
-                          "Verify the file PaginaPrincipal.fxml is on path src/UI/");
+                          "Verify the file FXMLAccounts.fxml is on path src/UI/");
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error inesperado al navegar", e);
             e.printStackTrace(); // Para ver el stacktrace completo

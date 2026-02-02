@@ -39,6 +39,7 @@ import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.DefaultStringConverter;
 import javafx.util.Callback;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.control.TableColumn.CellEditEvent;
 import javafx.scene.control.Alert;
 import model.AccountType;
@@ -50,7 +51,7 @@ import javafx.scene.control.TableRow;
  * Controlador de Gestión de Cuentas.
  * Recibe un Customer desde la ventana principal y muestra sus cuentas.
  */
-public class AccountsController implements Initializable {
+public class AccountsController {
 
     private static final Logger LOGGER = Logger.getLogger("UI.AccountsController");
 
@@ -91,6 +92,10 @@ public class AccountsController implements Initializable {
     private Button btnModify;
     @FXML
     private Button btnDelete;
+    @FXML
+    private Button btnMovements;
+    @FXML
+    private Button btnCancel;
     
     /**
      * Busca el ID más alto en la lista y le suma 1.
@@ -107,20 +112,38 @@ public class AccountsController implements Initializable {
         }
         return maxId + 1;
     }
+    
+    // Campo para guardar el usuario logueado
+    private Customer user;
 
+    /**
+     * Recibe el usuario autenticado desde la ventana de Login.
+     * @param user El cliente que ha iniciado sesión.
+     */
+    public void setCustomer(Customer user) {
+        this.user = user;
+    }
+    
+    public void setStage(Stage stage) {
+        this.stage = stage;
+    }
+
+    public void setUser(Customer user) {
+        this.user = user;
+    }
+    
     /**
      * Inicializa el escenario con el cliente específico.
      * @param root Nodo raíz FXML.
-     * @param customer Cliente dueño de la sesión.
      */
-    public void setStage(Parent root, Customer customer) {
-        this.userCustomer = customer;
-        LOGGER.info("Iniciando AccountsController para el cliente: " + customer.getId());
+    public void initStage(Parent root) {
+        this.userCustomer = user;
+        LOGGER.info("Iniciando AccountsController para el cliente: " + user.getId() );
 
         Scene scene = new Scene(root);
         stage = new Stage();
         stage.setScene(scene);
-        stage.setTitle("Mis Cuentas - " + customer.getFirstName() + " " + customer.getLastName());
+        stage.setTitle("Mis Cuentas - " + user.getFirstName() + " " + user.getLastName());
         stage.setResizable(false);
         stage.initModality(Modality.APPLICATION_MODAL);
 
@@ -133,9 +156,11 @@ public class AccountsController implements Initializable {
                 btnDelete.setDisable(true);
                 btnCreate.setDisable(false);
                 tbAccounts.setEditable(true);
+                btnCancel.setDisable(true);
+                btnCancel.setOpacity(0.0);
             }
         });
-
+        
         tbAccounts.addEventFilter(MouseEvent.MOUSE_PRESSED, new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent event) {
@@ -221,6 +246,18 @@ public class AccountsController implements Initializable {
             }
         );
         
+         // Manejador para el botón "X" de la ventana
+        stage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+            @Override
+            public void handle(WindowEvent event) {
+                // Consumimos el evento para evitar que la ventana se cierre inmediatamente
+                event.consume();
+                
+                // Llamamos a nuestro método de Log Out para pedir confirmación
+                handleLogOutAction(null);
+            }
+        });
+
         
         // Cargar datos del servidor filtrando por este cliente
         loadAccountsData();
@@ -236,11 +273,11 @@ public class AccountsController implements Initializable {
 
             // PREPARAR GenericType para recibir List<Account>
             // Esto es necesario porque Java borra los tipos genéricos en tiempo de ejecución.
-            GenericType<List<Account>> listType = new GenericType<List<Account>>() {};
+            //GenericType<List<Account>> listType = new GenericType<List<Account>>() {};
 
             // LLAMADA AL SERVIDOR (Síncrona)
-            // Usamos findAccountsByCustomerId_XML pasando el GenericType y el ID del usuario
-            List<Account> accounts = accountClient.findAccountsByCustomerId_XML(listType, String.valueOf(userCustomer.getId()));
+            // Usamos findAccountsByCustomerId_XML pasando el ID del usuario
+            Account[] accounts = accountClient.findAccountsByCustomerId_XML(Account[].class, String.valueOf(userCustomer.getId()));
 
             // Convertir a ObservableList y setear en la tabla
             accountsData = FXCollections.observableArrayList(accounts);
@@ -253,10 +290,7 @@ public class AccountsController implements Initializable {
         }
     }
 
-    @Override
-    public void initialize(URL location, ResourceBundle resources) {
-        
-    }
+  
     
     /**
      * Configura las celdas para que sean editables y define sus validaciones.
@@ -491,6 +525,10 @@ public class AccountsController implements Initializable {
                 btnModify.setDisable(true);
                 btnDelete.setDisable(true);
                 
+                //Aparecer y enseñar boton cancelar
+                btnCancel.setDisable(false);
+                btnCancel.setOpacity(1.0);
+                
                 // Nota: La tabla ya tiene el foco para escribir.
                 
             } else {
@@ -552,6 +590,46 @@ public class AccountsController implements Initializable {
             creatingAccount = null;
             btnCreate.setText("Create");
             loadAccountsData();
+        }
+    }
+    
+    @FXML
+    private void handleCancelAction(ActionEvent event) {
+        // 1. Mostrar confirmación
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Cancel creation");
+        alert.setHeaderText("Do you want to exit from creation mode?");
+        alert.setContentText("The data from the new account you were creating will be lost.");
+
+        // Esperar respuesta 
+        java.util.Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
+        
+        if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
+            try {
+                // 2. "Cancelar" significa volver al estado original.
+                // La forma más segura es recargar los datos del servidor.
+                // Esto borra la fila vacía local que habíamos añadido.
+                loadAccountsData(); 
+                
+                 // 3. Resetear estado
+                creationMode = false;
+                creatingAccount = null;
+                btnCreate.setText("Create");
+                
+                // Restaurar estado de los botones
+                btnCancel.setDisable(true);
+                btnCancel.setOpacity(0.0); 
+                
+                btnCreate.setDisable(false); 
+                btnModify.setDisable(true);
+                btnDelete.setDisable(true);
+                
+                // 4. Limpiar selección de la tabla por seguridad
+                tbAccounts.getSelectionModel().clearSelection();
+                
+            } catch (Exception e) {
+                LOGGER.severe("Error al cancelar creación: " + e.getMessage());
+            }
         }
     }
     
@@ -632,7 +710,66 @@ public class AccountsController implements Initializable {
         }
     }
     
-     /**
+    @FXML
+    private void handleMovementsAction(ActionEvent event) {
+        // 1. Obtener la cuenta seleccionada en la tabla
+        Account selectedAccount = tbAccounts.getSelectionModel().getSelectedItem();
+        try {
+            // Cargar el FXML de Movimientos
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/UI/FXMLDocumentMyMovements.fxml"));
+            Parent root = loader.load();
+
+            // Obtener la controladora
+            MovementController controller = loader.getController();
+
+            // Pasar los datos
+            controller.setClientData(this.user);
+
+            // 4. Mostrar la ventana (Stage)
+        Stage stage = new Stage();
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.initOwner(this.stage);
+        stage.setScene(new Scene(root));
+        stage.setTitle("Movements");
+        
+        controller.setPreselectedAccount(selectedAccount);
+        stage.show();
+
+        } catch (Exception e) {
+            LOGGER.severe("Error abriendo movimientos: " + e.getMessage());
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setContentText("Error al abrir la ventana de movimientos.");
+            alert.showAndWait();
+        }
+    }
+    
+    /**
+     * Método para manejar el cierre de sesión o salida de la ventana.
+     * Pide confirmación al usuario antes de cerrar.
+     * @param event Evento de acción (puede ser null si se llama manualmente).
+     */
+    @FXML
+    private void handleLogOutAction(ActionEvent event) {
+        // 1. Mostrar ventana de confirmación
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Cerrar Sesión");
+        alert.setHeaderText("Salir de la aplicación");
+        alert.setContentText("¿Está seguro de que desea cerrar sesión y volver al login?");
+
+        // 2. Esperar respuesta del usuario
+        java.util.Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
+
+        if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
+            // 3. Cerrar la ventana actual (Stage)
+            // Esto disparará el evento setOnHidden configurado en el Login, 
+            // el cual se encargará de limpiar los campos y restaurar el estado inicial.
+            
+                stage.close();
+            
+        }
+    }
+    
+    /**
      * Muestra una alerta de error simple.
      * @param msg Mensaje a mostrar
      */
