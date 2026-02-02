@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -14,6 +15,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotAuthorizedException;
@@ -202,6 +204,9 @@ public class GestionUsuariosController {
                 
                 // Navegar a la ventana principal
                 navigateToAccounts();
+                this.stage.show();
+                setControlsDisabled(false);
+                LoginButton.requestFocus();
                 
             } else {
                 LOGGER.warning("Evento: login_failed - Customer null o sin ID");

@@ -24,15 +24,15 @@
          <center>
             <VBox prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER">
                <children>
-                  <TableView fx:id="tbAccounts" prefHeight="690.0" prefWidth="1006.0" VBox.vgrow="ALWAYS">
+                  <TableView fx:id="tbAccounts" prefHeight="690.0" prefWidth="1000.0" VBox.vgrow="ALWAYS">
                     <columns>
-                      <TableColumn fx:id="tcId" prefWidth="58.0" text="ID" />
-                      <TableColumn fx:id="tcDescription" prefWidth="250.0" text="Description" />
-                      <TableColumn fx:id="tcBeginBalance" prefWidth="142.0" text="Begin balance" />
-                      <TableColumn fx:id="tcBalance" prefWidth="142.0" text="Balance" />
-                      <TableColumn fx:id="tcCreditLine" prefWidth="134.0" text="Credit Line" />
+                      <TableColumn fx:id="tcId" prefWidth="113.0" text="ID"/>
+                      <TableColumn fx:id="tcDescription" prefWidth="208.0" text="Description" />
+                      <TableColumn fx:id="tcBeginBalance" prefWidth="133.0" text="Begin balance" />
+                      <TableColumn fx:id="tcBalance" prefWidth="122.0" text="Balance" />
+                      <TableColumn fx:id="tcCreditLine" prefWidth="129.0" text="Credit Line" />
                       <TableColumn fx:id="tcType" prefWidth="144.0" text="Type" />
-                      <TableColumn fx:id="tcBalanceDate" prefWidth="156.0" text="Balance Date" />
+                      <TableColumn fx:id="tcBalanceDate" prefWidth="135.0" text="Balance Date" />
                     </columns>
                   </TableView>
                </children>
@@ -45,9 +45,11 @@
          <bottom>
             <HBox alignment="CENTER" prefHeight="60.0" prefWidth="800.0" spacing="30.0" BorderPane.alignment="CENTER">
                <children>
+                   <Button fx:id="btnCancel" mnemonicParsing="false" onAction="#handleCancelAction" prefHeight="42.0" prefWidth="133.0" text="Cancel" />
                   <Button fx:id="btnCreate" mnemonicParsing="false" onAction="#handleCreateAction" prefHeight="42.0" prefWidth="133.0" text="Create" />
                   <Button fx:id="btnModify" mnemonicParsing="false" onAction="#handleModifyAction" prefHeight="42.0" prefWidth="133.0" text="Modify" />
                   <Button fx:id="btnDelete" mnemonicParsing="false" onAction="#handleDeleteAction" prefHeight="42.0" prefWidth="133.0" text="Delete" />
+                  <Button fx:id="btnMovements" mnemonicParsing="false" onAction="#handleMovementsAction" prefHeight="42.0" prefWidth="133.0" text="Go to movements" />
                </children>
                <padding>
                   <Insets bottom="10.0" top="10.0" />
