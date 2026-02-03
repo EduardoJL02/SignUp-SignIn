@@ -269,25 +269,26 @@ public class AccountsController {
     
     private void loadAccountsData() {
         try {
-            LOGGER.info("Cargando cuentas para el cliente ID: " + userCustomer.getId());
+        // 1. Definimos el tipo exacto que queremos recibir: Una Lista de Accounts
+        // Usamos una clase anónima interna para capturar el tipo genérico (estilo Java 8 clásico)
+        GenericType<List<Account>> listType = new GenericType<List<Account>>() {};
 
-            // PREPARAR GenericType para recibir List<Account>
-            // Esto es necesario porque Java borra los tipos genéricos en tiempo de ejecución.
-            //GenericType<List<Account>> listType = new GenericType<List<Account>>() {};
+        // 2. Llamamos al servidor usando el nuevo método que acepta listType
+        List<Account> accountsList = accountClient.findAccountsByCustomerId_XML(listType, String.valueOf(userCustomer.getId()));
 
-            // LLAMADA AL SERVIDOR (Síncrona)
-            // Usamos findAccountsByCustomerId_XML pasando el GenericType y el ID del usuario
-            Account[] accounts = accountClient.findAccountsByCustomerId_XML(Account[].class, String.valueOf(userCustomer.getId()));
+        // 3. Convertimos la lista estándar de Java a una ObservableList para la tabla
+        accountsData = FXCollections.observableArrayList(accountsList);
 
-            // Convertir a ObservableList y setear en la tabla
-            accountsData = FXCollections.observableArrayList(accounts);
-            tbAccounts.setItems(accountsData);
-            
-            LOGGER.info("Se han cargado " + accountsData.size() + " cuentas.");
-            
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error al cargar datos del servidor", e);
-        }
+        // 4. Asignamos los datos a la tabla
+        tbAccounts.setItems(accountsData);
+
+    } catch (Exception ex) {
+        // Log del error (opcional, pero recomendado)
+        // Logger.getLogger(AccountsController.class.getName()).log(Level.SEVERE, null, ex);
+        
+        // Mostrar alerta al usuario
+        showErrorAlert("Error al cargar las cuentas del servidor: " + ex.getMessage());
+    }
     }
 
   
@@ -437,7 +438,7 @@ public class AccountsController {
             alert.showAndWait();
             return;
         }
-
+        
         // 2. Ventana de Confirmación
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Confirmar modificación");
@@ -446,7 +447,7 @@ public class AccountsController {
                 + "Descripción: " + selectedAccount.getDescription() + "\n"
                 + "Línea de Crédito: " + selectedAccount.getCreditLine());
 
-        // Capturar la respuesta del usuario (Sin lambdas)
+        // Capturar la respuesta del usuario
         java.util.Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
 
         if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
@@ -482,9 +483,6 @@ public class AccountsController {
                 loadAccountsData();
                 btnModify.setDisable(true);
             }
-        } else {
-            // Si el usuario cancela, podríamos optar por revertir cambios o dejarlos ahí.
-            // Por simplicidad, los dejamos pendientes por si quiere darle a Modify de nuevo.
         }
     }
     
@@ -492,6 +490,7 @@ public class AccountsController {
     private void handleCreateAction(ActionEvent event) {
         try {
             if (!creationMode) {
+                loadAccountsData();
                 // --- PASO 1: AÑADIR FILA VACÍA (MODO CREACIÓN) ---
                 creationMode = true;
                 // 1. Crear instancia con datos por defecto
@@ -520,10 +519,10 @@ public class AccountsController {
                 tbAccounts.edit(accountsData.size() - 1, tcDescription);
                 
                 // 5. Cambiar estado del botón y bloquear otros controles
-                creationMode = true;
-                btnCreate.setText("Guardar"); // Cambiamos texto visualmente
+                btnCreate.setText("Save"); // Cambiamos texto visualmente
                 btnModify.setDisable(true);
                 btnDelete.setDisable(true);
+                btnMovements.setDisable(true);
                 
                 //Aparecer y enseñar boton cancelar
                 btnCancel.setDisable(false);
@@ -537,22 +536,19 @@ public class AccountsController {
                 // 1. Obtener la cuenta que estamos creando (la seleccionada)
                 Account newAccount = tbAccounts.getSelectionModel().getSelectedItem();
                 
+                // 2. Validaciones básicas antes de enviar
+                if (newAccount.getDescription() == null || newAccount.getDescription().trim().isEmpty()) {
+                    showErrorAlert("Description cannot be empty");
+                    return;
+                }
+                
                 // Aseguramos que la cuenta tenga al cliente actual asociado antes de enviarla
                 if (newAccount.getCustomers() == null) {
                     newAccount.setCustomers(new HashSet<>());
                 }
                 
                 // Añadimos el usuario actual a la lista de dueños de la cuenta
-                newAccount.getCustomers().add(userCustomer);
-                
-                LOGGER.info("Enviando nueva cuenta al servidor con cliente asociado: " + userCustomer.getId());
-                accountClient.createAccount_XML(newAccount);
-
-                // 2. Validaciones básicas antes de enviar
-                if (newAccount.getDescription().trim().isEmpty()) {
-                    showErrorAlert("La descripción no puede estar vacía.");
-                    return;
-                }
+                newAccount.getCustomers().add(userCustomer);                
                 
                 // 3. Enviar al servidor
                 LOGGER.info("Enviando nueva cuenta al servidor: " + newAccount.getId());
@@ -569,6 +565,9 @@ public class AccountsController {
                 creationMode = false;
                 creatingAccount = null;
                 btnCreate.setText("Create");
+                btnCancel.setDisable(true);
+                btnCancel.setOpacity(0.0);
+                btnMovements.setDisable(false);
                 
                 // Recargamos datos para asegurar que tenemos lo que hay en BBDD
                 // y limpiamos cualquier estado "sucio" de la tabla.
@@ -588,7 +587,10 @@ public class AccountsController {
             // Por simplicidad, recargamos datos (borrando la fila local no guardada)
             creationMode = false;
             creatingAccount = null;
+            btnCancel.setDisable(true);
+            btnCancel.setOpacity(0.0);
             btnCreate.setText("Create");
+            btnMovements.setDisable(false);
             loadAccountsData();
         }
     }
@@ -623,6 +625,7 @@ public class AccountsController {
                 btnCreate.setDisable(false); 
                 btnModify.setDisable(true);
                 btnDelete.setDisable(true);
+                btnMovements.setDisable(false);
                 
                 // 4. Limpiar selección de la tabla por seguridad
                 tbAccounts.getSelectionModel().clearSelection();

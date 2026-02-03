@@ -35,9 +35,11 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
+import javax.ws.rs.core.GenericType;
 
 /**
  * Controlador principal para la gestión de Movimientos Bancarios.
@@ -230,44 +232,119 @@ public class MovementController implements Initializable {
         loadUserAccounts(true);
     }
 
+//    private void loadUserAccounts(boolean selectFirst) {
+//        try {
+//            Account[] accounts = accountClient.findAccountsByCustomerId_XML(Account[].class, String.valueOf(currentCustomer.getId()));
+//            
+//            isProgrammaticUpdate = true;
+//            Account current = cbAccountSelector.getValue();
+//            cbAccountSelector.setItems(FXCollections.observableArrayList(accounts));
+//            
+//            if (current != null) {
+//                for(Account a : accounts) {
+//                    if(a.getId().equals(current.getId())) {
+//                        cbAccountSelector.setValue(a);
+//                        break;
+//                    }
+//                }
+//            } else if (selectFirst && accounts.length > 0) {
+//                cbAccountSelector.getSelectionModel().selectFirst();
+//                loadMovementsForAccount(cbAccountSelector.getValue());
+//            }
+//            isProgrammaticUpdate = false;
+//        } catch (Exception e) {
+//            lblStatus.setText("Error cargando cuentas.");
+//        }
+//    }
+    
     private void loadUserAccounts(boolean selectFirst) {
         try {
-            Account[] accounts = accountClient.findAccountsByCustomerId_XML(Account[].class, String.valueOf(currentCustomer.getId()));
-            
+            // 1. Definimos el GenericType para recibir una lista
+            GenericType<List<Account>> listType = new GenericType<List<Account>>() {};
+
+            // 2. Llamamos al servicio (ahora devuelve List<Account>, no array)
+            List<Account> accounts = accountClient.findAccountsByCustomerId_XML(listType, String.valueOf(currentCustomer.getId()));
+
             isProgrammaticUpdate = true;
             Account current = cbAccountSelector.getValue();
-            cbAccountSelector.setItems(FXCollections.observableArrayList(accounts));
             
+            // 3. Pasamos la lista directamente al ObservableList
+            cbAccountSelector.setItems(FXCollections.observableArrayList(accounts));
+
+            // 4. Lógica de recuperación de selección
             if (current != null) {
-                for(Account a : accounts) {
-                    if(a.getId().equals(current.getId())) {
+                // El bucle for-each funciona igual para Listas que para Arrays
+                for (Account a : accounts) {
+                    if (a.getId().equals(current.getId())) {
                         cbAccountSelector.setValue(a);
                         break;
                     }
                 }
-            } else if (selectFirst && accounts.length > 0) {
+            } 
+            // CAMBIO AQUÍ: Las listas no tienen .length, usamos !isEmpty() o .size() > 0
+            else if (selectFirst && !accounts.isEmpty()) {
                 cbAccountSelector.getSelectionModel().selectFirst();
+                // Aseguramos que se carguen los movimientos de la cuenta seleccionada por defecto
                 loadMovementsForAccount(cbAccountSelector.getValue());
             }
+            
             isProgrammaticUpdate = false;
+
         } catch (Exception e) {
-            lblStatus.setText("Error cargando cuentas.");
+            // Es buena práctica mostrar el error exacto en el log o label
+            lblStatus.setText("Error cargando cuentas: " + e.getMessage());
+            // Opcional: Mostrar Alert si prefieres ser más intrusivo con el error
+            // showErrorAlert("No se pudieron cargar las cuentas.");
         }
     }
+
+//    private void loadMovementsForAccount(Account account) {
+//        try {
+//            Movement[] movements = movementClient.findMovementByAccount_XML(Movement[].class, String.valueOf(account.getId()));
+//            masterData.clear();
+//            masterData.addAll(Arrays.asList(movements));
+//            recalculateLocalBalances();
+//            lblStatus.setText("Datos cargados correctamente.");
+//        } catch (Exception e) {
+//            lblStatus.setText("Error de conexión.");
+//            e.printStackTrace();
+//        }
+//    }
 
     private void loadMovementsForAccount(Account account) {
+        // Validación básica: si no hay cuenta seleccionada, no hacemos nada
+        if (account == null) {
+            return;
+        }
+
         try {
-            Movement[] movements = movementClient.findMovementByAccount_XML(Movement[].class, String.valueOf(account.getId()));
+            // 1. Definimos el tipo genérico: Lista de Movimientos
+            GenericType<List<Movement>> listType = new GenericType<List<Movement>>() {};
+
+            // 2. Llamamos al servidor usando el nuevo método del cliente
+            List<Movement> movementsList = movementClient.findMovementByAccount_XML(listType, String.valueOf(account.getId()));
+
+            // 3. Actualizamos la lista observable (masterData)
             masterData.clear();
-            masterData.addAll(Arrays.asList(movements));
+            
+            // Ahora podemos añadir la lista directamente, sin usar Arrays.asList()
+            masterData.addAll(movementsList);
+
+            // 4. Recalculamos saldos y actualizamos la UI
             recalculateLocalBalances();
-            lblStatus.setText("Datos cargados correctamente.");
+            lblStatus.setText("Movimientos cargados: " + movementsList.size());
+
         } catch (Exception e) {
-            lblStatus.setText("Error de conexión.");
-            e.printStackTrace();
+            // Manejo de errores simple y visual
+            lblStatus.setText("Error al cargar movimientos.");
+            
+            // Opcional: Imprimir traza para depuración en consola
+            e.printStackTrace(); 
+            
+            // Si prefieres ser más explícito con el usuario, descomenta la alerta:
+            // showErrorAlert("No se pudieron descargar los movimientos del servidor.");
         }
     }
-
     private void recalculateLocalBalances() {
         masterData.sort((m1, m2) -> {
             if (m1.getTimestamp() == null || m2.getTimestamp() == null) return 0;
