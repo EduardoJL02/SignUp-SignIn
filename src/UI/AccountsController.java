@@ -531,6 +531,10 @@ public class AccountsController {
                 btnCancel.setDisable(false);
                 btnCancel.setOpacity(1.0);
                 
+                //Aparecer y enseñar boton cancelar
+                btnCancel.setDisable(false);
+                btnCancel.setOpacity(1.0);
+                
                 // Nota: La tabla ya tiene el foco para escribir.
                 
             } else {
