@@ -96,6 +96,8 @@ public class AccountsController {
     private Button btnMovements;
     @FXML
     private Button btnCancel;
+    @FXML
+    private Button btnRefresh;
     
     /**
      * Busca el ID más alto en la lista y le suma 1.
@@ -307,6 +309,9 @@ public class AccountsController {
                 account.setDescription(t.getNewValue());
                 // Habilitamos el botón Modify al haber cambios pendientes
                 btnModify.setDisable(false);
+                if (creationMode){
+                    btnModify.setDisable(true);
+                }
             }
         });
         
@@ -743,6 +748,38 @@ public class AccountsController {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setContentText("Error al abrir la ventana de movimientos.");
             alert.showAndWait();
+        }
+    }
+    
+    /**
+     * Acción para refrescar la tabla manualmente.
+     * Recarga los datos del servidor y limpia la selección.
+     * @param event 
+     */
+    @FXML
+    private void handleRefreshAction(ActionEvent event) {
+        try {
+            LOGGER.info("Refrescando datos de la tabla...");
+            
+            // 2. Recargar los datos desde el servidor
+            loadAccountsData();
+            
+            // 3. Resetear el estado de los botones CRUD
+            // Al refrescar, se pierde la selección, así que desactivamos botones de acción
+            tbAccounts.getSelectionModel().clearSelection();
+            btnCreate.setText("Create"); // Asegurar que no estamos en modo edición
+            btnModify.setDisable(true);
+            btnDelete.setDisable(true);
+            btnMovements.setDisable(false);
+            
+            // Asegurar que salimos de modo creación si estábamos en él
+            creationMode = false;
+            creatingAccount = null;
+            btnCancel.setDisable(true);
+            btnCancel.setOpacity(0.0);
+            
+        } catch (Exception e) {
+            showErrorAlert("No se pudo refrescar la tabla: " + e.getMessage());
         }
     }
     
