@@ -269,25 +269,26 @@ public class AccountsController {
     
     private void loadAccountsData() {
         try {
-            LOGGER.info("Cargando cuentas para el cliente ID: " + userCustomer.getId());
+        // 1. Definimos el tipo exacto que queremos recibir: Una Lista de Accounts
+        // Usamos una clase anónima interna para capturar el tipo genérico (estilo Java 8 clásico)
+        GenericType<List<Account>> listType = new GenericType<List<Account>>() {};
 
-            // PREPARAR GenericType para recibir List<Account>
-            // Esto es necesario porque Java borra los tipos genéricos en tiempo de ejecución.
-            //GenericType<List<Account>> listType = new GenericType<List<Account>>() {};
+        // 2. Llamamos al servidor usando el nuevo método que acepta listType
+        List<Account> accountsList = accountClient.findAccountsByCustomerId_XML(listType, String.valueOf(userCustomer.getId()));
 
-            // LLAMADA AL SERVIDOR (Síncrona)
-            // Usamos findAccountsByCustomerId_XML pasando el GenericType y el ID del usuario
-            Account[] accounts = accountClient.findAccountsByCustomerId_XML(Account[].class, String.valueOf(userCustomer.getId()));
+        // 3. Convertimos la lista estándar de Java a una ObservableList para la tabla
+        accountsData = FXCollections.observableArrayList(accountsList);
 
-            // Convertir a ObservableList y setear en la tabla
-            accountsData = FXCollections.observableArrayList(accounts);
-            tbAccounts.setItems(accountsData);
-            
-            LOGGER.info("Se han cargado " + accountsData.size() + " cuentas.");
-            
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error al cargar datos del servidor", e);
-        }
+        // 4. Asignamos los datos a la tabla
+        tbAccounts.setItems(accountsData);
+
+    } catch (Exception ex) {
+        // Log del error (opcional, pero recomendado)
+        // Logger.getLogger(AccountsController.class.getName()).log(Level.SEVERE, null, ex);
+        
+        // Mostrar alerta al usuario
+        showErrorAlert("Error al cargar las cuentas del servidor: " + ex.getMessage());
+    }
     }
 
   
@@ -521,9 +522,14 @@ public class AccountsController {
                 
                 // 5. Cambiar estado del botón y bloquear otros controles
                 creationMode = true;
-                btnCreate.setText("Guardar"); // Cambiamos texto visualmente
+                btnCreate.setText("Save"); // Cambiamos texto visualmente
                 btnModify.setDisable(true);
                 btnDelete.setDisable(true);
+                btnMovements.setDisable(true);
+                
+                //Aparecer y enseñar boton cancelar
+                btnCancel.setDisable(false);
+                btnCancel.setOpacity(1.0);
                 
                 //Aparecer y enseñar boton cancelar
                 btnCancel.setDisable(false);
@@ -623,6 +629,7 @@ public class AccountsController {
                 btnCreate.setDisable(false); 
                 btnModify.setDisable(true);
                 btnDelete.setDisable(true);
+                btnMovements.setDisable(false);
                 
                 // 4. Limpiar selección de la tabla por seguridad
                 tbAccounts.getSelectionModel().clearSelection();
@@ -712,6 +719,8 @@ public class AccountsController {
     
     @FXML
     private void handleMovementsAction(ActionEvent event) {
+        // 1. Obtener la cuenta seleccionada en la tabla
+        Account selectedAccount = tbAccounts.getSelectionModel().getSelectedItem();
         try {
             // Cargar el FXML de Movimientos
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/UI/FXMLDocumentMyMovements.fxml"));
@@ -726,8 +735,11 @@ public class AccountsController {
             // 4. Mostrar la ventana (Stage)
         Stage stage = new Stage();
         stage.initModality(Modality.APPLICATION_MODAL);
+        stage.initOwner(this.stage);
         stage.setScene(new Scene(root));
-        stage.setTitle("Movimientos");
+        stage.setTitle("Movements");
+        
+        controller.setPreselectedAccount(selectedAccount);
         stage.show();
 
         } catch (Exception e) {

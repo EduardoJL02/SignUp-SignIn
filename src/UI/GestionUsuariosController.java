@@ -204,6 +204,9 @@ public class GestionUsuariosController {
                 
                 // Navegar a la ventana principal
                 navigateToAccounts();
+                this.stage.show();
+                setControlsDisabled(false);
+                LoginButton.requestFocus();
                 
             } else {
                 LOGGER.warning("Evento: login_failed - Customer null o sin ID");
