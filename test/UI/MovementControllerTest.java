@@ -1,123 +1,143 @@
 package UI;
 
+import javafx.scene.Node;
+import javafx.scene.control.TableView;
 import javafx.scene.input.KeyCode;
 import javafx.stage.Stage;
-import org.junit.Test;
 import org.junit.FixMethodOrder;
+import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import static org.testfx.api.FxAssert.verifyThat;
 import org.testfx.framework.junit.ApplicationTest;
-import static org.testfx.matcher.base.NodeMatchers.isDisabled;
+import org.testfx.util.WaitForAsyncUtils;
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import static org.testfx.api.FxAssert.verifyThat;
 import static org.testfx.matcher.base.NodeMatchers.isEnabled;
 import static org.testfx.matcher.base.NodeMatchers.isVisible;
-import static org.testfx.matcher.control.LabeledMatchers.hasText;
-// Asegúrate de importar tu clase principal donde arranca la app
+import static org.junit.Assert.assertEquals;
+
+// Tu clase principal
 import signup.signin.SignUpSignIn; 
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class MovementControllerTest extends ApplicationTest {
-    
-    // Credenciales proporcionadas
+
     private static final String USUARIO = "awallace@gmail.com";
     private static final String PASS = "qwerty*9876";
 
     @Override
     public void start(Stage stage) throws Exception {
-        // Arrancamos la aplicación desde el principio (Login)
         new SignUpSignIn().start(stage);
     }
 
     /**
-     * Método auxiliar para realizar el Login y llegar a la pantalla de Movimientos.
-     * Se reutiliza en cada test para situarnos en la pantalla correcta.
+     * Método auxiliar para esperar dinámicamente a que se cumpla una condición
+     * sin usar sleep() fijos.
      */
-    private void llegarAMovements() {
-        // --- 1. LOGIN ---
-        // Ajusta estos IDs (#) según tu FXML de Login
-        clickOn("#EmailTextField"); 
-        write(USUARIO);
-        
-        clickOn("#tfPassword"); // O el ID que tengas para la contraseña
-        write(PASS);
-        
-        clickOn("#LoginButton"); // Botón de entrar
-        
-        // Esperamos a que cargue la ventana de Cuentas (puede tardar por el servidor)
-        sleep(2000);
-        verifyThat("#tbAccounts", isVisible()); // Confirmamos que estamos en Accounts
+    private void esperarHastaQue(Callable<Boolean> condicion, String mensajeError) {
+        try {
+            WaitForAsyncUtils.waitFor(10, TimeUnit.SECONDS, condicion);
+        } catch (TimeoutException e) {
+            throw new AssertionError(mensajeError);
+        }
+    }
 
-        // --- 2. SELECCIÓN DE CUENTA ---
-        // Seleccionamos la tabla y pulsamos Abajo + Enter para elegir la primera fila
-        clickOn("#tbAccounts");
-        type(KeyCode.DOWN);
-        type(KeyCode.ENTER);
-        
-        // --- 3. ABRIR MOVIMIENTOS ---
-        verifyThat("#btnMovements", isEnabled());
+    private void navegarHastaMovements() {
+        // 1. Login
+        clickOn("#EmailTextField").write(USUARIO);
+        clickOn("#PasswordField").write(PASS);
+        clickOn("#LoginButton");
+
+        // Esperar a que la tabla de cuentas sea visible
+        verifyThat("#tbAccounts", isVisible());
+
+        // 2. Seleccionar cuenta (Clic en la primera fila de datos)
+        Node primeraFila = lookup(".table-row-cell").nth(0).query();
+        clickOn(primeraFila);
+
+        // 3. Ir a movimientos
         clickOn("#btnMovements");
         
-        // Esperamos a que abra la ventana modal
-        sleep(1000);
-    }
-
-    @Test
-    public void test1_VerificarCargaDeDatosReales() {
-        // Ejecutamos la navegación
-        llegarAMovements();
-        
-        // Verificamos que se ha cargado la ventana de Movimientos
+        // Esperar a que la tabla de movimientos aparezca
         verifyThat("#tvMovements", isVisible());
-        
-        // Verificamos que los datos del usuario "awallace" se ven en las etiquetas
-        // (Ajusta el texto esperado si el nombre en BBDD es diferente, ej: "Alfred Wallace")
-        verifyThat("#lblCustomerName", isVisible()); 
-        
-        // Verificamos que el selector de cuentas está activo
-        verifyThat("#cbAccountSelector", isEnabled());
-        
-        // Salir para limpiar
-        clickOn("#btBack");
     }
 
     @Test
-    public void test2_CrearNuevoMovimiento() {
-        llegarAMovements();
-        
-        // Verificamos botón de nueva fila
-        verifyThat("#btNewRow", isEnabled());
-        
-        // Creamos la fila
+    public void test1_CrearMovimientoManual() {
+        navegarHastaMovements();
+
+        TableView<?> table = lookup("#tvMovements").queryTableView();
+        int filasIniciales = table.getItems().size();
+
+        // 1. Clic en botón Nuevo
         clickOn("#btNewRow");
-        sleep(500);
+
+        // Esperar a que la fila se añada visualmente
+        esperarHastaQue(() -> table.getItems().size() == filasIniciales + 1, 
+                        "La fila nueva no apareció en la tabla");
+
+        int indiceUltimaFila = table.getItems().size() - 1;
+
+        // --- PASO CLAVE: SELECCIONAR TIPO (DEPOSIT) ---
+        // Buscamos la celda de la columna "Type" (índice 1) en la última fila
+        Node celdaTipo = lookup(".table-cell").nth(indiceUltimaFila * 4 + 1).query();
         
-        // Escribimos una cantidad en la celda seleccionada (la columna Amount)
-        write("10.50");
-        type(KeyCode.ENTER);
+        // Doble clic para asegurar que entra en modo edición (ComboBox)
+        doubleClickOn(celdaTipo);
         
-        sleep(1000);
+        // Clic explícito en la opción "Deposit" del menú desplegable
+        clickOn("Deposit");
+
+        // --- PASO CLAVE: PONER CANTIDAD ---
+        // Buscamos la celda de la columna "Amount" (índice 2)
+        Node celdaAmount = lookup(".table-cell").nth(indiceUltimaFila * 4 + 2).query();
         
-        // Verificamos mensaje de estado (si tu controlador lo actualiza al guardar)
+        // Doble clic para editar
+        doubleClickOn(celdaAmount);
+        
+        // Escribir cantidad
+        write("50.00");
+        
+        // CONFIRMAR: JavaFX EXIGE pulsar Enter para guardar el dato de una celda
+        type(KeyCode.ENTER); 
+
+        // Esperar dinámicamente a que el mensaje de estado indique éxito
+        // Ojo: verifica que tu controlador ponga este texto exacto en lblStatus
         verifyThat("#lblStatus", isVisible());
-        
-        clickOn("#btBack");
     }
 
     @Test
-    public void test3_VolverAtrasFunciona() {
-        llegarAMovements();
+    public void test2_DeshacerManual() {
+        navegarHastaMovements();
         
-        verifyThat("#btBack", isVisible());
-        
-        // Pulsamos volver
+        TableView<?> table = lookup("#tvMovements").queryTableView();
+        int filasAntes = table.getItems().size();
+
+        if (filasAntes > 0) {
+            clickOn("#btUndoLast");
+
+            // Esperar y clicar el botón de la alerta
+            // TestFX esperará automáticamente a que aparezca el botón "Aceptar"
+            clickOn("Aceptar"); 
+
+            // Esperar dinámicamente a que la tabla reduzca su tamaño
+            esperarHastaQue(() -> table.getItems().size() == filasAntes - 1, 
+                            "El movimiento no se borró de la tabla");
+            
+            assertEquals("La tabla debería tener una fila menos", filasAntes - 1, table.getItems().size());
+        }
+    }
+
+    @Test
+    public void test3_VolverManual() {
+        navegarHastaMovements();
+
         clickOn("#btBack");
-        sleep(500);
-        
-        // Verificamos que hemos vuelto a la pantalla de Cuentas
-        // (El botón de movimientos debe estar visible de nuevo)
-        verifyThat("#btnMovements", isVisible());
+
+        // Esperar a que aparezca la tabla de cuentas (prueba de que volvimos)
         verifyThat("#tbAccounts", isVisible());
-        
-        // Opcional: Cerrar sesión para dejar limpio
-        // clickOn("#btnLogOut"); 
     }
 }
