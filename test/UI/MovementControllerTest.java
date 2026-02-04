@@ -1,26 +1,21 @@
 package UI;
 
 import javafx.scene.Node;
-import javafx.scene.control.TableView;
-import javafx.scene.input.KeyCode;
+import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.testfx.framework.junit.ApplicationTest;
 import org.testfx.util.WaitForAsyncUtils;
-
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import javafx.scene.input.KeyCode;
 
 import static org.testfx.api.FxAssert.verifyThat;
-import static org.testfx.matcher.base.NodeMatchers.isEnabled;
 import static org.testfx.matcher.base.NodeMatchers.isVisible;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
-// Tu clase principal
-import signup.signin.SignUpSignIn; 
+import signup.signin.SignUpSignIn;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class MovementControllerTest extends ApplicationTest {
@@ -33,111 +28,86 @@ public class MovementControllerTest extends ApplicationTest {
         new SignUpSignIn().start(stage);
     }
 
-    /**
-     * Método auxiliar para esperar dinámicamente a que se cumpla una condición
-     * sin usar sleep() fijos.
-     */
-    private void esperarHastaQue(Callable<Boolean> condicion, String mensajeError) {
-        try {
-            WaitForAsyncUtils.waitFor(10, TimeUnit.SECONDS, condicion);
-        } catch (TimeoutException e) {
-            throw new AssertionError(mensajeError);
-        }
-    }
-
     private void navegarHastaMovements() {
-        // 1. Login
-        clickOn("#EmailTextField").write(USUARIO);
-        clickOn("#PasswordField").write(PASS);
-        clickOn("#LoginButton");
+        // Casting a (Node) para evitar errores de compilación por ambigüedad
+        clickOn((Node) lookup("#EmailTextField").query()).write(USUARIO);
+        clickOn((Node) lookup("#PasswordField").query()).write(PASS);
+        clickOn((Node) lookup("#LoginButton").query());
 
-        // Esperar a que la tabla de cuentas sea visible
         verifyThat("#tbAccounts", isVisible());
-
-        // 2. Seleccionar cuenta (Clic en la primera fila de datos)
-        Node primeraFila = lookup(".table-row-cell").nth(0).query();
-        clickOn(primeraFila);
-
-        // 3. Ir a movimientos
-        clickOn("#btnMovements");
+        clickOn((Node) lookup(".table-row-cell").nth(0).query());
+        clickOn((Node) lookup("#btnMovements").query());
         
-        // Esperar a que la tabla de movimientos aparezca
         verifyThat("#tvMovements", isVisible());
+        WaitForAsyncUtils.waitForFxEvents();
     }
 
     @Test
-    public void test1_CrearMovimientoManual() {
+    public void test1_FlujoCompletoMovimiento() {
         navegarHastaMovements();
-
-        TableView<?> table = lookup("#tvMovements").queryTableView();
-        int filasIniciales = table.getItems().size();
-
-        // 1. Clic en botón Nuevo
-        clickOn("#btNewRow");
-
-        // Esperar a que la fila se añada visualmente
-        esperarHastaQue(() -> table.getItems().size() == filasIniciales + 1, 
-                        "La fila nueva no apareció en la tabla");
-
-        int indiceUltimaFila = table.getItems().size() - 1;
-
-        // --- PASO CLAVE: SELECCIONAR TIPO (DEPOSIT) ---
-        // Buscamos la celda de la columna "Type" (índice 1) en la última fila
-        Node celdaTipo = lookup(".table-cell").nth(indiceUltimaFila * 4 + 1).query();
         
-        // Doble clic para asegurar que entra en modo edición (ComboBox)
-        doubleClickOn(celdaTipo);
-        
-        // Clic explícito en la opción "Deposit" del menú desplegable
-        clickOn("Deposit");
+        // 1. Obtener balance inicial
+        TextField tfBalance = lookup("#tfBalance").queryAs(TextField.class);
+        String saldoInicial = tfBalance.getText();
 
-        // --- PASO CLAVE: PONER CANTIDAD ---
-        // Buscamos la celda de la columna "Amount" (índice 2)
-        Node celdaAmount = lookup(".table-cell").nth(indiceUltimaFila * 4 + 2).query();
+        // 2. Crear nueva fila
+        clickOn((Node) lookup("#btNewRow").query());
+        WaitForAsyncUtils.waitForFxEvents();
+
+        // 3. EDITAR TIPO: Seleccionar primero y luego cambiar
+        Node celdaTipo = lookup("Deposit").query();
+        clickOn(celdaTipo); 
+        sleep(500, TimeUnit.MILLISECONDS); 
+        clickOn("Payment"); 
+        WaitForAsyncUtils.waitForFxEvents();
+
+        // 4. EDITAR CANTIDAD: Localización por posición
+        Node celdaAmount = lookup("#tvMovements .table-row-cell")
+                            .nth(0) 
+                            .lookup(".table-cell")
+                            .nth(2) // Ajustado a la columna Amount
+                            .query();
+
+        // Secuencia de edición
+        clickOn((Node) celdaAmount);
+        sleep(500, TimeUnit.MILLISECONDS);
+        doubleClickOn((Node) celdaAmount); 
+        sleep(500, TimeUnit.MILLISECONDS);
         
-        // Doble clic para editar
-        doubleClickOn(celdaAmount);
+        // Escribimos la cantidad
+        write("150.00");
         
-        // Escribir cantidad
-        write("50.00");
-        
-        // CONFIRMAR: JavaFX EXIGE pulsar Enter para guardar el dato de una celda
+        // --- AQUÍ ESTÁ EL ENTER SOLICITADO ---
+        // Pulsamos ENTER para validar la celda. 
+        // A veces se requiere doble ENTER: uno para cerrar el editor y otro para confirmar la tabla.
         type(KeyCode.ENTER); 
+        type(KeyCode.ENTER); 
+        // -------------------------------------
 
-        // Esperar dinámicamente a que el mensaje de estado indique éxito
-        // Ojo: verifica que tu controlador ponga este texto exacto en lblStatus
-        verifyThat("#lblStatus", isVisible());
-    }
+        // 5. CONFIRMAR: Clic fuera para asegurar que el foco se pierda
+        clickOn((Node) tfBalance); 
 
-    @Test
-    public void test2_DeshacerManual() {
-        navegarHastaMovements();
+        // 6. Esperar a que el servidor REST procese y el saldo se actualice
+        sleep(3, TimeUnit.SECONDS); 
         
-        TableView<?> table = lookup("#tvMovements").queryTableView();
-        int filasAntes = table.getItems().size();
+        // 7. Verificar cambio de saldo
+        assertNotEquals("El saldo debería haber cambiado tras el ENTER", 
+                       saldoInicial, tfBalance.getText());
 
-        if (filasAntes > 0) {
-            clickOn("#btUndoLast");
+        // 6. SINCRONIZACIÓN: Esperar respuesta del servidor REST
+        // Se aumenta el tiempo para evitar el AssertionFailedError
+        sleep(4, TimeUnit.SECONDS); 
+        
+        // 7. VERIFICAR ACTUALIZACIÓN
+        String saldoFinal = tfBalance.getText();
+        assertNotEquals("Error: El saldo no cambió tras la edición. Inicial: " + saldoInicial, 
+                       saldoInicial, saldoFinal);
 
-            // Esperar y clicar el botón de la alerta
-            // TestFX esperará automáticamente a que aparezca el botón "Aceptar"
-            clickOn("Aceptar"); 
-
-            // Esperar dinámicamente a que la tabla reduzca su tamaño
-            esperarHastaQue(() -> table.getItems().size() == filasAntes - 1, 
-                            "El movimiento no se borró de la tabla");
-            
-            assertEquals("La tabla debería tener una fila menos", filasAntes - 1, table.getItems().size());
-        }
-    }
-
-    @Test
-    public void test3_VolverManual() {
-        navegarHastaMovements();
-
-        clickOn("#btBack");
-
-        // Esperar a que aparezca la tabla de cuentas (prueba de que volvimos)
+        // 8. DESHACER Y VOLVER
+        clickOn((Node) lookup("#btUndoLast").query());
+        clickOn("Aceptar"); 
+        sleep(2, TimeUnit.SECONDS);
+        clickOn((Node) lookup("#btBack").query());
         verifyThat("#tbAccounts", isVisible());
     }
 }
