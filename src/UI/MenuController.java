@@ -79,36 +79,6 @@ public class MenuController {
         }
     }
 
-    // --- ACTIONS ---
-
-    @FXML
-    private void handleAccounts(ActionEvent event) {
-        Stage stage = getCurrentStage(event);
-        
-        // CORRECCIÓN: Si ya estamos en Accounts, no hacer nada
-        if (stage != null && TITLE_ACCOUNTS.equals(stage.getTitle())) {
-            return; 
-        }
-
-        navigate(event, "FXMLAccounts.fxml", TITLE_ACCOUNTS);
-    }
-
-    @FXML
-    private void handleMovements(ActionEvent event) {
-        Stage stage = getCurrentStage(event);
-
-        // CORRECCIÓN CLAVE: Si ya estamos en Movements, no hacer nada (no recargar)
-        if (stage != null && TITLE_MOVEMENTS.equals(stage.getTitle())) {
-            return;
-        }
-
-        // ADVERTENCIA: Si navegas desde "Accounts" a "Movements" por el menú, 
-        // la tabla saldrá vacía porque el menú no sabe qué cliente pasar.
-        // Para solucionar eso necesitarías una "Sesión" global, pero esto 
-        // arregla el error de borrar datos si ya estás dentro.
-        navigate(event, "FXMLDocumentMyMovements.fxml", TITLE_MOVEMENTS);
-    }
-
     // --- HELP ---
 
     @FXML

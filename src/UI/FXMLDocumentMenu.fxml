@@ -15,13 +15,6 @@
             </items>
           </Menu>
 
-          <Menu mnemonicParsing="false" text="Actions">
-            <items>
-              <MenuItem fx:id="menuAccounts" mnemonicParsing="false" onAction="#handleAccounts" text="Accounts" />
-              <MenuItem fx:id="menuMovements" mnemonicParsing="false" onAction="#handleMovements" text="Movements" />
-            </items>
-          </Menu>
-
           <Menu mnemonicParsing="false" text="Help">
             <items>
               <MenuItem fx:id="menuAbout" mnemonicParsing="false" onAction="#handleAbout" text="About" />
