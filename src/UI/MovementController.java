@@ -482,34 +482,19 @@ public class MovementController implements Initializable {
      * @param event Evento del botón.
      */
     @FXML
-    void handleBack(ActionEvent event) {
-        try {
-            // 1. Cargar el FXML de la ventana de cuentas
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("FXMLAccounts.fxml"));
-            Parent root = loader.load();
-
-            // 2. Obtener el controlador de esa vista (AccountController)
-            // IMPORTANTE: Asegúrate de que 'AccountController' es el nombre exacto de tu clase controladora de cuentas
-            AccountsController controller = loader.getController();
-
-            // 3. Pasarle el cliente actual para restaurar el estado
-            // Debes tener un método setCustomer(Customer c) o similar en AccountController
-            if (this.currentCustomer != null) {
-                controller.setCustomer(this.currentCustomer);
-            }
-
-            // 4. Cambiar la escena
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            Scene scene = new Scene(root);
-            stage.setScene(scene);
-            stage.show();
-
-        } catch (IOException e) {
-            LOGGER.severe("Error al volver a la pantalla de cuentas: " + e.getMessage());
-            e.printStackTrace();
-            showError("No se pudo cargar la pantalla de cuentas.");
-        }
+void handleBack(ActionEvent event) {
+    try {
+        // Obtenemos el Stage (ventana) actual a partir del botón presionado
+        Stage stage = (Stage) btBack.getScene().getWindow();
+        
+        // Simplemente cerramos la ventana de movimientos.
+        // Al ser MODAL, la ventana de 'Accounts' que hay debajo se reactivará automáticamente.
+        stage.close();
+        
+    } catch (Exception e) {
+        LOGGER.severe("Error al cerrar la ventana de movimientos: " + e.getMessage());
     }
+}
 
     @FXML 
     void handleExit(ActionEvent event) { 

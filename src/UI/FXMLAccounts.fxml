@@ -24,15 +24,23 @@
          <center>
             <VBox prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER">
                <children>
+                   <HBox alignment="CENTER_RIGHT" prefHeight="40.0" prefWidth="200.0">
+                     <children>
+                        <Button fx:id="btnRefresh" mnemonicParsing="false" onAction="#handleRefreshAction" text="↻ Refrescar" />
+                     </children>
+                     <VBox.margin>
+                        <Insets bottom="5.0" left="10.0" right="10.0" top="5.0" />
+                     </VBox.margin>
+                  </HBox>
                   <TableView fx:id="tbAccounts" prefHeight="690.0" prefWidth="1000.0" VBox.vgrow="ALWAYS">
                     <columns>
-                      <TableColumn fx:id="tcId" prefWidth="113.0" text="ID"/>
-                      <TableColumn fx:id="tcDescription" prefWidth="208.0" text="Description" />
-                      <TableColumn fx:id="tcBeginBalance" prefWidth="133.0" text="Begin balance" />
-                      <TableColumn fx:id="tcBalance" prefWidth="122.0" text="Balance" />
-                      <TableColumn fx:id="tcCreditLine" prefWidth="129.0" text="Credit Line" />
-                      <TableColumn fx:id="tcType" prefWidth="144.0" text="Type" />
-                      <TableColumn fx:id="tcBalanceDate" prefWidth="135.0" text="Balance Date" />
+                      <TableColumn fx:id="tcId" prefWidth="113.0" text="ID" />
+                      <TableColumn fx:id="tcDescription" prefWidth="241.0" text="Description" />
+                      <TableColumn fx:id="tcBeginBalance" prefWidth="125.0" text="Begin balance" />
+                      <TableColumn fx:id="tcBalance" prefWidth="135.0" text="Balance" />
+                      <TableColumn fx:id="tcCreditLine" prefWidth="135.0" text="Credit Line" />
+                      <TableColumn fx:id="tcType" prefWidth="130.0" text="Type" />
+                      <TableColumn fx:id="tcBalanceDate" prefWidth="123.0" text="Balance Date" />
                     </columns>
                   </TableView>
                </children>
