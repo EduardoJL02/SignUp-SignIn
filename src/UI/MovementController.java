@@ -484,10 +484,21 @@ public class MovementController implements Initializable {
     @FXML
     void handleBack(ActionEvent event) {
         try {
-            // VERIFICA QUE ESTE NOMBRE DE ARCHIVO SEA CORRECTO
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("FXMLDocumentAccounts.fxml"));
+            // 1. Cargar el FXML de la ventana de cuentas
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("FXMLAccounts.fxml"));
             Parent root = loader.load();
 
+            // 2. Obtener el controlador de esa vista (AccountController)
+            // IMPORTANTE: Asegúrate de que 'AccountController' es el nombre exacto de tu clase controladora de cuentas
+            AccountsController controller = loader.getController();
+
+            // 3. Pasarle el cliente actual para restaurar el estado
+            // Debes tener un método setCustomer(Customer c) o similar en AccountController
+            if (this.currentCustomer != null) {
+                controller.setCustomer(this.currentCustomer);
+            }
+
+            // 4. Cambiar la escena
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
             stage.setScene(scene);
