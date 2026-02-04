@@ -482,23 +482,19 @@ public class MovementController implements Initializable {
      * @param event Evento del botón.
      */
     @FXML
-    void handleBack(ActionEvent event) {
-        try {
-            // VERIFICA QUE ESTE NOMBRE DE ARCHIVO SEA CORRECTO
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("FXMLDocumentAccounts.fxml"));
-            Parent root = loader.load();
-
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            Scene scene = new Scene(root);
-            stage.setScene(scene);
-            stage.show();
-
-        } catch (IOException e) {
-            LOGGER.severe("Error al volver a la pantalla de cuentas: " + e.getMessage());
-            e.printStackTrace();
-            showError("No se pudo cargar la pantalla de cuentas.");
-        }
+void handleBack(ActionEvent event) {
+    try {
+        // Obtenemos el Stage (ventana) actual a partir del botón presionado
+        Stage stage = (Stage) btBack.getScene().getWindow();
+        
+        // Simplemente cerramos la ventana de movimientos.
+        // Al ser MODAL, la ventana de 'Accounts' que hay debajo se reactivará automáticamente.
+        stage.close();
+        
+    } catch (Exception e) {
+        LOGGER.severe("Error al cerrar la ventana de movimientos: " + e.getMessage());
     }
+}
 
     @FXML 
     void handleExit(ActionEvent event) { 
