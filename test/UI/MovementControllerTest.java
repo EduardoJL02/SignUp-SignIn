@@ -8,7 +8,6 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.testfx.framework.junit.ApplicationTest;
 import org.testfx.util.WaitForAsyncUtils;
-import java.util.concurrent.TimeUnit;
 import javafx.scene.input.KeyCode;
 
 import static org.testfx.api.FxAssert.verifyThat;
@@ -43,70 +42,60 @@ public class MovementControllerTest extends ApplicationTest {
     }
 
     @Test
-    public void test1_FlujoCompletoMovimiento() {
+    public void test1_FlujoSinUndo() {
         navegarHastaMovements();
-        
-        // 1. Obtener balance inicial
         TextField tfBalance = lookup("#tfBalance").queryAs(TextField.class);
         String saldoInicial = tfBalance.getText();
-
-        // 2. Crear nueva fila
+        
+        // 1. Crear fila
         clickOn((Node) lookup("#btNewRow").query());
         WaitForAsyncUtils.waitForFxEvents();
 
-        // 3. EDITAR TIPO: Seleccionar primero y luego cambiar
-        Node celdaTipo = lookup("Deposit").query();
-        clickOn(celdaTipo); 
-        sleep(500, TimeUnit.MILLISECONDS); 
-        clickOn("Payment"); 
+        // 2. Editar Tipo
+        Node tipo = lookup("#tvMovements .table-row-cell").nth(0).lookup(".table-cell").nth(1).query();
+        clickOn(tipo);
+        clickOn("Payment");
+        type(KeyCode.ENTER);
+
+        // 3. Editar Cantidad
+        Node amount = lookup("#tvMovements .table-row-cell").nth(0).lookup(".table-cell").nth(2).query();
+        clickOn(amount);
+        doubleClickOn(amount);
+        write("100.00");
+        type(KeyCode.ENTER);
+        type(KeyCode.ENTER);
+       
+        assertNotEquals("El saldo debería cambiar (Sin Undo)", saldoInicial, tfBalance.getText());
+
+        // Salida limpia para el siguiente test
+        clickOn((Node) lookup("#btBack").query());
+    }
+
+    @Test
+    public void test2_FlujoConUndo() {
+        navegarHastaMovements();
+        TextField tfBalance = lookup("#tfBalance").queryAs(TextField.class);
+        String saldoAntes = tfBalance.getText();
+        
+        // 1. Crear fila
+        clickOn((Node) lookup("#btNewRow").query());
         WaitForAsyncUtils.waitForFxEvents();
 
-        // 4. EDITAR CANTIDAD: Localización por posición
-        Node celdaAmount = lookup("#tvMovements .table-row-cell")
-                            .nth(0) 
-                            .lookup(".table-cell")
-                            .nth(2) // Ajustado a la columna Amount
-                            .query();
+        // 2. Editar Cantidad
+        Node amount = lookup("#tvMovements .table-row-cell").nth(0).lookup(".table-cell").nth(2).query();
+        clickOn(amount);
+        doubleClickOn(amount);
+        write("50.00");
+        type(KeyCode.ENTER);
+        type(KeyCode.ENTER);
 
-        // Secuencia de edición
-        clickOn((Node) celdaAmount);
-        sleep(500, TimeUnit.MILLISECONDS);
-        doubleClickOn((Node) celdaAmount); 
-        sleep(500, TimeUnit.MILLISECONDS);
-        
-        // Escribimos la cantidad
-        write("150.00");
-        
-        // --- AQUÍ ESTÁ EL ENTER SOLICITADO ---
-        // Pulsamos ENTER para validar la celda. 
-        // A veces se requiere doble ENTER: uno para cerrar el editor y otro para confirmar la tabla.
-        type(KeyCode.ENTER); 
-        type(KeyCode.ENTER); 
-        // -------------------------------------
+        assertNotEquals("El saldo debería cambiar antes del Undo", saldoAntes, tfBalance.getText());
 
-        // 5. CONFIRMAR: Clic fuera para asegurar que el foco se pierda
-        clickOn((Node) tfBalance); 
-
-        // 6. Esperar a que el servidor REST procese y el saldo se actualice
-        sleep(3, TimeUnit.SECONDS); 
-        
-        // 7. Verificar cambio de saldo
-        assertNotEquals("El saldo debería haber cambiado tras el ENTER", 
-                       saldoInicial, tfBalance.getText());
-
-        // 6. SINCRONIZACIÓN: Esperar respuesta del servidor REST
-        // Se aumenta el tiempo para evitar el AssertionFailedError
-        sleep(4, TimeUnit.SECONDS); 
-        
-        // 7. VERIFICAR ACTUALIZACIÓN
-        String saldoFinal = tfBalance.getText();
-        assertNotEquals("Error: El saldo no cambió tras la edición. Inicial: " + saldoInicial, 
-                       saldoInicial, saldoFinal);
-
-        // 8. DESHACER Y VOLVER
+        // 4. Realizar Deshacer (Undo Last)
         clickOn((Node) lookup("#btUndoLast").query());
-        clickOn("Aceptar"); 
-        sleep(2, TimeUnit.SECONDS);
+        clickOn("Aceptar");
+
+        // 5. Salida final
         clickOn((Node) lookup("#btBack").query());
         verifyThat("#tbAccounts", isVisible());
     }
