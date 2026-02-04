@@ -482,19 +482,19 @@ public class MovementController implements Initializable {
      * @param event Evento del botón.
      */
     @FXML
-void handleBack(ActionEvent event) {
-    try {
-        // Obtenemos el Stage (ventana) actual a partir del botón presionado
-        Stage stage = (Stage) btBack.getScene().getWindow();
-        
-        // Simplemente cerramos la ventana de movimientos.
-        // Al ser MODAL, la ventana de 'Accounts' que hay debajo se reactivará automáticamente.
-        stage.close();
-        
-    } catch (Exception e) {
-        LOGGER.severe("Error al cerrar la ventana de movimientos: " + e.getMessage());
+    void handleBack(ActionEvent event) {
+        try {
+            // Obtenemos el Stage (ventana) actual a partir del botón presionado
+            Stage stage = (Stage) btBack.getScene().getWindow();
+
+            // Simplemente cerramos la ventana de movimientos.
+            // Al ser MODAL, la ventana de 'Accounts' que hay debajo se reactivará automáticamente.
+            stage.close();
+
+        } catch (Exception e) {
+            LOGGER.severe("Error al cerrar la ventana de movimientos: " + e.getMessage());
+        }
     }
-}
 
     @FXML 
     void handleExit(ActionEvent event) { 
