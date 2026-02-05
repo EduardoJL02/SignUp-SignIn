@@ -8,6 +8,7 @@ import javafx.stage.Stage;
 import model.Account;
 import model.AccountType;
 import static org.junit.Assert.*;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.FixMethodOrder;
 import org.junit.runners.MethodSorters;
@@ -17,8 +18,7 @@ import static org.testfx.matcher.base.NodeMatchers.*;
 import signup.signin.SignUpSignIn;
 
 /**
- * Clase de prueba CORREGIDA para AccountsController.
- * Versión 2.0 - Resuelve todos los errores detectados.
+ * Clase TEST para AccountsController.
  * 
  * @author Eduardo
  * @version 2.0
@@ -27,9 +27,17 @@ import signup.signin.SignUpSignIn;
 public class AccountsControllerTest extends ApplicationTest {
 
     
+    private static SignUpSignIn app;
+
+    @BeforeClass
+    public static void setUpClass() throws Exception {
+        app = new SignUpSignIn();
+
+    }
+
     @Override
     public void start(Stage stage) throws Exception {
-        new SignUpSignIn().start(stage);
+        app.start(stage);
     }
     
     /**
@@ -47,7 +55,6 @@ public class AccountsControllerTest extends ApplicationTest {
         clickOn("#LoginButton");
         
         verifyThat("#tbAccounts", isVisible());
-        sleep(1000);
     }
    
     /**
@@ -69,26 +76,25 @@ public class AccountsControllerTest extends ApplicationTest {
     }
 
     /**
-     * Test 3: Crear cuenta - CORREGIDO.
+     * Test 3: Crear cuenta 
      * Usa lookupButton() para verificar texto del botón.
      */
     @Test
     public void test3_CreateAccount() {
         TableView<Account> table = lookup("#tbAccounts").queryTableView();
-        int rowCountInicial = table.getItems().size();
         
-        // 1. Pulsar Create para añadir fila
+        // Pulsar Create para añadir fila
         clickOn("#btnCreate");
         doubleClickOn("#tcBalanceDate");
         
-        // 2. Verificar que se añadió fila
+        // Verificar que se añadió fila
         int rowCountDespuesAdd = table.getItems().size();
         
         
-        // 4. Verificar que Cancel está visible
+        // Verificar que Cancel está visible
         verifyThat("#btnCancel", isEnabled());
         
-        // 5. Editar descripción
+        // Editar descripción
         int lastRowIndex = rowCountDespuesAdd - 1;
         
         interact(() -> {
@@ -97,7 +103,7 @@ public class AccountsControllerTest extends ApplicationTest {
             table.getFocusModel().focus(lastRowIndex);
         });
         
-        // 6. Localizar y editar celda Description (columna 1)
+        // Localizar y editar celda Description (columna 1)
         Node celdaDescription = lookup("#tbAccounts")
                                 .lookup(".table-row-cell")
                                 .nth(lastRowIndex)
@@ -109,7 +115,7 @@ public class AccountsControllerTest extends ApplicationTest {
         write("Cuenta Test Auto");
         push(KeyCode.ENTER);
         
-        // 7. Editar BeginBalance (columna 2)
+        // Editar BeginBalance (columna 2)
         Node celdaBeginBalance = lookup("#tbAccounts")
                                  .lookup(".table-row-cell")
                                  .nth(lastRowIndex)
@@ -121,34 +127,34 @@ public class AccountsControllerTest extends ApplicationTest {
         write("1000");
         push(KeyCode.ENTER);
         
-        // 8. Guardar (segunda pulsación de Create/Save)
+        // Guardar (segunda pulsación de Create/Save)
         clickOn("#btnCreate");
         
-        // 9. Confirmar alerta de éxito
+        // Confirmar alerta de éxito
         verifyThat(".dialog-pane", isVisible());
         clickOn("Aceptar");
         
     }
     
     /**
-     * Test 4: Cancelar creación - CORREGIDO.
+     * Test 4: Cancelar creación
      * Fuerza recarga antes de comprobar estado inicial.
      */
     @Test
     public void test4_CancelCreation() {
-        // CORRECCIÓN: Refrescar tabla antes de obtener estado inicial
+        // Refrescar tabla antes de obtener estado inicial
         TableView<Account> table = lookup("#tbAccounts").queryTableView();
         
         // Forzar refresco visual
         interact(() -> table.refresh());
         
-        // 1. Iniciar creación
+        // Iniciar creación
         clickOn("#btnCreate");
         
-        // 3. Pulsar Cancel
+        // Pulsar Cancel
         clickOn("#btnCancel");
         
-        // 4. Confirmar cancelación
+        // Confirmar cancelación
         verifyThat(".dialog-pane", isVisible());
         clickOn("Aceptar");
         
@@ -156,18 +162,18 @@ public class AccountsControllerTest extends ApplicationTest {
     }
     
     /**
-     * Test 5: Modificar cuenta - CORREGIDO.
+     * Test 5: Modificar cuenta
      * Espera a que el controlador detecte el cambio.
      */
     @Test
     public void test5_ModifyAccount() {
         TableView<Account> table = lookup("#tbAccounts").queryTableView();
         
-        // 1. Buscar cuenta para editar (preferir CREDIT)
+        // Buscar cuenta para editar (preferir CREDIT)
         int indiceFila = -1;
         for (int i = 0; i < table.getItems().size(); i++) {
             Account acc = table.getItems().get(i);
-            if (acc != null) { // CORRECCIÓN: Validar nulidad
+            if (acc != null) { // Validar nulidad
                 indiceFila = i;
                 if (acc.getType() == AccountType.CREDIT) {
                     break; // Preferir CREDIT
@@ -178,7 +184,7 @@ public class AccountsControllerTest extends ApplicationTest {
         assertTrue("Debe haber al menos una cuenta", indiceFila >= 0);
         
         doubleClickOn("#tcBalanceDate");
-        // 2. Seleccionar cuenta
+        // Seleccionar cuenta
         final int fila = indiceFila;
         interact(() -> {
             table.getSelectionModel().select(fila);
@@ -187,7 +193,7 @@ public class AccountsControllerTest extends ApplicationTest {
         
         verifyThat("#btnDelete", isEnabled());
         
-        // 3. Editar Description
+        // Editar Description
         Node celdaDescription = lookup("#tbAccounts")
                                 .lookup(".table-row-cell")
                                 .nth(fila)
@@ -197,39 +203,37 @@ public class AccountsControllerTest extends ApplicationTest {
         
         doubleClickOn(celdaDescription);
         
-        // CORRECCIÓN: Limpiar contenido anterior correctamente
+        // Limpiar contenido anterior correctamente
         push(KeyCode.CONTROL, KeyCode.A);
-        sleep(100);
         push(KeyCode.BACK_SPACE);
-        sleep(100);
         
         write("Cuenta Modificada");
         push(KeyCode.ENTER);
         
-        // 5. Guardar cambios
+        // Guardar cambios
         clickOn("#btnModify");
         
-        // 6. Confirmar
-        verifyThat("Actualizar cuenta", isVisible());
+        // Confirmar
+        verifyThat("Update account", isVisible());
         clickOn("Aceptar");
         
-        // 7. Verificar éxito
-        verifyThat("La cuenta se ha actualizado correctamente.", isVisible());
+        // Verificar éxito
+        verifyThat("The account has been successfully updated.", isVisible());
         clickOn("Aceptar");
         
-        // 8. Verificar que Modify se deshabilitó
+        // Verificar que Modify se deshabilitó
         verifyThat("#btnModify", isDisabled());
     }
     
     /**
-     * Test 6: Intentar borrar cuenta CON movimientos - CORREGIDO.
+     * Test 6: Intentar borrar cuenta CON movimientos
      * Añade validación de nulidad robusta.
      */
     @Test
     public void test6_DeleteAccountWithMovements() {
         TableView<Account> table = lookup("#tbAccounts").queryTableView();
         
-        // 1. CORRECCIÓN: Buscar cuenta con validación de nulidad
+        // Buscar cuenta con validación de nulidad
         int indiceFila = -1;
         for (int i = 0; i < table.getItems().size(); i++) {
             Account acc = table.getItems().get(i);
@@ -247,14 +251,14 @@ public class AccountsControllerTest extends ApplicationTest {
             return;
         }
         
-        // 2. Seleccionar cuenta
+        // Seleccionar cuenta
         final int fila = indiceFila;
         interact(() -> table.getSelectionModel().select(fila));
         
-        // 3. Intentar borrar
+        // Intentar borrar
         clickOn("#btnDelete");
         
-        // 4. Verificar alerta de error
+        // Verificar alerta de error
         verifyThat(".dialog-pane", isVisible());
         clickOn("Aceptar");
         
@@ -262,15 +266,14 @@ public class AccountsControllerTest extends ApplicationTest {
     }
     
     /**
-     * Test 7: Borrar cuenta SIN movimientos - CORREGIDO.
+     * Test 7: Borrar cuenta SIN movimientos
      * Añade validación de nulidad y crea cuenta si es necesario.
      */
     @Test
     public void test7_DeleteAccountWithoutMovements() {
         TableView<Account> table = lookup("#tbAccounts").queryTableView();
-        int rowCountInicial = table.getItems().size();
         
-        // 1. CORRECCIÓN: Buscar cuenta SIN movimientos con validación
+        //Buscar cuenta SIN movimientos con validación
         int indiceFila = -1;
         for (int i = table.getItems().size() - 1; i >= 0; i--) {
             Account acc = table.getItems().get(i);
@@ -283,18 +286,18 @@ public class AccountsControllerTest extends ApplicationTest {
         }
         
         clickOn("#tcBalanceDate");
-        // 2. Seleccionar cuenta
+        // Seleccionar cuenta
         final int fila = indiceFila;
         interact(() -> table.getSelectionModel().select(fila));
         
-        // 3. Borrar
+        // Borrar
         clickOn("#btnDelete");
         
-        // 4. Confirmar
-        verifyThat("Eliminar cuenta", isVisible());
+        // Confirmar
+        verifyThat("Delete account", isVisible());
         clickOn("Aceptar");
         
-        // 5. Verificar éxito
+        // Verificar éxito
         verifyThat(".dialog-pane", isVisible());
         clickOn("Aceptar");
         
@@ -340,7 +343,6 @@ public class AccountsControllerTest extends ApplicationTest {
         
         // Limpiar y escribir
         push(KeyCode.CONTROL, KeyCode.A);
-        sleep(100);
         write("5000");
         push(KeyCode.ENTER);
         
