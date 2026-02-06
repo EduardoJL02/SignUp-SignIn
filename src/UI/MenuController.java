@@ -1,132 +1,133 @@
 package UI;
 
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.MenuItem;
-import javafx.scene.Node;
+import javafx.scene.web.WebEngine;
+import javafx.scene.web.WebView;
+import javafx.stage.Modality; // IMPORTANTE: Para hacer la ventana modal
 import javafx.stage.Stage;
-import java.io.IOException;
-import javafx.application.Platform;
+import javafx.stage.Window;
+
+import java.net.URL;
 
 public class MenuController {
 
-    // --- NOMBRES DE LAS VENTANAS (Tienen que coincidir con el título que pones al navegar) ---
     private static final String TITLE_MOVEMENTS = "Movements";
     private static final String TITLE_ACCOUNTS = "Accounts Management";
-    private static final String TITLE_SIGNIN = "Sign In";
-
-    // --- FILE ---
-
+    
+    // --- SALIR ---
     @FXML
     private void handleExit(ActionEvent event) {
-        try{
-            // 1. Crear alerta de confirmación
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Cerrar Aplicación");
-            alert.setHeaderText("Salir definitivamente");
-            alert.setContentText("¿Está seguro de que desea cerrar la aplicación?");
-
-            // 2. Esperar respuesta
-            java.util.Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
-
-            // 3. Si el usuario dice OK, cerramos
-            if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
-                // Cierra todas las ventanas y detiene el hilo de JavaFX
-                Platform.exit();
-                System.exit(0);
-            }
-        }catch (java.lang.IllegalStateException e) {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setContentText("Error al cerrar la aplicacion.");
-            alert.showAndWait();
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Cerrar Aplicación");
+        alert.setHeaderText("Salir definitivamente");
+        alert.setContentText("¿Está seguro de que desea cerrar la aplicación?");
+        
+        if (alert.showAndWait().orElse(null) == javafx.scene.control.ButtonType.OK) {
+            Platform.exit();
+            System.exit(0);
         }
     }
 
+    // --- LOGOUT ---
     @FXML
     private void handleLogout(ActionEvent event) {
-        // 1. Mostrar confirmación
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Cerrar Sesión");
         alert.setHeaderText("Salir de la aplicación");
         alert.setContentText("¿Está seguro de que desea cerrar sesión y volver al login?");
-
-        java.util.Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
-
-        if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
-            
-            // 1. Obtener la ventana actual (donde se pulsó el menú)
+        
+        if (alert.showAndWait().orElse(null) == javafx.scene.control.ButtonType.OK) {
             Stage currentStage = getCurrentStage(event);
-            
-            // 2. Antes de cerrarla, miramos si tiene un "Padre" (Owner)
-            // En Java 8, Window es la clase padre de Stage
-            javafx.stage.Window parentWindow = currentStage.getOwner();
-            
-            // 3. Cerramos la ventana actual (Movimientos)
-            currentStage.close();
-
-            // 4. Si tenía padre y es un Stage, lo cerramos también (Cuentas)
-            if (parentWindow != null && parentWindow instanceof Stage) {
-                ((Stage) parentWindow).close();
+            if (currentStage != null) {
+                Window parentWindow = currentStage.getOwner();
+                currentStage.close();
+                if (parentWindow != null && parentWindow instanceof Stage) {
+                    ((Stage) parentWindow).close();
+                }
             }
-            
-            // NOTA: Al cerrarse el padre (Cuentas), el Login que estaba debajo
-            // esperando (por el showAndWait) se reactivará automáticamente
-            // gracias al código que pusimos antes en GestionUsuariosController.
         }
     }
 
-    // --- HELP ---
-
+    // --- ACERCA DE (Modificado para usar WebView) ---
     @FXML
     private void handleAbout(ActionEvent event) {
-        showAlert("About", "Bank App v2.0", "Desarrollado por el equipo de desarrollo.");
+        // Usamos la misma lógica de ventana modal para mostrar el About HTML
+        Stage ownerStage = getCurrentStage(event);
+        showWebWindow(ownerStage, "index.html", "Acerca de Bank App");
     }
 
+    // --- AYUDA CONTEXTUAL ---
     @FXML
     private void handleHelp(ActionEvent event) {
-        showAlert("Help", "Ayuda", "Contacte con el administrador del sistema.");
-    }
-
-    // --- MÉTODOS AUXILIARES ---
-
-    /**
-     * Navega a una nueva vista FXML.
-     */
-    private void navigate(ActionEvent event, String fxmlFile, String title) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlFile));
-            Parent root = loader.load();
+            Stage currentStage = getCurrentStage(event);
+            String currentTitle = (currentStage != null && currentStage.getTitle() != null) 
+                                ? currentStage.getTitle() 
+                                : "";
 
-            Stage stage = getCurrentStage(event);
-            if (stage == null) return;
+            // Lógica de selección de ayuda
+            String helpFile = "accounts.html"; // Por defecto mostramos Cuentas si no coincide nada
+            
+            if (currentTitle.contains(TITLE_MOVEMENTS)) {
+                helpFile = "movements.html";
+            } else if (currentTitle.contains(TITLE_ACCOUNTS)) {
+                helpFile = "accounts.html";
+            }
 
-            Scene scene = new Scene(root);
-            stage.setTitle(title); // IMPORTANTE: Fijamos el título para poder comprobarlo después
-            stage.setScene(scene);
-            stage.show();
+            // Abrimos la ventana modal
+            showWebWindow(currentStage, helpFile, "Ayuda - Bank App");
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
-            showAlert("Error", "Error de Navegación", "No se pudo cargar: " + fxmlFile);
+            showAlert("Error", "No se pudo cargar la ayuda", e.getMessage());
         }
     }
 
-    /**
-     * Obtiene el Stage (Ventana) desde un evento de menú o botón.
-     * Es necesario porque los MenuItems no son nodos gráficos normales.
-     */
+    // --- MÉTODO GENÉRICO PARA ABRIR HTML MODAL ---
+    private void showWebWindow(Stage owner, String htmlFileName, String title) {
+        Stage webStage = new Stage();
+        webStage.setTitle(title);
+
+        // --- CONFIGURACIÓN MODAL ---
+        // Esto bloquea la ventana de atrás hasta que se cierre esta
+        if (owner != null) {
+            webStage.initOwner(owner);
+            webStage.initModality(Modality.WINDOW_MODAL); 
+        }
+
+        WebView browser = new WebView();
+        WebEngine webEngine = browser.getEngine();
+
+        URL url = getClass().getResource("/resources/" + htmlFileName);
+        
+        if (url != null) {
+            webEngine.load(url.toExternalForm());
+        } else {
+            System.err.println("Archivo no encontrado: /resources/" + htmlFileName);
+            webEngine.loadContent("<html><body><h1>Error 404</h1><p>Archivo no encontrado.</p></body></html>");
+        }
+
+        Scene scene = new Scene(browser, 600, 500); // Tamaño ajustado
+        webStage.setScene(scene);
+        webStage.showAndWait(); // showAndWait es clave para la modalidad
+    }
+
+    // --- AUXILIARES ---
     private Stage getCurrentStage(ActionEvent event) {
         Object source = event.getSource();
-        
         if (source instanceof MenuItem) {
-            // Truco para obtener el stage desde un ítem de menú desplegable
-            return (Stage) ((MenuItem) source).getParentPopup().getOwnerWindow();
+            MenuItem menuItem = (MenuItem) source;
+            if (menuItem.getParentPopup() != null) {
+                 return (Stage) menuItem.getParentPopup().getOwnerWindow();
+            }
+            return null; 
         } else if (source instanceof Node) {
-            // Forma normal para botones
             return (Stage) ((Node) source).getScene().getWindow();
         }
         return null;
