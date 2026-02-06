@@ -6,11 +6,7 @@ Este proyecto consiste en el desarrollo del lado cliente (**Front-end**) de una 
 
 El desarrollo sigue estrictamente los estándares de **Java 8 (JDK 1.8)**, priorizando la claridad didáctica y el uso de estructuras clásicas (clases anónimas, bucles tradicionales y comunicación síncrona).
 
-## 2. Credenciales acceso a la aplicación
-awallace@gmail.com
-qwerty*9876
-
-## 3. Tecnologías y Herramientas
+## 2. Tecnologías y Herramientas
 
 * **Lenguaje:** Java SE 8 (JDK 1.8).
 * **IDE Recomendado:** NetBeans 8.2.
@@ -18,7 +14,7 @@ qwerty*9876
 * **Cliente HTTP:** Jersey Client (`javax.ws.rs`).
 * **Pruebas:** JUnit + TestFX.
 
-## 4. Arquitectura y Patrón de Diseño
+## 3. Arquitectura y Patrón de Diseño
 
 El proyecto sigue el patrón **MVC (Modelo-Vista-Controlador)**:
 
@@ -29,7 +25,7 @@ El proyecto sigue el patrón **MVC (Modelo-Vista-Controlador)**:
 
 > **Nota Técnica:** Por requisitos de diseño, **no se utiliza asincronía** (hilos en segundo plano). Todas las peticiones al servidor se realizan en el hilo principal de la aplicación (JavaFX Application Thread), bloqueando la UI durante la transacción para garantizar la integridad secuencial de los datos.
 
-## 5. Funcionalidades y Reglas de Negocio
+## 4. Funcionalidades y Reglas de Negocio
 
 La aplicación implementa los siguientes casos de uso descritos en la documentación funcional:
 
@@ -72,7 +68,7 @@ Visualización y control del historial de transacciones.
 
 
 
-## 6. Estructura del Proyecto
+## 5. Estructura del Proyecto
 
 ```text
 src/
@@ -92,7 +88,7 @@ src/
 
 ```
 
-## 7. Configuración e Instalación
+## 6. Configuración e Instalación
 
 1. **Backend:** Asegúrese de que el servidor GlassFish 4 esté ejecutándose y la base de datos `bankdb` esté desplegada.
 2. **Configuración de Conexión:**
@@ -109,14 +105,14 @@ src/
 
 
 
-## 8. Pruebas y Calidad (QA)
+## 7. Pruebas y Calidad (QA)
 
 Se han implementado pruebas unitarias y de interfaz utilizando **JUnit** y **TestFX**.
 
 * **Cobertura:** Las pruebas verifican el flujo de navegación, la habilitación/deshabilitación correcta de botones y las validaciones de campos.
 * **Ejecución:** Click derecho en el paquete `test` -> "Test File".
 
-## 9. Notas sobre Estilo de Código
+## 8. Notas sobre Estilo de Código
 
 Para mantener la compatibilidad y legibilidad en entornos educativos:
 
