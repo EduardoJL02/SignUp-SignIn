@@ -305,7 +305,7 @@ public class AccountsControllerTest extends ApplicationTest {
     }
     
     /**
-     * Test 8: CreditLine editable solo en CREDIT - CORREGIDO. 
+     * Test 8: CreditLine editable solo en CREDIT
      * Simplifica la verificación de estado.
      */
     @Test
@@ -358,21 +358,8 @@ public class AccountsControllerTest extends ApplicationTest {
     }
     
 
-//    @Test
-//    public void test10_RefreshButton() {
-//     
-//        verifyThat("#btnRefresh", isVisible());
-//        verifyThat("#btnRefresh", isEnabled());
-//
-//        clickOn("#btnRefresh");
-//
-//        verifyThat("#btnCreate", isEnabled());
-//        verifyThat("#btnModify", isDisabled());
-//        verifyThat("#btnDelete", isDisabled());
-//    }
-    
     /**
-     * Test 9: Navegación a Movements - SIMPLIFICADO.
+     * Test 9: Navegación a Movements
      */
     @Test
     public void test9_NavigateToMovements() {
