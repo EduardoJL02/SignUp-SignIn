@@ -1,296 +1,128 @@
-# Sistema de Autenticación y Gestión de Usuarios - JavaFX
+# BankApp - Cliente de Escritorio JavaFX
 
-Sistema completo de autenticación de usuarios (Sign-In/Sign-Up) desarrollado con JavaFX, integrando un backend REST sobre Java EE con servidor GlassFish y base de datos MySQL.
+## 1. Descripción del Proyecto
 
----
+Este proyecto consiste en el desarrollo del lado cliente (**Front-end**) de una aplicación bancaria de escritorio. La aplicación proporciona una Interfaz Gráfica de Usuario (UI) construida con **JavaFX** para gestionar clientes, cuentas bancarias y movimientos, conectándose a un servidor RESTful (GlassFish 4) mediante **Jersey Client**.
 
-## 📋 Descripción del Proyecto
+El desarrollo sigue estrictamente los estándares de **Java 8 (JDK 1.8)**, priorizando la claridad didáctica y el uso de estructuras clásicas (clases anónimas, bucles tradicionales y comunicación síncrona).
 
-Aplicación de escritorio que implementa un sistema de registro e inicio de sesión con las siguientes características:
+## 2. Tecnologías y Herramientas
 
-- **Login (Sign-In)**: Autenticación de usuarios mediante REST API
-- **Registro (Sign-Up)**: Creación de nuevas cuentas con validación completa de datos
-- **Página Principal**: Interfaz personalizada post-autenticación con gestión de sesión
-- **Arquitectura Cliente-Servidor**: Separación clara entre frontend (JavaFX) y backend (Java EE REST)
+* **Lenguaje:** Java SE 8 (JDK 1.8).
+* **IDE Recomendado:** NetBeans 8.2.
+* **Framework UI:** JavaFX (FXML + SceneBuilder 2.0).
+* **Cliente HTTP:** Jersey Client (`javax.ws.rs`).
+* **Informes:** JasperReports.
+* **Ayuda:** JavaHelp / WebView.
+* **Pruebas:** JUnit + TestFX.
 
----
+## 3. Arquitectura y Patrón de Diseño
 
-## 🏗️ Arquitectura del Sistema
+El proyecto sigue el patrón **MVC (Modelo-Vista-Controlador)**:
 
-### **Cliente (JavaFX)**
-```
+* **Model:** Clases POJO (`Account`, `Customer`, `Movement`) anotadas con JAXB para la serialización XML/JSON.
+* **View:** Archivos `.fxml` que definen la estructura visual.
+* **Controller:** Clases Java que gestionan la lógica de la UI y los eventos.
+* **Logic:** Clases `RESTClient` que encapsulan la comunicación HTTP con el servidor backend.
+
+> **Nota Técnica:** Por requisitos de diseño, **no se utiliza asincronía** (hilos en segundo plano). Todas las peticiones al servidor se realizan en el hilo principal de la aplicación (JavaFX Application Thread), bloqueando la UI durante la transacción para garantizar la integridad secuencial de los datos.
+
+## 4. Funcionalidades y Reglas de Negocio
+
+La aplicación implementa los siguientes casos de uso descritos en la documentación funcional:
+
+### A. Gestión de Usuarios (Sign Up / Sign In / Admin)
+
+* **Login:** Acceso seguro para usuarios (Clientes) y Administradores.
+* **Sign Up:** Registro de nuevos clientes.
+* **CRUD Clientes:** Los administradores pueden gestionar la información de los clientes.
+
+### B. Gestión de Cuentas (My Accounts)
+
+Permite a los clientes ver y gestionar sus cuentas bancarias.
+
+* **Tipos de Cuenta:** `STANDARD` y `CREDIT`.
+* **Creación:**
+* El ID de la cuenta se genera localmente.
+* *Simulación de Error:* El sistema está programado para permitir 3 peticiones exitosas; la cuarta intentará generar un conflicto intencionado (según especificación de pruebas).
+
+
+* **Modificación (UPDATE):**
+* Solo se permite modificar la **descripción** y el **límite de crédito**.
+* El límite de crédito solo es editable si la cuenta es tipo `CREDIT` (no puede ser negativo ni 0).
+
+
+* **Borrado (DELETE):**
+* Restricción estricta: **No se pueden borrar cuentas que tengan movimientos asociados**.
+* El sistema valida esta condición antes de enviar la petición al servidor para evitar errores 500.
+
+
+
+### C. Gestión de Movimientos (My Movements)
+
+Visualización y control del historial de transacciones.
+
+* **Consultas (READ):** Filtrado de movimientos por rango de fechas (Desde, Hasta, Entre dos fechas).
+* **Borrado (Deshacer):**
+* No existe borrado arbitrario.
+* Solo se permite borrar el **último movimiento** registrado (función "Deshacer").
+* Al borrar, el saldo de la cuenta se actualiza automáticamente acorde a la operación revertida.
+
+
+
+## 5. Estructura del Proyecto
+
+```text
 src/
-├── signup/signin/
-│   ├── SignUpSignIn.java           # Entry point de la aplicación
-│   └── SignUpWindow.java           # Inicializador ventana registro
-├── UI/
-│   ├── GestionUsuariosController.java       # Controlador LOGIN
-│   ├── GestionUsuariosControllerSignUp.java # Controlador SIGN-UP
-│   ├── PaginaPrincipalController.java       # Controlador página principal
-│   ├── FXMLDocument.fxml                    # Interfaz LOGIN
-│   ├── FXMLDocumentSignUp.fxml              # Interfaz SIGN-UP
-│   └── PaginaPrincipal.fxml                 # Interfaz página principal
-├── logic/
-│   └── CustomerRESTClient.java     # Cliente REST (JAX-RS)
-└── model/
-    └── Customer.java               # Entidad Customer (POJO)
-```
-
-### **Servidor (Java EE - No incluido en este repo)**
-- Backend REST con JAX-RS
-- Persistencia con JPA/Hibernate
-- Base de datos MySQL
-- Endpoints:
-  - `POST /customer` - Crear usuario (Sign-Up)
-  - `GET /customer/signin/{email}/{password}` - Autenticación (Sign-In)
-
----
-
-## 🔧 Requisitos Técnicos
-
-### **Desarrollo**
-- **JDK**: 1.8 (Java 8)
-- **IDE**: NetBeans 8.2 (recomendado)
-- **Build**: Apache Ant (incluido en NetBeans)
-
-### **Servidor (Desarrollo Backend)**
-- **Servidor de Aplicaciones**: GlassFish 4.x
-- **Base de Datos**: MySQL 5.7+
-- **Driver JDBC**: MySQL Connector/J 5.1.x
-
-### **Librerías JavaFX**
-- JavaFX 8 (incluido en JDK 8)
-- Jersey Client 2.x (JAX-RS)
-
----
-
-## 📖 Guía de Uso
-
-### **1. Ventana LOGIN (Sign-In)**
-
-#### **Funcionalidades:**
-- Validación en tiempo real de email y contraseña
-- Feedback visual de errores (bordes rojos, mensajes inline)
-- Autenticación asíncrona contra REST API
-- Navegación a Sign-Up mediante hyperlink
-
-#### **Validaciones:**
-- **Email**: Formato válido `usuario@dominio.com`
-- **Contraseña**: Mínimo 8 caracteres
-
-#### **Flujo de Autenticación:**
-1. Usuario ingresa credenciales
-2. Botón LOGIN se habilita si validaciones pasan
-3. Petición POST a `/customer/signin/{email}/{password}`
-4. **Respuestas del servidor:**
-   - `200 OK`: Login exitoso → Navega a Página Principal
-   - `401 Unauthorized`: Credenciales incorrectas → Muestra error inline
-   - `500 Internal Server Error`: Error del servidor → Alert modal
-
----
-
-### **2. Ventana SIGN-UP (Registro)**
-
-#### **Funcionalidades:**
-- Formulario completo de registro (11 campos obligatorios)
-- Validación en tiempo real por campo
-- Tooltips informativos (icono "?")
-- Confirmación al volver (si hay datos ingresados)
-
-#### **Campos y Validaciones:**
-
-| Campo | Validación | Ejemplo |
-|-------|-----------|---------|
-| **First Name** | Solo letras | John |
-| **Middle Initial** | Formato "A." | J. |
-| **Last Name** | Solo letras | Doe |
-| **Address** | Alfanumérico + símbolos básicos | 123 Main St |
-| **City** | Solo letras | New York |
-| **State** | Letras o código (e.g., "NY") | NY / Texas |
-| **ZIP** | Exactamente 5 dígitos | 10001 |
-| **Phone** | Mínimo 9 dígitos | 123456789 |
-| **Email** | Formato email válido | john@example.com |
-| **Password** | 8+ chars, 1 mayús, 1 minús, 1 número, 1 símbolo | Pass@123 |
-| **Repeat Password** | Debe coincidir con Password | Pass@123 |
-
-#### **Flujo de Registro:**
-1. Usuario completa formulario
-2. Botón CREATE ACCOUNT se habilita cuando todos los campos son válidos
-3. Petición POST a `/customer` con datos del Customer
-4. **Respuestas del servidor:**
-   - `201 Created`: Cuenta creada → Alert éxito + Cierra ventana
-   - `403 Forbidden`: Email ya registrado → Alert warning
-   - `400 Bad Request`: Datos inválidos → Alert error
-   - `500 Internal Server Error`: Error del servidor → Alert error
-
----
-
-### **3. Página Principal**
-
-#### **Funcionalidades:**
-- Muestra información del usuario autenticado
-- Saludo personalizado según hora del día
-- Botón Logout con confirmación
-
-#### **Datos Mostrados:**
-- Nombre completo (First Name + Middle Initial + Last Name)
-- Email
-- ID de usuario
-
-#### **Flujo de Logout:**
-1. Usuario hace clic en "Log out"
-2. Alert de confirmación
-3. Si confirma: Limpia sesión + Navega a LOGIN
-4. Si cancela: Permanece en Página Principal
-
----
-
-## 🔐 Seguridad y Buenas Prácticas
-
-### **Cliente (JavaFX)**
-
-#### **1. Validación de Datos**
-
-#### **2. Encoding de Parámetros URL**
-
-#### **3. Manejo de Excepciones REST**
-
-#### **4. Operaciones Asíncronas**
-
-
-### **Servidor (Backend - Recomendaciones)**
-
-#### **1. Nunca Almacenar Contraseñas en Texto Plano**
-
-#### **2. Usar PreparedStatement (Prevenir SQL Injection)**
-
-#### **3. HTTPS en Producción**
-
----
-
-## 🐛 Manejo de Errores
-
-### **Errores Comunes y Soluciones**
-
-#### **1. "Connection refused" al ejecutar cliente**
-**Causa:** Backend no está corriendo o URL incorrecta
-
-
-#### **2. "FXMLLoader cannot find controller"**
-**Causa:** fx:controller incorrecto en FXML
-
-
-#### **3. "ClassNotFoundException: javax.ws.rs..."**
-**Causa:** Librerías JAX-RS no incluidas
-
-**Solución:**
-1. Project Properties → Libraries
-2. Add JAR/Folder → Agregar Jersey Client JARs
-
-#### **4. Navegación falla al volver de Sign-Up a Login**
-**Causa:** Stage no se reutiliza correctamente
-
----
-
-## 🧪 Testing
-
-### **Casos de Prueba Recomendados**
-
-#### **Login**
-- [ ] Email vacío → Botón deshabilitado
-- [ ] Email inválido → Mensaje error inline
-- [ ] Contraseña < 8 chars → Botón deshabilitado
-- [ ] Credenciales incorrectas → 401 → Mensaje error
-- [ ] Credenciales correctas → 200 → Navega a Página Principal
-- [ ] Servidor offline → Muestra error de conexión
-
-#### **Sign-Up**
-- [ ] Todos los campos vacíos → Botón deshabilitado
-- [ ] Middle Initial sin formato "A." → Error inline
-- [ ] ZIP con letras → Error inline
-- [ ] Contraseñas no coinciden → Botón deshabilitado
-- [ ] Email duplicado → 403 → Alert warning
-- [ ] Registro exitoso → 201 → Alert éxito + Cierra ventana
-- [ ] Botón BACK con datos → Confirmación antes de cerrar
-
-#### **Página Principal**
-- [ ] Muestra nombre completo correcto
-- [ ] Muestra email correcto
-- [ ] Saludo personalizado según hora
-- [ ] Logout con confirmación → Regresa a Login
-- [ ] Logout sin confirmación → Permanece en Página Principal
-
----
-
-## 📝 Notas Técnicas
-
-### **Separación de Capas**
+├── model/                  # Entidades (Account, Customer, Movement, AccountType)
+├── ui/                     # Controladores y Vistas FXML
+│   ├── AccountsController.java
+│   ├── FXMLAccounts.fxml
+│   ├── MovementController.java
+│   ├── ...
+├── logic/                  # Clientes REST (Jersey)
+│   ├── AccountRESTClient.java
+│   ├── CustomerRESTClient.java
+│   ├── MovementRESTClient.java
+│   └── BusinessLogicFactory.java
+├── resources/              # Imágenes, estilos CSS y configuración
+└── signup/signin/          # Clase Main (Punto de entrada)
 
 ```
-[UI Layer] → [Logic Layer] → [REST Client] → [Backend]
-    ↓              ↓               ↓              ↓
-Controllers   CustomerREST   JAX-RS Client   REST API
-             Client logic                    (Java EE)
-```
 
-### **Gestión de Stage (Ventanas)**
+## 6. Configuración e Instalación
 
-- **Login**: Stage principal (único Stage de toda la app)
-- **Sign-Up**: Modal APPLICATION_MODAL (bloquea Login hasta cerrar)
-- **Página Principal**: Reutiliza Stage principal (no crea nuevo)
+1. **Backend:** Asegúrese de que el servidor GlassFish 4 esté ejecutándose y la base de datos `bankdb` esté desplegada.
+2. **Configuración de Conexión:**
+* Verifique la URL base del servicio REST en el archivo de propiedades o en la constante `BASE_URI` de los clientes REST (generalmente `http://localhost:8080/BankAppServer/webresources`).
 
-**Ventaja:** Evita múltiples ventanas abiertas simultáneamente.
 
----
+3. **Compilación:**
+* Abra el proyecto en NetBeans 8.2.
+* Realice un "Clean and Build".
 
-## 📚 Recursos Adicionales
 
-### **Documentación Oficial**
-- [JavaFX Documentation](https://docs.oracle.com/javase/8/javafx/api/)
-- [JAX-RS (Jersey) Guide](https://eclipse-ee4j.github.io/jersey/)
-- [GlassFish Documentation](https://javaee.github.io/glassfish/)
+4. **Ejecución:**
+* Ejecute la clase principal: `signup.signin.SignUpSignIn`.
 
-### **Tutoriales Recomendados**
-- JavaFX Scene Builder
-- REST API con Java EE
-- JPA/Hibernate básico
 
----
 
-## 📞 Soporte y Contribuciones
+## 7. Pruebas y Calidad (QA)
 
-### **Problemas Comunes**
-- Revisar sección "Manejo de Errores" arriba
-- Verificar logs de GlassFish y cliente
+Se han implementado pruebas unitarias y de interfaz utilizando **JUnit** y **TestFX**.
 
-### **Contribuir**
-1. Fork del repositorio
-2. Crear rama feature (`git checkout -b feature/NuevaFuncionalidad`)
-3. Commit cambios (`git commit -m 'Agrega nueva funcionalidad'`)
-4. Push a la rama (`git push origin feature/NuevaFuncionalidad`)
-5. Abrir Pull Request
+* **Cobertura:** Las pruebas verifican el flujo de navegación, la habilitación/deshabilitación correcta de botones y las validaciones de campos.
+* **Ejecución:** Click derecho en el paquete `test` -> "Test File".
 
-### **Contacto**
-- Email: eduardo.jimenez3@educa.madrid.org
+## 8. Notas sobre Estilo de Código
+
+Para mantener la compatibilidad y legibilidad en entornos educativos:
+
+* Se utilizan **Clases Anónimas Internas** para el manejo de eventos (`new EventHandler...`) en lugar de Lambdas.
+* Se evitan los `Streams` de Java 8; la lógica de iteración se realiza mediante bucles `for` o `for-each`.
+* El manejo de excepciones se realiza mediante bloques `try-catch` explícitos con retroalimentación visual al usuario (`Alert`).
 
 ---
 
-## ✅ Checklist de Configuración Inicial
-
-- [ ] JDK 8 instalado y configurado
-- [ ] NetBeans 8.2 instalado
-- [ ] GlassFish 4 configurado en NetBeans
-- [ ] MySQL instalado y corriendo
-- [ ] Base de datos `bank_db` creada
-- [ ] Tabla `customer` creada con esquema correcto
-- [ ] Proyecto backend desplegado en GlassFish
-- [ ] Endpoint REST accesible (`http://localhost:8080/...`)
-- [ ] Librerías JAX-RS agregadas al proyecto cliente
-- [ ] URL del backend configurada en `CustomerRESTClient.java`
-- [ ] Proyecto cliente ejecuta sin errores
-
----
-
-**Versión:** 1.0.0  
-**Última actualización:** Noviembre 2024  
-**Autor:** Eduardo Jiménez y Pablo Rodríguez
+**Desarrollado para el Módulo de Desarrollo de Interfaces (DIN).**
+*Curso 2025-2026*
