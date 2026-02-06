@@ -12,15 +12,13 @@ El desarrollo sigue estrictamente los estándares de **Java 8 (JDK 1.8)**, prior
 * **IDE Recomendado:** NetBeans 8.2.
 * **Framework UI:** JavaFX (FXML + SceneBuilder 2.0).
 * **Cliente HTTP:** Jersey Client (`javax.ws.rs`).
-* **Informes:** JasperReports.
-* **Ayuda:** JavaHelp / WebView.
 * **Pruebas:** JUnit + TestFX.
 
 ## 3. Arquitectura y Patrón de Diseño
 
 El proyecto sigue el patrón **MVC (Modelo-Vista-Controlador)**:
 
-* **Model:** Clases POJO (`Account`, `Customer`, `Movement`) anotadas con JAXB para la serialización XML/JSON.
+* **Model:** Clases (`Account`, `Customer`, `Movement`) anotadas con JAXB para la serialización XML/JSON.
 * **View:** Archivos `.fxml` que definen la estructura visual.
 * **Controller:** Clases Java que gestionan la lógica de la UI y los eventos.
 * **Logic:** Clases `RESTClient` que encapsulan la comunicación HTTP con el servidor backend.
