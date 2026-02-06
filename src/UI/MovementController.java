@@ -38,49 +38,52 @@ import javax.ws.rs.core.GenericType;
  */
 public class MovementController implements Initializable {
 
+    // Logger para registrar eventos o errores técnicos
     private static final Logger LOGGER = Logger.getLogger(MovementController.class.getName());
 
-    // --- ELEMENTOS DE LA UI (FXML) ---
-    // Etiquetas de información superior
+    // --- ELEMENTOS DE LA UI (Vínculo con FXML) ---
     @FXML private Label lblCustomerName;
     @FXML private Label lblUserId;
     @FXML private Label lblAccountId;
     @FXML private Label lblCreditLimit; // Muestra el límite si es cuenta crédito
     @FXML private ComboBox<Account> cbAccountSelector; // Selector de cuentas del usuario
-    @FXML private TextField tfBalance; // Saldo total calculado
-    @FXML private Label lblStatus; // Barra de estado inferior (mensajes de error/éxito)
+    @FXML private TextField tfBalance; // Saldo total calculado (Solo lectura en UI)
+    @FXML private Label lblStatus; // Barra de estado para feedback al usuario
     @FXML private Button btBack; 
 
-    // --- TABLA Y COLUMNAS ---
+    // --- CONFIGURACIÓN DE LA TABLA ---
     @FXML private TableView<Movement> tvMovements;
     @FXML private TableColumn<Movement, LocalDate> colDate;
-    @FXML private TableColumn<Movement, String> colType; // Editable (ComboBox)
-    @FXML private TableColumn<Movement, Double> colAmount; // Editable (TextField)
-    @FXML private TableColumn<Movement, Movement> colBalance; // Calculado (No editable)
+    @FXML private TableColumn<Movement, String> colType; // Editable (Ingreso/Pago)
+    @FXML private TableColumn<Movement, Double> colAmount; // Editable (Importe)
+    @FXML private TableColumn<Movement, Movement> colBalance; // Columna calculada localmente
 
-    // --- DATOS Y LÓGICA ---
-    // 'masterData' es la lista que ve la tabla. Si cambio esto, la tabla cambia sola.
+    // --- DATOS Y LÓGICA DE CONTROL ---
+    // Lista observable: cualquier cambio aquí actualiza la TableView automáticamente
     private ObservableList<Movement> masterData = FXCollections.observableArrayList();
-    private Customer currentCustomer; // El cliente que ha iniciado sesión
+    private Customer currentCustomer; // Usuario que tiene la sesión activa
     
-    // Clientes REST para hablar con el servidor
+    // Clientes para realizar peticiones HTTP a la API REST
     private AccountRESTClient accountClient;
     private MovementRESTClient movementClient;
 
-    // Flag para evitar bucles infinitos cuando cambio el ComboBox por código y no por clic
+    // Flag para ignorar eventos del ComboBox cuando cambiamos la selección por código
     private boolean isProgrammaticUpdate = false;
     
-    // Formateador para que las fechas se vean como dd/MM/yyyy
+    // Formateador estándar de fechas para la visualización en tabla
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
+    /**
+     * Método de inicialización de la controladora (ciclo de vida de JavaFX).
+     */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        // 1. Instancio los clientes REST (IMPORTANTE: Sin esto da NullPointer)
+        // 1. Instancia de los conectores REST para evitar NullPointerException
         accountClient = new AccountRESTClient();
         movementClient = new MovementRESTClient();
 
         // 2. CONFIGURACIÓN DEL COMBOBOX DE CUENTAS
-        // Defino cómo convertir un objeto Account a String para mostrarlo
+        // Define cómo mostrar el objeto Account en el texto del combo
         StringConverter<Account> converter = new StringConverter<Account>() {
             @Override
             public String toString(Account account) {
@@ -88,12 +91,12 @@ public class MovementController implements Initializable {
                 return account.getId() + " - " + account.getType(); // Ej: "1 - STANDARD"
             }
             @Override
-            public Account fromString(String string) { return null; } // No necesito convertir texto a objeto aquí
+            public Account fromString(String string) { return null; } 
         };
         
         cbAccountSelector.setConverter(converter);
         
-        // Configuro las celdas de la lista desplegable y del botón cerrado
+        // Personalización de las celdas del desplegable para usar el convertidor anterior
         cbAccountSelector.setCellFactory(lv -> new ListCell<Account>() {
             @Override
             protected void updateItem(Account item, boolean empty) {
@@ -109,14 +112,12 @@ public class MovementController implements Initializable {
             }
         });
 
-        // 3. LISTENER: ¿QUÉ PASA AL CAMBIAR DE CUENTA?
+        // 3. EVENTO DE CAMBIO DE SELECCIÓN EN CUENTAS
         cbAccountSelector.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
-            // Solo actúo si hay valor nuevo y NO lo estoy cambiando yo por código
             if (newVal != null && !isProgrammaticUpdate) {
-                // Actualizo etiquetas de la cabecera
                 lblAccountId.setText(String.valueOf(newVal.getId()));
                 
-                // Lógica visual: Si es crédito muestro el límite, si no, "N/A"
+                // Lógica visual para límites de crédito
                 if (lblCreditLimit != null) {
                     String typeStr = (newVal.getType() != null) ? newVal.getType().toString().toUpperCase() : "";
                     if (typeStr.contains("CREDIT")) {
@@ -126,18 +127,18 @@ public class MovementController implements Initializable {
                         lblCreditLimit.setText("N/A");
                     }
                 }
-                // Cargo los movimientos de esta nueva cuenta
+                // Al cambiar la cuenta, cargamos sus movimientos específicos
                 loadMovementsForAccount(newVal);
             }
         });
 
-        // 4. Configuro las columnas de la tabla (factorías de celdas)
+        // 4. Configuración de factorías de celdas (CellFactories)
         setupColumns();
 
-        // 5. Enlazo la lista observable con la tabla
+        // 5. Vinculación de la lista maestra con el control visual
         tvMovements.setItems(masterData);
 
-        // 6. ATAJO DE TECLADO: ESC para salir
+        // 6. ATAJO DE TECLADO: Cerrar con tecla ESCAPE
         Platform.runLater(() -> {
             if (tvMovements.getScene() != null) {
                 tvMovements.getScene().addEventFilter(KeyEvent.KEY_PRESSED, event -> {
@@ -149,7 +150,7 @@ public class MovementController implements Initializable {
             }
         });
         
-        // 7. Poner título a la ventana (detalle estético)
+        // 7. Configuración estética del título de la ventana
         Platform.runLater(() -> {
             if (lblUserId.getScene() != null) {
                 Stage stage = (Stage) lblUserId.getScene().getWindow();
@@ -159,20 +160,18 @@ public class MovementController implements Initializable {
     }
 
     /**
-     * Configuración de cómo se muestran y editan las columnas.
-     * Entender CellValueFactory vs CellFactory.
+     * Configuración técnica de las columnas: visualización, formateo y edición.
      */
     private void setupColumns() {
-        // A) COLUMNA FECHA
+        // A) COLUMNA FECHA: Transforma Date (Server) a LocalDate (UI)
         colDate.setCellValueFactory(cellData -> {
             if(cellData.getValue().getTimestamp() != null){
-                // Convierto Date (antiguo) a LocalDate (moderno) para JavaFX
                 return new SimpleObjectProperty<>(cellData.getValue().getTimestamp().toInstant()
                                           .atZone(ZoneId.systemDefault()).toLocalDate());
             }
             return null;
         });
-        // Formateo visual de la fecha
+        // Formatea la fecha para el usuario
         colDate.setCellFactory(column -> new TableCell<Movement, LocalDate>() {
             @Override
             protected void updateItem(LocalDate item, boolean empty) {
@@ -181,50 +180,54 @@ public class MovementController implements Initializable {
             }
         });
 
-        // B) COLUMNA TIPO (Editable con ComboBox)
+        // B) COLUMNA TIPO: Menú desplegable editable dentro de la tabla
         colType.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getDescription()));
-        colType.setCellFactory(ComboBoxTableCell.forTableColumn("Deposit", "Payment")); // Opciones fijas
+        colType.setCellFactory(ComboBoxTableCell.forTableColumn("Deposit", "Payment"));
         colType.setOnEditCommit(e -> {
-            // Solo dejo editar si es una fila NUEVA (no persistida en BD)
+            // Solo se permite editar el tipo si el movimiento aún no existe en la base de datos (ID 0)
             if (isNewRow(e.getRowValue())) {
                 e.getRowValue().setDescription(e.getNewValue());
-                // Truco de usabilidad: Salto a la siguiente columna (Amount) automáticamente
+                // UX: Salta automáticamente a la celda Amount para agilizar la entrada
                 tvMovements.getSelectionModel().select(e.getTablePosition().getRow(), colAmount);
             } else {
-                tvMovements.refresh(); // Si es vieja, revierto cambios visuales
+                tvMovements.refresh(); // Revierte el cambio si es un dato persistido
             }
         });
 
-        // C) COLUMNA CANTIDAD (Editable con TextField)
+        // C) COLUMNA CANTIDAD: Campo de texto editable con validación de números
         colAmount.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getAmount()));
         colAmount.setCellFactory(TextFieldTableCell.forTableColumn(new StringConverter<Double>() {
             @Override
             public String toString(Double object) { return object == null ? "0.00" : object.toString(); }
+
             @Override
             public Double fromString(String string) {
                 if (string == null || string.trim().isEmpty()) return 0.0;
-                try { return Double.parseDouble(string.replace(",", ".")); } // Manejo decimales con coma o punto
-                catch (NumberFormatException e) { return 0.0; }
+                try { 
+                    return Double.parseDouble(string.replace(",", ".")); 
+                } catch (NumberFormatException e) { 
+                    Platform.runLater(() -> showError("Formato incorrecto. Introduce un número válido."));
+                    return 0.0; 
+                }
             }
         }));
         
-        // Al terminar de editar la cantidad...
+        // Acción al confirmar la edición del importe
         colAmount.setOnEditCommit(e -> {
             Movement m = e.getRowValue();
             if (isNewRow(m)) {
                 Double val = e.getNewValue();
-                // Lógica de negocio: Si dice "Payment" (pago), lo convierto a negativo
+                // REGLA DE NEGOCIO: Si el tipo es Pago, el importe se fuerza a negativo
                 if ("Payment".equalsIgnoreCase(m.getDescription()) && val > 0) val *= -1;
                 m.setAmount(val);
-                // Llamo al servidor para guardar
+                // Intento de guardado en el servidor
                 createMovementOnServer(m);
             } else {
                 tvMovements.refresh();
             }
         });
 
-        // D) COLUMNA BALANCE (Calculada)
-        // Paso el objeto entero 'Movement' para poder acceder al balance calculado
+        // D) COLUMNA BALANCE: Muestra el saldo acumulativo (no se edita, se calcula)
         colBalance.setCellValueFactory(cellData -> new ReadOnlyObjectWrapper<>(cellData.getValue()));
         colBalance.setCellFactory(column -> new TableCell<Movement, Movement>() {
             @Override
@@ -235,10 +238,10 @@ public class MovementController implements Initializable {
         });
     }
 
-    // --- CARGA DE DATOS ---
+    // --- MÉTODOS DE CARGA DE DATOS ---
 
     /**
-     * Método llamado desde la ventana anterior (Login/Accounts) para pasarme el usuario.
+     * Inicializa los datos del cliente desde la ventana de navegación anterior.
      */
     public void setClientData(Customer customer) {
         this.currentCustomer = customer;
@@ -246,27 +249,23 @@ public class MovementController implements Initializable {
                                 (customer.getLastName()!=null ? customer.getLastName() : ""));
         lblUserId.setText(String.valueOf(customer.getId()));
         
-        // Cargo las cuentas de este cliente
-        loadUserAccounts(true);
+        loadUserAccounts(true); // Carga inicial de cuentas
     }
 
     /**
-     * Carga las cuentas del servidor.
-     * Uso GenericType porque Jersey necesita saber qué tipo de lista devuelve el XML.
+     * Recupera las cuentas bancarias asociadas al cliente desde el servicio REST.
      */
     private void loadUserAccounts(boolean selectFirst) {
         try {
-            // Defino el tipo para mapear la respuesta XML a una List<Account>
             GenericType<List<Account>> listType = new GenericType<List<Account>>() {};
-
             List<Account> accounts = accountClient.findAccountsByCustomerId_XML(listType, String.valueOf(currentCustomer.getId()));
 
-            isProgrammaticUpdate = true; // Bloqueo el listener para no disparar eventos a lo loco
+            isProgrammaticUpdate = true; // Evitamos disparar el listener durante el refresco
             
             Account current = cbAccountSelector.getValue();
             cbAccountSelector.setItems(FXCollections.observableArrayList(accounts));
 
-            // Intento mantener la selección anterior si existía
+            // Mantenemos la selección previa si es posible
             if (current != null) {
                 for (Account a : accounts) {
                     if (a.getId().equals(current.getId())) {
@@ -275,13 +274,13 @@ public class MovementController implements Initializable {
                     }
                 }
             } 
-            // Si no, selecciono la primera por defecto
+            // Si es la carga inicial, seleccionamos la primera cuenta disponible
             else if (selectFirst && !accounts.isEmpty()) {
                 cbAccountSelector.getSelectionModel().selectFirst();
                 loadMovementsForAccount(cbAccountSelector.getValue());
             }
             
-            isProgrammaticUpdate = false; // Desbloqueo el listener
+            isProgrammaticUpdate = false;
 
         } catch (Exception e) {
             lblStatus.setText("Error cargando cuentas: " + e.getMessage());
@@ -289,7 +288,7 @@ public class MovementController implements Initializable {
     }
 
     /**
-     * Descarga los movimientos de la cuenta seleccionada.
+     * Descarga y muestra los movimientos financieros de una cuenta seleccionada.
      */
     private void loadMovementsForAccount(Account account) {
         if (account == null) return;
@@ -301,7 +300,7 @@ public class MovementController implements Initializable {
             masterData.clear();
             masterData.addAll(movementsList);
 
-            // IMPORTANTE: Recalcular saldos parciales localmente
+            // IMPORTANTE: Calculamos los saldos línea a línea localmente
             recalculateLocalBalances();
             lblStatus.setText("Movimientos cargados: " + movementsList.size());
 
@@ -312,41 +311,41 @@ public class MovementController implements Initializable {
     }
 
     /**
-     * Algoritmo para calcular el saldo línea a línea.
-     * Ordena por fecha y va sumando acumulativamente desde el saldo inicial de la cuenta.
+     * Algoritmo de cálculo de saldos parciales.
+     * Ordena cronológicamente y acumula importes sobre el saldo inicial de la cuenta.
      */
     private void recalculateLocalBalances() {
-        // 1. Ordenar por fecha
+        // 1. Ordenación por fecha (Timestamp)
         masterData.sort((m1, m2) -> {
             if (m1.getTimestamp() == null || m2.getTimestamp() == null) return 0;
             return m1.getTimestamp().compareTo(m2.getTimestamp());
         });
 
-        // 2. Obtener saldo inicial de la cuenta
+        // 2. Determinar punto de partida (Balance de apertura)
         double runningBalance = 0.0;
         Account selectedAccount = cbAccountSelector.getValue();
         if (selectedAccount != null && selectedAccount.getBeginBalance() != null) {
             runningBalance = selectedAccount.getBeginBalance();
         }
 
-        // 3. Iterar y sumar
+        // 3. Iteración para cálculo acumulativo
         for (Movement m : masterData) {
             runningBalance += m.getAmount();
-            m.setBalance(runningBalance); // Guardo el saldo parcial en el objeto (transitorio)
+            m.setBalance(runningBalance); // Se guarda en el objeto para que la tabla lo muestre
         }
 
-        // 4. Actualizar UI
+        // 4. Actualización de la UI en el hilo principal
         final double finalBalance = runningBalance;
         Platform.runLater(() -> {
             tfBalance.setText(String.format("%.2f €", finalBalance));
-            tvMovements.refresh(); // Fuerzo repintado de la tabla para ver los balances nuevos
+            tvMovements.refresh(); // Forzamos el repintado para actualizar la columna Balance
         });
     }
 
-    // --- CRUD (Create, Remove) ---
+    // --- ACCIONES CRUD (Create, Remove) ---
 
     /**
-     * Crea una fila vacía en la tabla para empezar a insertar.
+     * Inserta una fila vacía en la tabla para permitir al usuario crear un nuevo movimiento.
      */
     @FXML
     void handleNewRow(ActionEvent event) {
@@ -356,33 +355,43 @@ public class MovementController implements Initializable {
         newMov.setTimestamp(new Date());
         newMov.setDescription("Deposit");
         newMov.setAmount(0.0);
-        newMov.setBalance(0.0); // Temporal
+        
+        // Cálculo preventivo del saldo para la nueva fila
+        try {
+            String txt = tfBalance.getText().replace(" €","").replace(",",".");
+            newMov.setBalance(Double.parseDouble(txt));
+        } catch(Exception e) { newMov.setBalance(0.0); }
 
         masterData.add(newMov);
         
-        // Foco y edición automática para mejorar UX
+        // Foco automático en la nueva fila para iniciar edición
         Platform.runLater(() -> {
             int targetIndex = tvMovements.getItems().indexOf(newMov);
+            
             if (targetIndex >= 0) {
                 tvMovements.getSelectionModel().clearSelection();
                 tvMovements.getSelectionModel().select(targetIndex);
+                tvMovements.requestFocus(); 
                 tvMovements.scrollTo(targetIndex);
                 
-                // Pongo la celda "Type" en modo edición directamente
-                tvMovements.edit(targetIndex, colType);
+                final int rowToEdit = targetIndex;
+                Platform.runLater(() -> {
+                    tvMovements.layout(); 
+                    tvMovements.edit(rowToEdit, colType);
+                });
             }
         });
     }
 
     /**
-     * Envía el movimiento al servidor. Contiene VALIDACIONES DE NEGOCIO.
+     * Persiste un movimiento en el servidor previa validación de saldo.
      */
     private void createMovementOnServer(Movement mov) {
         try {
             Account acc = cbAccountSelector.getValue();
             double currentBal = 0.0;
             
-            // Calculo el saldo que quedaría
+            // Predicción del nuevo saldo
             try {
                 String txt = tfBalance.getText().replace(" €","").replace(",",".");
                 currentBal = Double.parseDouble(txt) + mov.getAmount();
@@ -391,21 +400,21 @@ public class MovementController implements Initializable {
                 currentBal = start + mov.getAmount();
             }
             
-            // VALIDACIÓN: ¿Tiene fondos suficientes?
+            // VALIDACIÓN BANCARIA: Fondos suficientes según el tipo de cuenta
             if (mov.getAmount() < 0) {
                 String typeStr = (acc.getType() != null) ? acc.getType().toString().toUpperCase() : "";
 
+                // Cuenta Standard: No permite saldo negativo
                 if (typeStr.contains("STANDARD")) { 
-                    // Cuentas estándar no pueden tener saldo negativo
                     if (currentBal < 0) {
                         showError("Fondos insuficientes (Cuenta Standard).");
-                        masterData.remove(mov); // Borro la fila provisional
+                        masterData.remove(mov);
                         tvMovements.refresh();
                         return;
                     }
                 } 
+                // Cuenta Crédito: Permite negativo hasta el límite de la línea de crédito
                 else if (typeStr.contains("CREDIT")) {
-                    // Cuentas crédito tienen un límite negativo
                     double limit = (acc.getCreditLine() != null) ? acc.getCreditLine() : 0.0;
                     if (currentBal < -limit) {
                         showError("Límite de crédito excedido (" + limit + " €).");
@@ -416,23 +425,23 @@ public class MovementController implements Initializable {
                 }
             }
 
-            // Si pasa validaciones, asigno datos finales y envío
+            // Si las validaciones pasan, se envía al servidor REST
             mov.setBalance(currentBal); 
             mov.setAccount(acc);
             movementClient.create_XML(mov, String.valueOf(acc.getId()));
             
-            reloadEverything(); // Recargo para asegurar consistencia con servidor
+            reloadEverything(); // Sincronización final con el estado del servidor
             lblStatus.setText("Guardado exitosamente.");
             
         } catch (Exception e) {
-            masterData.remove(mov); // Si falla, quito la fila
+            masterData.remove(mov); // Reversión en UI si falla la red
             lblStatus.setText("Error al guardar.");
             showError("Error técnico: " + e.getMessage());
         }
     }
 
     /**
-     * Borra el último movimiento de la lista (Deshacer).
+     * Elimina el último movimiento registrado (Función Deshacer).
      */
     @FXML
     void handleUndoLastMovement(ActionEvent event) {
@@ -442,12 +451,12 @@ public class MovementController implements Initializable {
             return;
         }
 
-        Movement last = masterData.get(masterData.size()-1); // Cojo el último
+        Movement last = masterData.get(masterData.size()-1); 
         try {
-            // Borro en servidor
+            // Borrado físico en el servidor
             movementClient.remove(String.valueOf(last.getId()));
             
-            // Actualizo saldo de cuenta en servidor (lógica manual, depende del backend)
+            // Actualización del balance de la cuenta tras el borrado
             Account acc = cbAccountSelector.getValue();
             acc.setBalance(acc.getBalance() - last.getAmount());
             accountClient.updateAccount_XML(acc);
@@ -461,10 +470,10 @@ public class MovementController implements Initializable {
 
     // --- NAVEGACIÓN Y CIERRE ---
 
+    /** Cierra la ventana actual para volver a la anterior */
     @FXML
     void handleBack(ActionEvent event) {
         try {
-            // Cierro esta ventana (Stage). Como es modal, se verá la de abajo (Accounts)
             Stage stage = (Stage) btBack.getScene().getWindow();
             stage.close();
         } catch (Exception e) {
@@ -472,21 +481,20 @@ public class MovementController implements Initializable {
         }
     }
 
+    /** Cierra completamente la aplicación Java */
     @FXML 
     void handleExit(ActionEvent event) { 
         if (showConfirmation("¿Seguro que quieres salir de la aplicación?")) {
-            System.exit(0); // Mata todo el proceso Java
+            System.exit(0); 
         }
     }
 
-    // --- UTILIDADES ---
-
-    /** Recarga cuentas y movimientos para refrescar la vista completa */
+    /** Refresca la información de cuentas y movimientos para mantener la consistencia */
     private void reloadEverything() {
         Account current = cbAccountSelector.getValue();
         if(current == null) return;
         loadUserAccounts(false);
-        // Restauro la selección
+        // Restauración de la selección del usuario tras el refresco de datos
         for(Account a : cbAccountSelector.getItems()) {
             if(a.getId().equals(current.getId())) {
                 isProgrammaticUpdate = true;
@@ -498,24 +506,23 @@ public class MovementController implements Initializable {
         }
     }
     
-    // Helper para saber si una fila es nueva (ID nulo o 0) o viene de BD
+    // Identifica si un objeto es nuevo (ID nulo o 0) o ya existe en la base de datos
     private boolean isNewRow(Movement m) { return m.getId() == null || m.getId() == 0; }
     
-    /**
-     * Permite preseleccionar una cuenta desde fuera antes de mostrar la ventana.
-     */
+    /** Método público para seleccionar una cuenta específica desde un controlador externo */
     public void setPreselectedAccount(Account account) {
         if (account == null) return;
 
         for (Account a : cbAccountSelector.getItems()) {
             if (a.getId().equals(account.getId())) {
-                cbAccountSelector.getSelectionModel().select(a); // Esto dispara el listener
+                cbAccountSelector.getSelectionModel().select(a); 
                 break;
             }
         }
     }
     
-    // Helpers para Alertas
+    // --- HELPERS PARA DIÁLOGOS DE USUARIO ---
+    
     private void showError(String msg) { 
         Alert a = new Alert(Alert.AlertType.ERROR); 
         a.setTitle("Error");
