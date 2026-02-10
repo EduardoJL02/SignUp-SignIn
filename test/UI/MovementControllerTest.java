@@ -19,7 +19,9 @@ import signup.signin.SignUpSignIn;
 /**
  * Pruebas de integración para la vista de Movimientos.
  * Se ejecutan en orden alfabético para mantener la consistencia del estado.
- */
+ * @fixme Los métodos de test presentados son insuficientes.
+ * @fixme Crear sendos métodos de test para Read,Create y Delete (último movimiento) sobre la tabla de Movements que verifiquen sobre los items de la tabla cada caso de uso.
+*/
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class MovementControllerTest extends ApplicationTest {
 
@@ -35,7 +37,7 @@ public class MovementControllerTest extends ApplicationTest {
     }
 
     /**
-     * Método auxiliar para automatizar el flujo de navegación:
+     * Method auxiliar para automatizar el flujo de navegación:
      * Login -> Selección de Cuenta -> Vista de Movimientos.
      */
     private void navegarHastaMovements() {

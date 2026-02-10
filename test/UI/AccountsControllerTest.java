@@ -133,6 +133,9 @@ public class AccountsControllerTest extends ApplicationTest {
         // Confirmar alerta de éxito
         verifyThat(".dialog-pane", isVisible());
         clickOn("Aceptar");
+        //FIXME Verificaciones insuficientes: verificar que hay un nuevo objeto Account en
+        //FIXME los items de la tabla con los datos introducidos al crear: Tipo, descripción, saldo inicial y 
+        //FIXME línea de crédito(si tipo es crédito, que es el tipo de cuenta más complejo y que habría que testear).
         
     }
     
@@ -223,6 +226,10 @@ public class AccountsControllerTest extends ApplicationTest {
         
         // Verificar que Modify se deshabilitó
         verifyThat("#btnModify", isDisabled());
+        //FIXME Verificaciones insuficientes: verificar que hay un objeto Account en
+        //FIXME los items de la tabla con los datos introducidos al modificar: descripción y 
+        //FIXME línea de crédito(si tipo es crédito, que es el tipo de cuenta más complejo y que habría que testear).
+
     }
     
     /**
@@ -300,6 +307,8 @@ public class AccountsControllerTest extends ApplicationTest {
         // Verificar éxito
         verifyThat(".dialog-pane", isVisible());
         clickOn("Aceptar");
+        //FIXME Verificaciones insuficientes: verificar que el objeto Account seleccionado para borrar
+        //FIXME ya no está entre los items de la tabla.
         
         
     }
