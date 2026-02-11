@@ -506,7 +506,7 @@ public class AccountsController {
                 newAccount.setBeginBalance(0.0);
                 newAccount.setCreditLine(0.0);
                 newAccount.setBeginBalanceTimestamp(new Date());
-                newAccount.setType(AccountType.STANDARD);
+                newAccount.setType(AccountType.CREDIT);
                 newAccount.setDescription("New Account"); // Texto inicial para que no sea null
                 newAccount.setCustomers(new HashSet<>()); // Inicializar relación
                 
@@ -516,9 +516,13 @@ public class AccountsController {
                 // Añadir a la lista observable (se muestra en tabla automáticamente)
                 accountsData.add(newAccount);
                 
+                final int newRowIndex = accountsData.size() -1;
+                
                 // Seleccionar la nueva fila y hacer scroll hacia ella
-                tbAccounts.getSelectionModel().select(newAccount);
-                tbAccounts.scrollTo(newAccount);
+                tbAccounts.getSelectionModel().clearSelection();
+                tbAccounts.getSelectionModel().select(newRowIndex);
+                tbAccounts.getFocusModel().focus(newRowIndex);
+                tbAccounts.scrollTo(newRowIndex);
                 
                 // Poner el foco en la celda de Descripción para editar directamente
                 // (columna tcDescription editable)
