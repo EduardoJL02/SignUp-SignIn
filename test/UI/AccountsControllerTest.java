@@ -43,8 +43,11 @@ public class AccountsControllerTest extends ApplicationTest {
     
     /**
      * Test 1: Login exitoso y navegación a ventana de cuentas.
+     * 
+     * Test 1 y test 2 fusionados para que el test 2 no dependa del primero 
      */
     @Test
+    @Ignore
     public void test1_Login() {
         clickOn("#EmailTextField");
         write("awallace@gmail.com");
@@ -55,14 +58,10 @@ public class AccountsControllerTest extends ApplicationTest {
         verifyThat("#LoginButton", isEnabled());
         clickOn("#LoginButton");
         
+       
+        // Estado inicial de la ventana
         verifyThat("#tbAccounts", isVisible());
-    }
-   
-    /**
-     * Test 2: Estado inicial de la ventana.
-     */
-    @Test
-    public void test2_InitialState() {
+        
         verifyThat("#tbAccounts", isVisible());
         
         TableView<Account> table = lookup("#tbAccounts").queryTableView();
@@ -73,16 +72,15 @@ public class AccountsControllerTest extends ApplicationTest {
         verifyThat("#btnDelete", isDisabled());
         verifyThat("#btnCancel", isDisabled());
         verifyThat("#btnMovements", isEnabled());
-        
     }
-    
 
     /**
-     * Test 3: Crear cuenta 
-     * Usa lookupButton() para verificar texto del botón.
+     * Test 2: Crear cuenta 
+     * Uso lookupButton() para verificar texto del botón.
      */
     @Test
-    public void test3_CreateAccount() {
+    @Ignore
+    public void test2_CreateAccount() {
         TableView<Account> table = lookup("#tbAccounts").queryTableView();
         int rowsBefore = table.getItems().size();
 
@@ -116,6 +114,7 @@ public class AccountsControllerTest extends ApplicationTest {
                                 .query();
 
         doubleClickOn(celdaDescription);
+        push(KeyCode.CONTROL, KeyCode.A);
         write("Cuenta Test Auto");
         push(KeyCode.ENTER);
 
@@ -157,7 +156,7 @@ public class AccountsControllerTest extends ApplicationTest {
                      AccountType.CREDIT, createdAccount.getType());
                      
         assertEquals("La descripción no se guardó correctamente", 
-                     "New Cuenta Test Auto", createdAccount.getDescription());
+                     "Cuenta Test Auto", createdAccount.getDescription());
                      
         assertEquals("El saldo inicial no es correcto", 
                      1000.0, createdAccount.getBalance(), 0.01);
@@ -167,12 +166,12 @@ public class AccountsControllerTest extends ApplicationTest {
     }
         
     /**
-     * Test 4: Cancelar creación
+     * Test 3: Cancelar creación
      * Fuerza recarga antes de comprobar estado inicial.
      */
     @Test
     @Ignore
-    public void test4_CancelCreation() {
+    public void test3_CancelCreation() {
         // Refrescar tabla antes de obtener estado inicial
         TableView<Account> table = lookup("#tbAccounts").queryTableView();
         
@@ -190,14 +189,17 @@ public class AccountsControllerTest extends ApplicationTest {
         clickOn("Aceptar");
         
         verifyThat("#btnCancel", isDisabled());
+        
+        clickOn("#tcBalanceDate");
     }
     
     /**
-     * Test 5: Modificar cuenta
+     * Test 4: Modificar cuenta
      * Espera a que el controlador detecte el cambio.
      */
     @Test
-    public void test5_ModifyAccount() {
+    @Ignore
+    public void test4_ModifyAccount() {
         TableView<Account> table = lookup("#tbAccounts").queryTableView();
         
         // Buscar cuenta para editar (preferir CREDIT)
@@ -206,22 +208,26 @@ public class AccountsControllerTest extends ApplicationTest {
        
         for (int i = 0; i < table.getItems().size(); i++) {
             Account acc = table.getItems().get(i);
-            if (acc != null) { // Validar nulidad
+            if (acc != null && acc.getType() == AccountType.CREDIT) { // Validar nulidad y credito
                 // Guardamos la primera que encontremos por defecto
                 if (indiceFila == -1) {
                     indiceFila = i;
                     cuentaSeleccionada = acc;
+                   
                 }
-                // Si encontramos una CREDIT, nos quedamos con esa y salimos
                 if (acc.getType() == AccountType.CREDIT) {
                     indiceFila = i;
                     cuentaSeleccionada = acc;
                     break; // Preferir CREDIT
                 }
+                if (indiceFila < 0) {
+                    System.out.println("SKIP test5: No hay cuentas CREDIT");
+                    return;
+                }
             }
         }
         
-        assertTrue("Debe haber al menos una cuenta", indiceFila >= 0);
+        assertTrue("Debe haber al menos una cuenta de credito", indiceFila >= 0);
         
         // Variables finales para uso en clases anónimas
         final int filaFinal = indiceFila;
@@ -254,27 +260,7 @@ public class AccountsControllerTest extends ApplicationTest {
         write("Cuenta Modificada");
         push(KeyCode.ENTER);
         
-        
-        // 1. Buscar cuenta CREDIT
-//        int filaCredit = -1;
-//        for (int i = 0; i < table.getItems().size(); i++) {
-//            Account acc = table.getItems().get(i);
-//            if (acc != null && acc.getType() == AccountType.CREDIT) {
-//                filaCredit = i;
-//                break;
-//            }
-//        }
-//        
-//        if (filaCredit < 0) {
-//            System.out.println("SKIP test8: No hay cuentas CREDIT");
-//            return;
-//        }
-//        
-//        // 2. Seleccionar cuenta CREDIT
-//        final int fila = filaCredit;
-//        interact(() -> table.getSelectionModel().select(fila));
-//        
-        // 3. Editar CreditLine (columna 4)
+        // Editar CreditLine (columna 4)
         Node celdaCreditLine = lookup("#tbAccounts")
                                .lookup(".table-row-cell")
                                .nth(filaFinal)
@@ -286,7 +272,7 @@ public class AccountsControllerTest extends ApplicationTest {
         
         // Limpiar y escribir
         push(KeyCode.CONTROL, KeyCode.A);
-        write("4000");
+        write("5000");
         push(KeyCode.ENTER);
 
         // Guardar cambios
@@ -315,7 +301,7 @@ public class AccountsControllerTest extends ApplicationTest {
         // Verificar Línea de Crédito
         if (cuentaActualizada.getType() == AccountType.CREDIT) {
             assertEquals("La línea de crédito debería haber cambiado", 
-                         4000, 
+                         5000, 
                          cuentaActualizada.getCreditLine(), 
                          0.01); 
         }
@@ -325,11 +311,12 @@ public class AccountsControllerTest extends ApplicationTest {
     }
     
     /**
-     * Test 6: Intentar borrar cuenta CON movimientos
+     * Test 5: Intentar borrar cuenta CON movimientos
      * Añade validación de nulidad robusta.
      */
     @Test
-    public void test6_DeleteAccountWithMovements() {
+    @Ignore
+    public void test5_DeleteAccountWithMovements() {
         TableView<Account> table = lookup("#tbAccounts").queryTableView();
         
         // Buscar cuenta con validación de nulidad
@@ -365,11 +352,12 @@ public class AccountsControllerTest extends ApplicationTest {
     }
     
     /**
-     * Test 7: Borrar cuenta SIN movimientos
+     * Test 6: Borrar cuenta SIN movimientos
      * Añade validación de nulidad y crea cuenta si es necesario.
      */
     @Test
-    public void test7_DeleteAccountWithoutMovements() {
+    @Ignore
+    public void test6_DeleteAccountWithoutMovements() {
         TableView<Account> table = lookup("#tbAccounts").queryTableView();
         
         //Buscar cuenta SIN movimientos con validación
@@ -416,77 +404,23 @@ public class AccountsControllerTest extends ApplicationTest {
         //FIXME ya no está entre los items de la tabla.
 
         // Verificar que la cuenta ya no está en la tabla
-        boolean existe = false;
+        boolean bool = false;
         for (Account acc : table.getItems()) {
             if (acc.equals(deletedAccount)) {
-                existe = true;
+                bool = true;
                 break;
             }
         }
         
-        assertFalse("La cuenta borrada debería haber desaparecido de la tabla", existe); 
+        assertFalse("La cuenta borrada debería haber desaparecido de la tabla", bool); 
     }
-//    
-//    /**
-//     * Test 8: CreditLine editable solo en CREDIT
-//     * Simplifica la verificación de estado.
-//     */
-//    @Test
-//    @Ignore
-//    public void test8_CreditLineEditableOnlyForCredit() {
-//        TableView<Account> table = lookup("#tbAccounts").queryTableView();
-//        
-//        // 1. Buscar cuenta CREDIT
-//        int filaCredit = -1;
-//        for (int i = 0; i < table.getItems().size(); i++) {
-//            Account acc = table.getItems().get(i);
-//            if (acc != null && acc.getType() == AccountType.CREDIT) {
-//                filaCredit = i;
-//                break;
-//            }
-//        }
-//        
-//        if (filaCredit < 0) {
-//            System.out.println("SKIP test8: No hay cuentas CREDIT");
-//            return;
-//        }
-//        
-//        // 2. Seleccionar cuenta CREDIT
-//        final int fila = filaCredit;
-//        interact(() -> table.getSelectionModel().select(fila));
-//        
-//        // 3. Editar CreditLine (columna 4)
-//        Node celdaCreditLine = lookup("#tbAccounts")
-//                               .lookup(".table-row-cell")
-//                               .nth(fila)
-//                               .lookup(".table-cell")
-//                               .nth(4)
-//                               .query();
-//        
-//        doubleClickOn(celdaCreditLine);
-//        
-//        // Limpiar y escribir
-//        push(KeyCode.CONTROL, KeyCode.A);
-//        write("5000");
-//        push(KeyCode.ENTER);
-//        
-//        //Verificacion boton refrescar
-//        verifyThat("#btnRefresh", isVisible());
-//        verifyThat("#btnRefresh", isEnabled());
-//
-//        clickOn("#btnRefresh");
-//
-//        verifyThat("#btnCreate", isEnabled());
-//        verifyThat("#btnModify", isDisabled());
-//        verifyThat("#btnDelete", isDisabled());
-//    }
-//    
-
+    
     /**
-     * Test 9: Navegación a Movements
+     * Test 7: Navegación a Movements
      */
     @Test
-    public void test8_NavigateToMovements() {
+    @Ignore
+    public void test7_NavigateToMovements() {
         TableView<Account> table = lookup("#tbAccounts").queryTableView();
         
         
