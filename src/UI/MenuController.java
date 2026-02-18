@@ -14,11 +14,27 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 
 import java.net.URL;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class MenuController {
+    
+    private static final Logger LOGGER =
+        Logger.getLogger(MenuController.class.getName());
 
     private static final String TITLE_MOVEMENTS = "Movements";
     private static final String TITLE_ACCOUNTS = "Accounts Management";
+    private HelpProvider activeController;
+    
+    
+    public void setActiveController(HelpProvider controller) {
+        if (controller == null) {
+            LOGGER.warning("Se intentó registrar un HelpProvider nulo.");
+            return;
+        }
+        this.activeController = controller;
+        LOGGER.info("HelpProvider registrado: " + controller.getClass().getSimpleName());
+    }
     
     // --- SALIR ---
     @FXML
@@ -67,24 +83,38 @@ public class MenuController {
     private void handleHelp(ActionEvent event) {
         try {
             Stage currentStage = getCurrentStage(event);
-            String currentTitle = (currentStage != null && currentStage.getTitle() != null) 
-                                ? currentStage.getTitle() 
-                                : "";
 
-            // Lógica de selección de ayuda
-            String helpFile = "accounts.html"; // Por defecto mostramos Cuentas si no coincide nada
-            
-            if (currentTitle.contains(TITLE_MOVEMENTS)) {
-                helpFile = "movements.html";
-            } else if (currentTitle.contains(TITLE_ACCOUNTS)) {
-                helpFile = "accounts.html";
+            // Validación antes de intentar cargar el HTML
+            if (activeController == null) {
+                LOGGER.warning("handleHelp: no hay HelpProvider registrado. Usando default.");
+                showWebWindow(currentStage, HelpProvider.HELP_DEFAULT, "Ayuda - Bank App");
+                return;
             }
 
-            // Abrimos la ventana modal
-            showWebWindow(currentStage, helpFile, "Ayuda - Bank App");
+            // isHelpAvailable() valida que los datos no sean nulos/vacíos
+            if (!activeController.isHelpAvailable()) {
+                LOGGER.warning("HelpProvider inválido en: " 
+                    + activeController.getClass().getSimpleName());
+                showAlert("Ayuda", "Ayuda no disponible",
+                    "No se encontró ayuda para esta pantalla.");
+                return;
+            }
+
+            // POLIMORFISMO EN ACCIÓN:
+            // getHelpFile() ejecuta la versión correcta según el tipo real del objeto.
+            // Si es AccountsController  → "accounts.html"
+            // Si es MovementController  → "movements.html"
+            // MenuController no sabe ni le importa cuál es.
+            String helpFile    = activeController.getHelpFile();
+            String windowTitle = activeController.getWindowTitle();
+
+            LOGGER.info("Abriendo ayuda: " + helpFile + " para: " 
+                + activeController.getClass().getSimpleName());
+
+            showWebWindow(currentStage, helpFile, windowTitle);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error en handleHelp", e);
             showAlert("Error", "No se pudo cargar la ayuda", e.getMessage());
         }
     }

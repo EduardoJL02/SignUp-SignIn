@@ -28,6 +28,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.ws.rs.core.GenericType;
 
@@ -36,7 +37,17 @@ import javax.ws.rs.core.GenericType;
  * Esta clase conecta la tabla visual con el servidor REST.
  * Gestiona la carga de cuentas, visualización de movimientos y lógica de saldo.
  */
-public class MovementController implements Initializable {
+public class MovementController implements Initializable, HelpProvider {
+    
+    @Override
+    public String getHelpFile() {
+        return HelpProvider.HELP_MOVEMENTS; // → "movements.html"
+    }
+
+    @Override
+    public String getWindowTitle() {
+        return "Ayuda - Movimientos";
+    }
 
     // Logger para registrar eventos o errores técnicos
     private static final Logger LOGGER = Logger.getLogger(MovementController.class.getName());
@@ -57,6 +68,9 @@ public class MovementController implements Initializable {
     @FXML private TableColumn<Movement, String> colType; // Editable (Ingreso/Pago)
     @FXML private TableColumn<Movement, Double> colAmount; // Editable (Importe)
     @FXML private TableColumn<Movement, Movement> colBalance; // Columna calculada localmente
+    
+    @FXML
+    private MenuController menuController;
 
     // --- DATOS Y LÓGICA DE CONTROL ---
     // Lista observable: cualquier cambio aquí actualiza la TableView automáticamente
@@ -78,6 +92,7 @@ public class MovementController implements Initializable {
      */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        try{
         // 1. Instancia de los conectores REST para evitar NullPointerException
         accountClient = new AccountRESTClient();
         movementClient = new MovementRESTClient();
@@ -157,6 +172,14 @@ public class MovementController implements Initializable {
                 stage.setTitle("Movements"); 
             }
         });
+        
+        if (menuController != null) {
+                menuController.setActiveController(this);
+            }
+    }
+    catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error al inicializar MovementController", e);
+        }
     }
 
     /**

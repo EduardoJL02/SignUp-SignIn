@@ -203,7 +203,7 @@ public class GestionUsuariosController {
                 loggedCustomer = customer; // Almacenar usuario autenticado
                 
                 // Navegar a la ventana principal
-                navigateToAccounts();
+                navigateToAccounts(event);
                 this.stage.show();
                 setControlsDisabled(false);
                 LoginButton.requestFocus();
@@ -359,7 +359,7 @@ public class GestionUsuariosController {
      * 
      * Sustituir el Platform.runLater() del método navigateToMain() por código síncrono. 
      */
-    private void navigateToAccounts() {
+    private void navigateToAccounts(ActionEvent event) {
         LOGGER.info("=== INICIO NAVEGACIÓN A VENTANA CUENTAS ===");
         LOGGER.info("Stage actual: " + (stage != null ? "OK" : "NULL"));
         LOGGER.info("Logged customer: " + (loggedCustomer != null ? loggedCustomer.getEmail() : "NULL"));
@@ -379,12 +379,12 @@ public class GestionUsuariosController {
             
             // 2. Cargar el FXML
             LOGGER.info("Paso 2: Cargando FXML...");
-            Parent root = (Parent) loader.load();
+            Parent root = loader.load();
             LOGGER.info("FXML cargado exitosamente. Root: " + (root != null ? "OK" : "NULL"));
             
             // 3. Obtener el controlador
             LOGGER.info("Paso 3: Obteniendo controlador...");
-            AccountsController controller = (AccountsController) loader.getController();
+            AccountsController controller =  loader.getController();
             
             if (controller == null) {
                 LOGGER.severe("ERROR: Controller es NULL. Verifica fx:controller en FXMLAccounts.fxml");
@@ -415,7 +415,8 @@ public class GestionUsuariosController {
             
             // 6. Inicializar la ventana principal
             LOGGER.info("Paso 6: Inicializando ventana de cuentas...");
-            controller.initStage(root);
+            Stage accountsStage = new Stage();              // El Stage lo crea el padre
+            controller.init(accountsStage, root); 
             
             
             LOGGER.info("=== NAVEGACIÓN EXITOSA ===");

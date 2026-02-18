@@ -17,7 +17,6 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.TableCell;
@@ -27,11 +26,9 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
-import javafx.util.Callback;
 import javax.ws.rs.core.GenericType;
 import logic.AccountRESTClient;
 import model.Account;
-import model.AccountType;
 import model.Customer;
 import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.control.cell.TextFieldTableCell;
@@ -45,6 +42,7 @@ import javafx.scene.control.Alert;
 import model.AccountType;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.Node;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.TableRow;
 
 /**
@@ -52,7 +50,7 @@ import javafx.scene.control.TableRow;
  * Recibe el Customer logueado y muestra sus cuentas.
  * @author Eduardo
  */
-public class AccountsController {
+public class AccountsController implements Initializable, HelpProvider{
 
     private static final Logger LOGGER = Logger.getLogger("UI.AccountsController");
 
@@ -60,8 +58,8 @@ public class AccountsController {
     private AccountRESTClient accountClient;
     private ObservableList<Account> accountsData;
     
-    // Cliente conectado (recibido desde la ventana anterior)
-    private Customer userCustomer;
+    // Campo para guardar el usuario logueado
+    private Customer user;
     
     // Variable para controlar el estado del botón Create
     private boolean creationMode = false;
@@ -69,6 +67,32 @@ public class AccountsController {
     // Variable para localizar la cuenta que se está creando
     private Account creatingAccount = null;
 
+     /**
+     * Archivo HTML de ayuda para esta pantalla.
+     * Usamos la constante de la interfaz para evitar errores tipográficos.
+     */
+    @Override
+    public String getHelpFile() {
+        return HelpProvider.HELP_ACCOUNTS; // → "accounts.html"
+    }
+
+    /**
+     * Título personalizado que aparecerá en la ventana de ayuda.
+     */
+    @Override
+    public String getWindowTitle() {
+        return "Ayuda - Gestión de Cuentas";
+    }
+
+    /**
+     * Sobrescribimos getScreenDescription() para dar más contexto
+     * que el simple título. (Opcional, el default bastaría)
+     */
+    @Override
+    public String getScreenDescription() {
+        return "Pantalla de Cuentas: alta, baja, modificación y consulta de cuentas bancarias.";
+    }
+    
     @FXML
     private MenuBar menuBar;
     @FXML
@@ -99,31 +123,55 @@ public class AccountsController {
     private Button btnCancel;
     @FXML
     private Button btnRefresh;
+    @FXML
+    private MenuController menuController;
     
-    /**
-     * Busca el ID más alto en la lista y le suma 1.
-     * @return Nuevo ID local.
-     */
-    private Long generateLocalId() {
-        Long maxId = 0L;
-        if (accountsData != null) {
-            for (Account a : accountsData) {
-                if (a.getId() > maxId) {
-                    maxId = a.getId();
-                }
-            }
+    
+    @Override
+    public void initialize(URL url, ResourceBundle rb) {
+        try {
+            LOGGER.info("initialize() — configurando estructura visual de la tabla.");
+
+            // Instanciar cliente REST (no necesita datos del usuario)
+            accountClient = new AccountRESTClient();
+
+            // Configurar qué propiedad del modelo muestra cada columna
+            tcId.setCellValueFactory(           new PropertyValueFactory<>("id"));
+            tcDescription.setCellValueFactory(  new PropertyValueFactory<>("description"));
+            tcBeginBalance.setCellValueFactory(  new PropertyValueFactory<>("beginBalance"));
+            tcBalance.setCellValueFactory(       new PropertyValueFactory<>("balance"));
+            tcCreditLine.setCellValueFactory(    new PropertyValueFactory<>("creditLine"));
+            tcType.setCellValueFactory(          new PropertyValueFactory<>("type"));
+            tcBalanceDate.setCellValueFactory(   new PropertyValueFactory<>("beginBalanceTimestamp"));
+
+
+            // Hacer las celdas editables con sus validaciones
+            setupColumnFactories();
+
+            // Listener de selección de fila → habilita/deshabilita botones
+            setupSelectionListener();
+
+            // Estado inicial de los botones (no hay selección al arrancar)
+            resetButtonState();
+            
+            registerWithMenu();
+
+        } catch (Exception e) {
+            // No lanzamos la excepción: JavaFX no la capturaría bien desde initialize()
+            LOGGER.log(Level.SEVERE, "Error crítico en initialize()", e);
         }
-        return maxId + 1;
     }
     
-    // Campo para guardar el usuario logueado
-    private Customer user;
+    
 
     /**
      * Recibe el usuario autenticado desde la ventana de Login.
      * @param user El cliente que ha iniciado sesión.
      */
     public void setCustomer(Customer user) {
+        if (user == null) {
+            LOGGER.warning("setCustomer() recibió un usuario null.");
+        }
         this.user = user;
     }
     
@@ -136,161 +184,156 @@ public class AccountsController {
     }
     
     /**
-     * Inicializa el escenario con el cliente específico.
-     * @param root Nodo raíz FXML.
+     * Configura el Stage y carga los datos del servidor.
+     * Este método sustituye al antiguo initStage(Parent).
+     *
+     * @param stage  Stage creado por el controlador padre. Nunca null.
+     * @param root   Nodo raíz cargado con FXMLLoader.
      */
-    public void initStage(Parent root) {
-        this.userCustomer = user;
-        LOGGER.info("Iniciando AccountsController para el cliente: " + user.getId() );
-
-        Scene scene = new Scene(root);
-        stage = new Stage();
-        stage.setScene(scene);
-        stage.setTitle("My accounts - " + user.getFirstName() + " " + user.getLastName());
-        stage.setResizable(false);
-        stage.initModality(Modality.APPLICATION_MODAL);
-
-        // Evento al mostrar ventana
-        stage.setOnShowing(new EventHandler<WindowEvent>() {
-            @Override
-            public void handle(WindowEvent event) {
-                // Estado inicial de botones
-                btnModify.setDisable(true);
-                btnDelete.setDisable(true);
-                btnCreate.setDisable(false);
-                tbAccounts.setEditable(true);
-                btnCancel.setDisable(true);
-                btnCancel.setOpacity(0.0);
+    public void init(Stage stage, Parent root) {
+        try {
+            // Validación defensiva antes de continuar
+            if (user == null) {
+                LOGGER.severe("init() llamado sin usuario. Llama setCustomer() primero.");
+                throw new IllegalStateException("El usuario no fue inyectado antes de init().");
             }
-        });
-        
-        tbAccounts.addEventFilter(MouseEvent.MOUSE_PRESSED, new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent event) {
-                if (creationMode) {
-                    // Busamos qué fila se ha clicado
-                    Node node = event.getPickResult().getIntersectedNode();
-                    
-                    // Navegar hacia arriba en la jerarquía visual hasta encontrar la TableRow
-                    while (node != null && node != tbAccounts && !(node instanceof TableRow)) {
-                        node = node.getParent();
-                    }
-                    
-                    // Obtenemos item si hemos encontrado una fila...
-                    if (node instanceof TableRow) {
-                        TableRow row = (TableRow) node;
-                        Account rowAccount = (Account) row.getItem();
-                        
-                        // Si la fila clicada NO es la que estamos creando, BLOQUEAMOS el evento
-                        if (rowAccount == null || !rowAccount.equals(creatingAccount)) {
-                            event.consume(); // El clic no hace nada
-                        }
-                    } else {
-                        // Si clicamos en espacio vacío de la tabla, también bloqueamos para no perder foco
-                        event.consume();
-                    }
+
+            LOGGER.info("init() — configurando Stage para el usuario: " + user.getId());
+
+            // Guardar referencia al Stage (no lo creamos, lo recibimos)
+            this.stage = stage;
+
+            // Configurar el Stage
+            Scene scene = new Scene(root);
+            stage.setScene(scene);
+            stage.setTitle("My Accounts — " + user.getFirstName() + " " + user.getLastName());
+            stage.setResizable(false);
+            stage.initModality(Modality.APPLICATION_MODAL);
+
+            // Configurar filtro de clics en la tabla (necesita que stage esté listo)
+            setupTableClickFilter();
+
+            // Interceptar el botón X de la ventana para pedir confirmación
+            stage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+                @Override
+                public void handle(WindowEvent event) {
+                    event.consume(); // Previene el cierre inmediato
+                    handleLogOutAction(null);
                 }
-            }
-        });
-        
-        // Instanciar cliente REST
-        accountClient = new AccountRESTClient();
+            });
 
-        // Configuración de columnas (Visualización básica)
-        tcId.setCellValueFactory(new PropertyValueFactory<>("id"));
-        tcDescription.setCellValueFactory(new PropertyValueFactory<>("description"));
-        tcBeginBalance.setCellValueFactory(new PropertyValueFactory<>("Begin balance"));
-        tcBalance.setCellValueFactory(new PropertyValueFactory<>("balance"));
-        tcCreditLine.setCellValueFactory(new PropertyValueFactory<>("creditLine"));
-        tcType.setCellValueFactory(new PropertyValueFactory<>("type"));
-        tcBalanceDate.setCellValueFactory(new PropertyValueFactory<>("beginBalanceTimestamp"));
+            // Estado inicial de la ventana al mostrarse
+            stage.setOnShowing(new EventHandler<WindowEvent>() {
+                @Override
+                public void handle(WindowEvent event) {
+                    resetButtonState();
+                    tbAccounts.setEditable(true);
+                }
+            });
 
-        // Formatear la fecha (dd/MM/yyyy)
-        tcBalanceDate.setCellFactory(new Callback<TableColumn<Account, Date>, TableCell<Account, Date>>() {
-            @Override
-            public TableCell<Account, Date> call(TableColumn<Account, Date> param) {
-                return new TableCell<Account, Date>() {
-                    private SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy");
-                    @Override
-                    protected void updateItem(Date item, boolean empty) {
-                        super.updateItem(item, empty);
-                        if (empty || item == null) {
-                            setText(null);
-                        } else {
-                            setText(format.format(item));
-                        }
-                    }
-                };
-            }
-        });
+            // Cargar datos del servidor (ya tenemos "user" disponible)
+            loadAccountsData();
 
-        setupColumnFactories();
-        
-        // Listener para la selección de la tabla
+            // Mostrar la ventana (el controlador padre decide si show() o showAndWait())
+            // NO llamamos a stage.show() aquí — eso es responsabilidad del que abre la ventana
+            stage.showAndWait();
+
+        } catch (IllegalStateException e) {
+            // Error de programación: el orden de llamadas es incorrecto
+            LOGGER.severe("Error de configuración: " + e.getMessage());
+            showErrorAlert("Error de configuración interna: " + e.getMessage());
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error inesperado en init()", e);
+            showErrorAlert("Error al inicializar la ventana: " + e.getMessage());
+        }
+    }
+    
+    private void setupSelectionListener() {
         tbAccounts.getSelectionModel().selectedItemProperty().addListener(
-            // Usamos clase anónima (Standard Java 8)
             new javafx.beans.value.ChangeListener<Account>() {
                 @Override
-                public void changed(javafx.beans.value.ObservableValue<? extends Account> observable, 
-                                    Account oldValue, Account newValue) {
-                    
-                    // Si hay una fila seleccionada, habilitamos Delete
-                    if (newValue != null) {
-                        btnDelete.setDisable(false);
-                        // Modify se mantiene deshabilitado hasta que se edita una celda
-                        // (lógica de setupColumnFactories)
-                        btnModify.setDisable(true); 
-                    } else {
-                        // Si no hay selección, se deshabilita todo
-                        btnDelete.setDisable(true);
-                        btnModify.setDisable(true);
-                    }
+                public void changed(javafx.beans.value.ObservableValue<? extends Account> obs,
+                                    Account oldVal, Account newVal) {
+                    boolean haySeleccion = (newVal != null);
+                    btnDelete.setDisable(!haySeleccion);
+                    // Modify solo se habilita cuando el usuario edita una celda
+                    btnModify.setDisable(true);
                 }
             }
         );
-        
-         // Manejador para el botón de cierre de la ventana
-        stage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+    }
+    
+    /**
+     * Bloquea clics fuera de la fila en creación cuando creationMode = true.
+     * Se llama desde init() porque necesita que tbAccounts ya esté en un Stage.
+     */
+    private void setupTableClickFilter() {
+        tbAccounts.addEventFilter(MouseEvent.MOUSE_PRESSED, new EventHandler<MouseEvent>() {
             @Override
-            public void handle(WindowEvent event) {
-                // Consumimos el evento para evitar que la ventana se cierre inmediatamente
-                event.consume();
-                
-                // Llamamos a nuestro método de Log Out para pedir confirmación
-                handleLogOutAction(null);
+            public void handle(MouseEvent event) {
+                if (!creationMode) return; // Solo actúa en modo creación
+
+                Node node = event.getPickResult().getIntersectedNode();
+
+                // Subir por la jerarquía visual hasta encontrar la TableRow
+                while (node != null && node != tbAccounts && !(node instanceof TableRow)) {
+                    node = node.getParent();
+                }
+
+                if (node instanceof TableRow) {
+                    TableRow row = (TableRow) node;
+                    Account rowAccount = (Account) row.getItem();
+                    // Bloquear si el clic NO es sobre la fila que se está creando
+                    if (rowAccount == null || !rowAccount.equals(creatingAccount)) {
+                        event.consume();
+                    }
+                } else {
+                    // Clic en espacio vacío de la tabla → bloqueamos
+                    event.consume();
+                }
             }
         });
-
-        
-        // Cargar datos del servidor filtrando por este cliente
-        loadAccountsData();
-
-        stage.showAndWait();
+    }
+    
+    
+    /**
+     * Restablece el estado inicial de todos los botones.
+     * Se usa en initialize(), en init() y tras operaciones CRUD.
+     */
+    private void resetButtonState() {
+        btnCreate.setText("Create");
+        btnCreate.setDisable(false);
+        btnModify.setDisable(true);
+        btnDelete.setDisable(true);
+        btnMovements.setDisable(false);
+        btnCancel.setDisable(true);
+        btnCancel.setOpacity(0.0);
+        creationMode    = false;
+        creatingAccount = null;
     }
 
    
     
+    /**
+     * Consulta al servidor REST las cuentas del usuario actual
+     * y las carga en la tabla. Requiere que "user" no sea null.
+     */
     private void loadAccountsData() {
         try {
-        // Definimos el tipo exacto que queremos recibir: Una Lista de Accounts
-        // Usamos una clase anónima interna para capturar el tipo genérico
-        GenericType<List<Account>> listType = new GenericType<List<Account>>() {};
+            LOGGER.info("Cargando cuentas del usuario: " + user.getId());
+            
+            GenericType<List<Account>> listType = new GenericType<List<Account>>() {};
+            List<Account> lista = accountClient.findAccountsByCustomerId_XML(
+                listType, String.valueOf(user.getId())
+            );
 
-        // Llamamos al servidor usando el nuevo método que acepta listType
-        List<Account> accountsList = accountClient.findAccountsByCustomerId_XML(listType, String.valueOf(userCustomer.getId()));
+            accountsData = FXCollections.observableArrayList(lista);
+            tbAccounts.setItems(accountsData);
 
-        // Convertimos la lista estándar de Java a una ObservableList para la tabla
-        accountsData = FXCollections.observableArrayList(accountsList);
-
-        // Asignamos los datos a la tabla
-        tbAccounts.setItems(accountsData);
-
-    } catch (Exception ex) {
-        Logger.getLogger(AccountsController.class.getName()).log(Level.SEVERE, null, ex);
-        
-        // Mostrar alerta al usuario
-        showErrorAlert("Error loading server accounts: " + ex.getMessage());
-    }
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error al cargar cuentas", e);
+            showErrorAlert("Error loading accounts from server: " + e.getMessage());
+        }
     }
 
   
@@ -501,7 +544,7 @@ public class AccountsController {
                 creationMode = true;
                 // Crear instancia con datos por defecto
                 Account newAccount = new Account();
-                newAccount.setId(generateLocalId()); // ID local
+                newAccount.setId(generateLocalTempId()); // ID local
                 newAccount.setBalance(0.0);
                 newAccount.setBeginBalance(0.0);
                 newAccount.setCreditLine(0.0);
@@ -552,13 +595,15 @@ public class AccountsController {
                     return;
                 }
                 
+                newAccount.setId(null);
+                
                 // Aseguramos que la cuenta tenga al cliente actual asociado antes de enviarla
                 if (newAccount.getCustomers() == null) {
                     newAccount.setCustomers(new HashSet<>());
                 }
                 
                 // Añadimos el usuario actual a la lista de dueños de la cuenta
-                newAccount.getCustomers().add(userCustomer);                
+                newAccount.getCustomers().add(user);                
                 
                 // Enviar al servidor
                 LOGGER.info("Enviando nueva cuenta al servidor: " + newAccount.getId());
@@ -640,7 +685,7 @@ public class AccountsController {
                 tbAccounts.getSelectionModel().clearSelection();
                 
             } catch (Exception e) {
-                LOGGER.severe("Error al cancelar creación: " + e.getMessage());
+                LOGGER.log(Level.SEVERE, "Error al cancelar creación", e);
                 showErrorAlert("Error canceling creation: " + e.getMessage());
             }
         }
@@ -734,7 +779,7 @@ public class AccountsController {
 
             // Obtener la controladora
             MovementController controller = loader.getController();
-
+            
             // Pasar los datos
             controller.setClientData(this.user);
 
@@ -796,23 +841,47 @@ public class AccountsController {
      */
     @FXML
     private void handleLogOutAction(ActionEvent event) {
-        // Mostrar ventana de confirmación
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Sign Out");
-        alert.setHeaderText("Exit the application");
-        alert.setContentText("Are you sure you want to log out and log back in?");
+        alert.setContentText("Are you sure you want to log out?");
 
-        // Esperar respuesta del usuario
-        java.util.Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
-
-        if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
-            // Cerrar la ventana actual (Stage)
-            // Esto disparará el evento setOnHidden configurado en el Login, 
-            // el cual se encargará de limpiar los campos y restaurar el estado inicial.
-            
+        java.util.Optional<ButtonType> result = alert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
             stage.close();
-            
         }
+    }
+    
+     /**
+     * Busca el MenuController dentro del mismo Stage y se registra como
+     * proveedor de ayuda. Se llama desde initialize().
+     *
+     * Nota: Este método asume que el MenuBar está incluido como
+     * fx:include en el FXML principal, con fx:id="menuController".
+     */
+    private void registerWithMenu() {
+        try {
+            // Opción A: si tienes referencia directa al MenuController
+            // (inyectada vía @FXML si usas fx:include en el FXML)
+            if (menuController != null) {
+                menuController.setActiveController(this);
+                LOGGER.info("AccountsController registrado en MenuController.");
+            }
+        } catch (Exception e) {
+            // No interrumpimos la carga de la ventana si esto falla
+            LOGGER.log(Level.WARNING, "No se pudo registrar en MenuController", e);
+        }
+    }
+    
+    private Long generateLocalTempId() {
+        Long minId = 0L;
+        if (accountsData != null) {
+            for (Account a : accountsData) {
+                if (a.getId() != null && a.getId() < minId) {
+                    minId = a.getId();
+                }
+            }
+        }
+        return minId - 1; // -1, -2, -3... nunca colisiona con ID real de BD
     }
     
     /**
