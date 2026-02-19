@@ -9,6 +9,7 @@ import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -58,7 +59,7 @@ import javafx.scene.control.TableRow;
  * El método initialize debe llamar a setMenuActionsHandler() para establecer que este
  * controlador es el manejador de acciones del menú.
  */
-public class AccountsController {
+public class AccountsController implements Initializable, MenuActionsHandler {
 
     /**
      * TODO: NO TOCAR La siguiente referencia debe llamarse así y tener este tipo.
@@ -113,6 +114,30 @@ public class AccountsController {
     @FXML
     private Button btnRefresh;
     
+    @Override
+    public void initialize(URL url, ResourceBundle rb){
+        try{
+            // Instanciar cliente REST
+            accountClient = new AccountRESTClient();
+
+            // Configuración de columnas (Visualización básica)
+            tcId.setCellValueFactory(new PropertyValueFactory<>("id"));
+            tcDescription.setCellValueFactory(new PropertyValueFactory<>("description"));
+            tcBeginBalance.setCellValueFactory(new PropertyValueFactory<>("beginBalance"));
+            tcBalance.setCellValueFactory(new PropertyValueFactory<>("balance"));
+            tcCreditLine.setCellValueFactory(new PropertyValueFactory<>("creditLine"));
+            tcType.setCellValueFactory(new PropertyValueFactory<>("type"));
+            tcBalanceDate.setCellValueFactory(new PropertyValueFactory<>("beginBalanceTimestamp"));
+            
+            setupColumnFactories();
+            
+            setMenuActionsHandler();
+            
+        }catch (Exception e){
+            LOGGER.log(Level.SEVERE, "Error crítico en initialize()", e);
+        }
+    }
+    
     /**
      * Busca el ID más alto en la lista y le suma 1.
      * @return Nuevo ID local.
@@ -151,11 +176,14 @@ public class AccountsController {
     /**
      * Inicializa el escenario con el cliente específico.
      * @param root Nodo raíz FXML.
+     * @param stage
      */
-    public void initStage(Parent root) {
+    public void initStage(Stage stage, Parent root) {
         this.userCustomer = user;
         LOGGER.info("Iniciando AccountsController para el cliente: " + user.getId() );
 
+        this.stage = stage;
+        
         Scene scene = new Scene(root);
         stage = new Stage();
         stage.setScene(scene);
@@ -206,17 +234,7 @@ public class AccountsController {
             }
         });
         
-        // Instanciar cliente REST
-        accountClient = new AccountRESTClient();
-
-        // Configuración de columnas (Visualización básica)
-        tcId.setCellValueFactory(new PropertyValueFactory<>("id"));
-        tcDescription.setCellValueFactory(new PropertyValueFactory<>("description"));
-        tcBeginBalance.setCellValueFactory(new PropertyValueFactory<>("Begin balance"));
-        tcBalance.setCellValueFactory(new PropertyValueFactory<>("balance"));
-        tcCreditLine.setCellValueFactory(new PropertyValueFactory<>("creditLine"));
-        tcType.setCellValueFactory(new PropertyValueFactory<>("type"));
-        tcBalanceDate.setCellValueFactory(new PropertyValueFactory<>("beginBalanceTimestamp"));
+        
 
         // Formatear la fecha (dd/MM/yyyy)
         tcBalanceDate.setCellFactory(new Callback<TableColumn<Account, Date>, TableCell<Account, Date>>() {
@@ -237,8 +255,7 @@ public class AccountsController {
             }
         });
 
-        setupColumnFactories();
-        
+                
         // Listener para la selección de la tabla
         tbAccounts.getSelectionModel().selectedItemProperty().addListener(
             // Usamos clase anónima (Standard Java 8)
@@ -819,10 +836,10 @@ public class AccountsController {
             // Esto disparará el evento setOnHidden configurado en el Login, 
             // el cual se encargará de limpiar los campos y restaurar el estado inicial.
             
-            stage.close();
-            
-        }
-    }
+                stage.close(); 
+                System.exit(0);
+                }
+            }
     
     /**
      * Muestra una alerta de error simple.
@@ -835,5 +852,28 @@ public class AccountsController {
         alert.setContentText(msg);
         alert.showAndWait();
     }
-    
+
+    @Override
+    public void onCreate() {
+        handleCreateAction(null);
+    }
+
+    @Override
+    public void onRefresh() {
+        handleRefreshAction(null);
+    }
+
+    @Override
+    public void onUpdate() {
+        handleModifyAction(null);
+    }
+
+    @Override
+    public void onDelete() {
+        handleDeleteAction(null);
+    }
+
+    private void setMenuActionsHandler() {
+        menuIncludeController.setMenuActionsHandler(this);
+    }
 }

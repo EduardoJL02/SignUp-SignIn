@@ -415,7 +415,8 @@ public class GestionUsuariosController {
             
             // 6. Inicializar la ventana principal
             LOGGER.info("Paso 6: Inicializando ventana de cuentas...");
-            controller.initStage(root);
+//            Stage accountsStage = new Stage();              // El Stage lo crea el padre
+            controller.initStage(stage, root);
             
             
             LOGGER.info("=== NAVEGACIÓN EXITOSA ===");
