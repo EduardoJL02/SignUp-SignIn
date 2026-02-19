@@ -43,7 +43,7 @@ import javax.ws.rs.core.GenericType;
  * controlador es el manejador de acciones del menú.
 
  */
-public class MovementController implements Initializable {
+public class MovementController implements Initializable, MenuActionsHandler {
 
     /**
      * TODO: NO TOCAR La siguiente referencia debe llamarse así y tener este tipo.
@@ -92,6 +92,13 @@ public class MovementController implements Initializable {
      */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        
+        if (menuIncludeController != null) {
+            menuIncludeController.setMenuActionsHandler(this);
+        } else {
+            LOGGER.warning("El controlador del menú es nulo. Revisa que el fx:id coincida en el FXML.");
+        }
+        
         // 1. Instancia de los conectores REST para evitar NullPointerException
         accountClient = new AccountRESTClient();
         movementClient = new MovementRESTClient();
@@ -250,6 +257,27 @@ public class MovementController implements Initializable {
                 setText((empty || item == null) ? null : String.format("%.2f €", item.getBalance()));
             }
         });
+    }
+    
+    @Override
+    public void onCreate() {
+        handleNewRow(null);
+    }
+
+    @Override
+    public void onRefresh() {
+        reloadEverything();
+    }
+
+    @Override
+    public void onUpdate() {
+        if (showConfirmation("En Movements no existe la accion Update del CRUD")) { 
+        }
+    }
+
+    @Override
+    public void onDelete() {
+        handleUndoLastMovement(null);
     }
 
     // --- MÉTODOS DE CARGA DE DATOS ---

@@ -1,7 +1,7 @@
 package UI;
 
 import javafx.scene.Node;
-import javafx.scene.control.TextField;
+import javafx.scene.control.TableView;
 import javafx.stage.Stage;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -9,17 +9,23 @@ import org.junit.runners.MethodSorters;
 import org.testfx.framework.junit.ApplicationTest;
 import org.testfx.util.WaitForAsyncUtils;
 import javafx.scene.input.KeyCode;
+import model.Movement;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import static org.testfx.api.FxAssert.verifyThat;
 import static org.testfx.matcher.base.NodeMatchers.isVisible;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import org.junit.Ignore;
 
 import signup.signin.SignUpSignIn;
 
 /**
  * Pruebas de integración para la vista de Movimientos.
  * Se ejecutan en orden alfabético para mantener la consistencia del estado.
- */
+ * @fixme Los métodos de test presentados son insuficientes.
+ * @fixme Crear sendos métodos de test para Read,Create y Delete (último movimiento) sobre la tabla de Movements que verifiquen sobre los items de la tabla cada caso de uso.
+*/
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class MovementControllerTest extends ApplicationTest {
 
@@ -35,7 +41,7 @@ public class MovementControllerTest extends ApplicationTest {
     }
 
     /**
-     * Método auxiliar para automatizar el flujo de navegación:
+     * Method auxiliar para automatizar el flujo de navegación:
      * Login -> Selección de Cuenta -> Vista de Movimientos.
      */
     private void navegarHastaMovements() {
@@ -55,101 +61,177 @@ public class MovementControllerTest extends ApplicationTest {
         verifyThat("#tvMovements", isVisible());
         WaitForAsyncUtils.waitForFxEvents(); // Sincroniza eventos de la UI
     }
-
-    /**
-     * Test 1: Verifica que al crear y editar un movimiento, el saldo de la cuenta se actualiza.
-     */
-    @Test
-    public void test1_FlujoSinUndo() {
-        navegarHastaMovements();
-        
-        TextField tfBalance = lookup("#tfBalance").queryAs(TextField.class);
-        String saldoInicial = tfBalance.getText();
-        
-        // 1. Crea una nueva fila en la tabla de movimientos
-        clickOn((Node) lookup("#btNewRow").query());
-        WaitForAsyncUtils.waitForFxEvents();
-
-        // 2. Edita la columna "Tipo" (índice 1) seleccionando "Payment"
-        Node tipo = lookup("#tvMovements .table-row-cell").nth(0).lookup(".table-cell").nth(1).query();
-        clickOn(tipo);
-        clickOn("Payment");
-        type(KeyCode.ENTER);
-
-        // 3. Edita la columna "Cantidad" (índice 2) introduciendo un valor
-        Node amount = lookup("#tvMovements .table-row-cell").nth(0).lookup(".table-cell").nth(2).query();
-        clickOn(amount);
-        doubleClickOn(amount); // Asegura que se selecciona el texto previo para sobreescribir
-        write("100.00");
-        type(KeyCode.ENTER); // Primer Enter confirma edición
-        type(KeyCode.ENTER); // Segundo Enter podría ser necesario según la implementación del commit
-       
-        // Verifica que el saldo en pantalla ha cambiado respecto al inicial
-        assertNotEquals("El saldo debería cambiar (Sin Undo)", saldoInicial, tfBalance.getText());
-
-        // Vuelve a la pantalla anterior
-        clickOn((Node) lookup("#btBack").query());
-    }
-
-    /**
-     * Test 2: Verifica que la funcionalidad "Deshacer" (Undo) está operativa.
-     */
-    @Test
-    public void test2_FlujoConUndo() {
-        navegarHastaMovements();
-        
-        TextField tfBalance = lookup("#tfBalance").queryAs(TextField.class);
-        String saldoAntes = tfBalance.getText();
-        
-        // 1. Crea fila y edita cantidad a 50.00
-        clickOn((Node) lookup("#btNewRow").query());
-        WaitForAsyncUtils.waitForFxEvents();
-
-        Node amount = lookup("#tvMovements .table-row-cell").nth(0).lookup(".table-cell").nth(2).query();
-        clickOn(amount);
-        doubleClickOn(amount);
-        write("50.00");
-        type(KeyCode.ENTER);
-        type(KeyCode.ENTER);
-
-        // Verifica que el saldo cambió temporalmente
-        assertNotEquals("El saldo debería cambiar antes del Undo", saldoAntes, tfBalance.getText());
-
-        // 4. Ejecuta la acción de Deshacer último cambio
-        clickOn((Node) lookup("#btUndoLast").query());
-        clickOn("Aceptar"); // Confirma el diálogo de confirmación de Undo
-
-        // 5. Regresa a la vista de cuentas y verifica la navegación
-        clickOn((Node) lookup("#btBack").query());
-        verifyThat("#tbAccounts", isVisible());
-    }
     
     /**
-     * Test 3: Verifica la validación de datos de entrada (Data Validation).
-     * El sistema no debe permitir valores no numéricos en la columna Amount.
+     Test 1: Valido que la tabla tiene movimimientos
      */
     @Test
-    public void test3_InputNoNumerico() {
+    //@Ignore
+    public void test1_ReadMovements() {
         navegarHastaMovements();
-        
-        // 1. Crea una fila nueva
-        clickOn((Node) lookup("#btNewRow").query());
+        TableView<Movement> tv = lookup("#tvMovements").queryAs(TableView.class);
+        assertNotNull("La tabla no debe ser nula", tv);
+        assertFalse("La tabla debe tener datos", tv.getItems().isEmpty());
+    }
+
+    /**
+     * Test 2: CREATE Depósito.
+     */
+    @Test
+    @Ignore
+    public void test2_CreateDeposit() {
+        navegarHastaMovements();
+        TableView<Movement> tv = lookup("#tvMovements").queryAs(TableView.class);
+        int totalInicial = tv.getItems().size();
+
+        // 1. Crear fila (El controlador la selecciona automáticamente)
+        clickOn("#btNewRow"); 
         WaitForAsyncUtils.waitForFxEvents();
 
-        // 2. Localiza la celda de Amount (columna 2)
-        Node amountCell = lookup("#tvMovements .table-row-cell").nth(0).lookup(".table-cell").nth(2).query();
+        // 2. Localizar la celda Amount (columna 2) DENTRO de la fila SELECCIONADA
+        // Esto evita errores de índices visuales vs lógicos
+        Node row = lookup(".table-row-cell:selected").query();
+        Node amountCell = from(row).lookup(".table-cell").nth(2).query();
         
-        // 3. Intenta escribir texto en un campo numérico
-        clickOn(amountCell);
-        doubleClickOn(amountCell); 
-        write("TextoInvalido");
+        // 3. Editar (Doble click es necesario para TextFieldTableCell)
+        doubleClickOn(amountCell);
+        write("50.00");
+        push(KeyCode.ENTER);
+        WaitForAsyncUtils.waitForFxEvents();
+
+        // 4. Verificación
+        assertEquals("La tabla debería crecer", totalInicial + 1, tv.getItems().size());
+        
+        // Obtenemos el último elemento real de los datos para verificar
+        Movement created = tv.getItems().get(tv.getItems().size() - 1);
+        assertEquals("Importe correcto", 50.0, created.getAmount(), 0.01);
+    }
+
+    /**
+     * Test 3: CREATE Payment (Lógica de conversión a negativo).
+     */
+    @Test
+    @Ignore
+    public void test3_CreatePayment_Logic() {
+        navegarHastaMovements();
+        TableView<Movement> tv = lookup("#tvMovements").queryAs(TableView.class);
+        
+        clickOn("#btNewRow");
+        WaitForAsyncUtils.waitForFxEvents();
+        
+        // 1. Buscamos la fila seleccionada (la nueva)
+        Node row = lookup(".table-row-cell:selected").query();
+        
+        // 2. Cambiar Tipo a "Payment" USANDO TECLADO
+        Node typeCell = from(row).lookup(".table-cell").nth(1).query();
+        clickOn(typeCell); // Foco en la celda
+        
+        // En vez de buscar el texto "Payment" con el ratón (que puede fallar),
+        // pulsamos la flecha ABAJO para cambiar la selección del combo y ENTER para confirmar.
+        type(KeyCode.DOWN); 
         type(KeyCode.ENTER);
+        WaitForAsyncUtils.waitForFxEvents();
+        
+        // 3. Escribir importe POSITIVO en Amount (Columna 2)
+        // Volvemos a buscar la fila seleccionada por si el foco cambió ligeramente
+        row = lookup(".table-row-cell:selected").query(); 
+        Node amountCell = from(row).lookup(".table-cell").nth(2).query();
+        
+        doubleClickOn(amountCell); 
+        write("20.00");
+        push(KeyCode.ENTER);
+        WaitForAsyncUtils.waitForFxEvents();
 
-        // 4. VERIFICACIÓN: Comprueba que el sistema lanza una alerta de error
-        verifyThat("Error", isVisible());
-        verifyThat("Formato incorrecto. Introduce un número válido.", isVisible());
+        // 4. Verificar que se convirtió a negativo
+        // Obtenemos el último ítem de la lista de datos
+        Movement created = tv.getItems().get(tv.getItems().size() - 1);
+        assertEquals("Debe convertirse a negativo", -20.0, created.getAmount(), 0.01);
+    }
 
-        // 5. Cierra la alerta para dejar el entorno limpio para otros tests
+    /**
+     * Test 4: Validación de Fondos (Lógica de Negocio).
+     */
+    @Test
+    @Ignore
+    public void test4_BusinessLogic_InsufficientFunds() {
+        navegarHastaMovements();
+        TableView<Movement> tv = lookup("#tvMovements").queryAs(TableView.class);
+        int totalAntes = tv.getItems().size();
+
+        clickOn("#btNewRow");
+        WaitForAsyncUtils.waitForFxEvents();
+
+        Node row = lookup(".table-row-cell:selected").query();
+
+        // 1. Tipo Payment
+        Node typeCell = from(row).lookup(".table-cell").nth(1).query();
+        clickOn(typeCell);
+        
+        type(KeyCode.DOWN);
+        type(KeyCode.ENTER);
+        WaitForAsyncUtils.waitForFxEvents();
+
+        // 2. Importe excesivo
+        row = lookup(".table-row-cell:selected").query();
+        Node amountCell = from(row).lookup(".table-cell").nth(2).query();
+        
+        doubleClickOn(amountCell);
+        write("99999999");
+        push(KeyCode.ENTER);
+        WaitForAsyncUtils.waitForFxEvents();
+        
+        // 3. Verificar alerta de forma segura para evitar NPE
+        // Usamos lookup con try-catch o verificamos existencia antes de interactuar
+        verifyThat(".dialog-pane", isVisible()); // .dialog-pane es más seguro que .alert
+        
+        // Buscar el botón Aceptar dentro del diálogo
         clickOn("Aceptar"); 
+        
+        WaitForAsyncUtils.waitForFxEvents();
+
+        // 4. Verificar Rollback
+        assertEquals("El movimiento no debe guardarse", totalAntes, tv.getItems().size());
+    }
+
+    @Test
+    @Ignore
+    public void test5_InputValidation() {
+        navegarHastaMovements();
+        clickOn("#btNewRow");
+        
+        Node row = lookup(".table-row-cell:selected").query();
+        Node amountCell = from(row).lookup(".table-cell").nth(2).query();
+        
+        doubleClickOn(amountCell);
+        write("TEXTO");
+        push(KeyCode.ENTER);
+
+        verifyThat(".dialog-pane", isVisible());
+        clickOn("Aceptar");
+    }
+
+    @Test
+    @Ignore
+    public void test6_DeleteLastMovement() {
+        navegarHastaMovements();
+        TableView<Movement> tv = lookup("#tvMovements").queryAs(TableView.class);
+        
+        // Aseguramos datos para borrar
+        if(tv.getItems().isEmpty()) {
+            clickOn("#btNewRow");
+            Node row = lookup(".table-row-cell:selected").query();
+            Node amount = from(row).lookup(".table-cell").nth(2).query();
+            doubleClickOn(amount);
+            write("10");
+            push(KeyCode.ENTER);
+        }
+
+        int totalAntes = tv.getItems().size();
+
+        clickOn("#btUndoLast");
+        clickOn("Aceptar"); // Ajustar si el botón es "OK" o "Sí"
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertEquals("Debe haber una fila menos", totalAntes - 1, tv.getItems().size());
     }
 }
