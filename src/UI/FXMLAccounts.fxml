@@ -18,7 +18,9 @@
       <BorderPane prefHeight="768.0" prefWidth="1024.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          
          <top>
-            <fx:include fx:id="hBoxMenu" source="FXMLDocumentMenu.fxml" />
+            <!--FIXME: NO TOCAR la siguiente modificación necesaria: fx:id deber tener el valor "menuInclude" -->
+            <fx:include source="FXMLDocumentMenu.fxml" fx:id="menuInclude"/>
+            <!--fx:include fx:id="hBoxMenu" source="FXMLDocumentMenu.fxml" /-->
          </top>
 
          <center>

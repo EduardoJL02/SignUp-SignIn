@@ -8,7 +8,9 @@
 
 <Pane fx:id="mainPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="768.0" prefWidth="1024.0" style="-fx-background-color: #f4f4f4;" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="UI.MovementController">
    <children>
-      <fx:include fx:id="hBoxMenu" source="FXMLDocumentMenu.fxml" />
+      <!--FIXME: NO TOCAR la siguiente modificación necesaria: fx:id deber tener el valor "menuInclude" -->
+      <fx:include source="FXMLDocumentMenu.fxml" fx:id="menuInclude"/>
+      <!--fx:include fx:id="hBoxMenu" source="FXMLDocumentMenu.fxml" /-->
       <Label layoutX="30.0" layoutY="45.0" text="CUSTOMER DETAILS" textFill="#666666">
          <font>
             <Font size="10.0" />
