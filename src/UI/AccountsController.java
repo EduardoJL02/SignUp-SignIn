@@ -2,9 +2,12 @@ package UI;
 
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.logging.Level;
@@ -47,6 +50,13 @@ import model.AccountType;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.Node;
 import javafx.scene.control.TableRow;
+import net.sf.jasperreports.engine.JRException;
+import net.sf.jasperreports.engine.JasperCompileManager;
+import net.sf.jasperreports.engine.JasperFillManager;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.JasperReport;
+import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
+import net.sf.jasperreports.view.JasperViewer;
 
 /**
  * Controlador de Gestión de Cuentas.
@@ -782,6 +792,48 @@ public class AccountsController implements Initializable, MenuActionsHandler {
         }
     }
     
+    /**
+     * Accion para la confeccion de reportes
+     */
+    @FXML
+    private void handleReportAction(ActionEvent event) {
+        try {
+            LOGGER.info("Iniciando confeccion de informes...");
+            
+            // 1. Cargar el diseño del informe. 
+            java.io.InputStream reportStream = getClass().getResourceAsStream("report/AccountsReport.jrxml");
+            if (reportStream == null) {
+                showErrorAlert("No se pudo encontrar el archivo del reporte. Verifica la ruta.");
+                return;
+            }
+            
+            JasperReport report = JasperCompileManager.compileReport(reportStream);
+            
+            // 2. Obtener los datos directamente de la TableView
+            JRBeanCollectionDataSource dataItems = 
+                    new JRBeanCollectionDataSource((Collection<Account>) this.tbAccounts.getItems());
+            
+            // 3. Preparar los parámetros (Aquí pasamos la fecha de creación)
+            Map<String, Object> parameters = new HashMap<>();
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+            String currentDate = sdf.format(new java.util.Date());
+            parameters.put("fechaCreacion", currentDate);
+            
+            // 4. Llenar el reporte con los datos y parámetros
+            JasperPrint jasperPrint = JasperFillManager.fillReport(report, parameters, dataItems);
+            
+            // 5. Mostrar el reporte usando el visor de Jasper
+            JasperViewer jasperViewer = new JasperViewer(jasperPrint, false);
+            jasperViewer.setVisible(true);
+            
+        } catch (JRException ex) {
+            LOGGER.log(Level.SEVERE, "Error imprimiendo el reporte: {0}", ex.getMessage());
+            showErrorAlert("Ocurrió un error al compilar o rellenar el reporte: " + ex.getMessage());
+        } catch (Exception ex) {
+            LOGGER.log(Level.SEVERE, "Error inesperado generando informe: {0}", ex.getMessage());
+            showErrorAlert("Error inesperado: " + ex.getMessage());
+        }
+    }
     /**
      * Acción para refrescar la tabla manualmente.
      * Recarga los datos del servidor y limpia la selección.

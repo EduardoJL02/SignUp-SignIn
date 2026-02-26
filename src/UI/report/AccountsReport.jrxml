@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="AccountsReport" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="f5ede580-789e-483d-aa7f-7fc97f683ba1">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="fechaCreacion" class="java.lang.String"/>
+	<field name="id" class="java.lang.Long"/>
+	<field name="description" class="java.lang.String"/>
+	<field name="beginBalance" class="java.lang.Double"/>
+	<field name="balance" class="java.lang.Double"/>
+	<field name="creditLine" class="java.lang.Double"/>
+	<field name="type" class="java.lang.Object"/>
+	<field name="beginBalanceTimestamp" class="java.util.Date"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="79" splitType="Stretch">
+			<staticText>
+				<reportElement x="310" y="20" width="200" height="25" uuid="4795ddc7-9d6f-48fc-97a5-49f6cdd950f4"/>
+				<textElement textAlignment="Center">
+					<font size="18" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Account report]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="600" y="50" width="200" height="20" uuid="abcdef12-3456-7890-abcd-ef1234567890"/>
+				<textElement textAlignment="Right">
+					<font isItalic="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Generated: " + $P{fechaCreacion}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<columnHeader>
+		<band height="30" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="5" width="50" height="20" uuid="814983a2-8fd9-4145-a86a-a28885c5e869"/>
+				<textElement>
+					<font isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[ID]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="65" y="5" width="150" height="20" uuid="4f7b0fe6-e2f5-4689-b7b6-8de017715c97"/>
+				<textElement>
+					<font isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[Description]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="228" y="5" width="100" height="20" uuid="b79522d5-89c1-466a-8d2f-76dad5642ece"/>
+				<textElement>
+					<font isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[Begin Balance]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="347" y="5" width="100" height="20" uuid="4fad4b9e-c567-4eae-8fca-92d3538855d0"/>
+				<textElement>
+					<font isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[Current Bal.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="458" y="5" width="100" height="20" uuid="5108bde2-8fe5-4841-ae05-68b59b0a7295"/>
+				<textElement>
+					<font isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[Credit Line]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="569" y="5" width="100" height="20" uuid="f3096c75-74f2-434f-ac68-5a74c6f9030d"/>
+				<textElement>
+					<font isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[Type]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="682" y="5" width="120" height="20" uuid="9236d915-68a2-43b9-883e-07ba4cc47f38"/>
+				<textElement>
+					<font isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[Creation Date]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="25" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="5" width="50" height="20" uuid="ce450305-c0e1-4aff-90e4-c7a62e098562"/>
+				<textFieldExpression><![CDATA[$F{id}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="65" y="5" width="150" height="20" uuid="79a651d0-bfb8-4879-be64-6593f5e6f0c8"/>
+				<textFieldExpression><![CDATA[$F{description} != null ? $F{description} : ""]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="228" y="5" width="100" height="20" uuid="3f31fd81-57bb-4395-a399-64d3e2ab7a36"/>
+				<textFieldExpression><![CDATA[$F{beginBalance}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="347" y="5" width="100" height="20" uuid="021e9f25-f84a-469f-beed-575b1522ab83"/>
+				<textFieldExpression><![CDATA[$F{balance}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="458" y="5" width="100" height="20" uuid="b0f2d62b-7ff5-4ef8-97c3-c67f873c5ba8"/>
+				<textFieldExpression><![CDATA[$F{creditLine} != null ? $F{creditLine} : "N/A"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="569" y="5" width="100" height="20" uuid="e5c25d20-8236-43ad-bcb2-401436f5e942"/>
+				<textFieldExpression><![CDATA[$F{type} != null ? "" + $F{type} : "N/A"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="682" y="5" width="120" height="20" uuid="f1939155-a00b-46ca-b381-159b567289d7"/>
+				<textFieldExpression><![CDATA[$F{beginBalanceTimestamp} != null ? new java.text.SimpleDateFormat("dd/MM/yyyy").format($F{beginBalanceTimestamp}) : "N/A"]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>
