@@ -800,7 +800,7 @@ public class AccountsController implements Initializable, MenuActionsHandler {
         try {
             LOGGER.info("Iniciando confeccion de informes...");
             
-            // 1. Cargar el diseño del informe. 
+            // Cargar el diseño del informe. 
             java.io.InputStream reportStream = getClass().getResourceAsStream("report/AccountsReport.jrxml");
             if (reportStream == null) {
                 showErrorAlert("No se pudo encontrar el archivo del reporte. Verifica la ruta.");
@@ -809,20 +809,20 @@ public class AccountsController implements Initializable, MenuActionsHandler {
             
             JasperReport report = JasperCompileManager.compileReport(reportStream);
             
-            // 2. Obtener los datos directamente de la TableView
+            // Obtener los datos directamente de la TableView
             JRBeanCollectionDataSource dataItems = 
                     new JRBeanCollectionDataSource((Collection<Account>) this.tbAccounts.getItems());
             
-            // 3. Preparar los parámetros (Aquí pasamos la fecha de creación)
+            // Preparar los parámetros (pasamos la fecha de creación)
             Map<String, Object> parameters = new HashMap<>();
             java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
             String currentDate = sdf.format(new java.util.Date());
             parameters.put("fechaCreacion", currentDate);
             
-            // 4. Llenar el reporte con los datos y parámetros
+            // Llenar el reporte con los datos y parámetros
             JasperPrint jasperPrint = JasperFillManager.fillReport(report, parameters, dataItems);
             
-            // 5. Mostrar el reporte usando el visor de Jasper
+            // Mostrar el reporte usando el visor de Jasper
             JasperViewer jasperViewer = new JasperViewer(jasperPrint, false);
             jasperViewer.setVisible(true);
             

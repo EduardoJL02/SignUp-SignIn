@@ -28,11 +28,11 @@
                <children>
                    <HBox alignment="CENTER_LEFT" prefHeight="40.0" prefWidth="200.0">
                      <children>
-                        <Button fx:id="btnRefresh" mnemonicParsing="false" onAction="#handleRefreshAction" text="↻ Refrescar" />
+                        <Button fx:id="btnRefresh" mnemonicParsing="false" onAction="#handleRefreshAction" text="↻ Refresh" />
                         
                         <Region HBox.hgrow="ALWAYS" />
                         
-                        <Button fx:id="btnReport" mnemonicParsing="false" onAction="#handleReportAction" text="Imprimir" />
+                        <Button fx:id="btnReport" mnemonicParsing="false" onAction="#handleReportAction" text="Print" />
                      </children>
                      <VBox.margin>
                         <Insets bottom="5.0" left="0.0" right="0.0" top="5.0" />
